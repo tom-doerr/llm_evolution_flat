@@ -134,20 +134,18 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
+    # Get candidates and calculate Pareto weights
     candidates = population[-WINDOW_SIZE:]
     weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
-    total_weight = weights.sum()
+    pareto_weights = weights * np.random.pareto(2.0, len(weights))
     
-    if total_weight <= 0:
-        return []
-    
-    # Perform weighted sampling without replacement in one step
+    # Normalize and sample without replacement
     sample_size = min(len(population), MAX_POPULATION//2)
     selected_indices = np.random.choice(
         len(candidates),
         size=sample_size,
-        replace=False,
-        p=weights/total_weight
+        p=pareto_weights/pareto_weights.sum(),
+        replace=False
     )
     
     return [candidates[i] for i in selected_indices]
@@ -306,33 +304,26 @@ def run_genetic_algorithm(pop_size: int) -> None:
 def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
     assert MAX_POPULATION == 1_000_000, "Population limit mismatch with spec.md"
-    population = population[:MAX_POPULATION]  # Ensure initial population size limit
+    population = population[:MAX_POPULATION]
     fitness_window = []
     
-    # Continuous evolution loop per spec.md
     for generation in itertools.count(0):
+        # Evaluate and update population
         population = evaluate_population(population)[:MAX_POPULATION]
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        # Update fitness window with new values
-        new_fitnesses = [a["fitness"] for a in population]
-        fitness_window = update_fitness_window(fitness_window, new_fitnesses)
-        
-        # Combined stats calculation to reduce locals
-        stats = {
+        # Generate stats and evolve
+        stats = calculate_window_statistics(fitness_window)
+        stats.update({
             'generation': generation,
             'population_size': len(population),
             'diversity': calculate_diversity(population),
             'best': max(a["fitness"] for a in population),
-            'worst': min(a["fitness"] for a in population),
-            **calculate_window_statistics(fitness_window)
-        }
+            'worst': min(a["fitness"] for a in population)
+        })
         
-        # Handle logging/display in one step
-        log_and_display(stats, population)
-        
-        parents = select_parents(population)
-        population = generate_children(parents, population)[:MAX_POPULATION]
-        assert len(population) <= MAX_POPULATION, "Population exceeded max limit"
+        handle_generation_output(stats, population)
+        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
 
