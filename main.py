@@ -140,15 +140,20 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     # Calculate fitness^2 weights with Pareto distribution (spec.md requirement)
-    weighted_weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
-    weighted_weights = np.nan_to_num(weighted_weights, nan=1e-6)  # Handle potential NaNs
-    weighted_weights /= weighted_weights.sum() + 1e-9  # Prevent division by zero
+    weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
+    weights = np.nan_to_num(weights, nan=1e-6)  # Handle potential NaNs
+    weights /= weights.sum() + 1e-9  # Prevent division by zero
+    
+    # Enforce population limit - critical for spec.md requirement
+    population = population[:MAX_POPULATION]
+    assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
     
     # Weighted sampling without replacement
+    sample_size = min(len(population), MAX_POPULATION//2)
     selected_indices = np.random.choice(
         len(population),
-        size=min(len(population), MAX_POPULATION//2),
-        p=weighted_weights,
+        size=sample_size,
+        p=weights,
         replace=False
     )
     
