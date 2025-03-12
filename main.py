@@ -297,12 +297,21 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         if validate_mating_candidate(a, parent)
     ]
     
-    # Select mate and build child in streamlined way
-    mate = llm_select_mate(parent, random.choices(
-        valid_candidates,
-        weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
-        k=min(5, len(valid_candidates))
-    ))
+    # Weighted sampling without replacement using numpy
+    if valid_candidates:
+        weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
+        weights /= weights.sum()
+        selected_indices = np.random.choice(
+            len(valid_candidates), 
+            size=min(5, len(valid_candidates)),
+            replace=False,
+            p=weights
+        )
+        mates = [valid_candidates[i] for i in selected_indices]
+    else:
+        mates = []
+    
+    mate = llm_select_mate(parent, mates) if mates else parent  # Fallback to parent if no mates
     
     return create_agent(build_child_chromosome(parent, mate))
 
