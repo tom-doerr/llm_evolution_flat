@@ -10,8 +10,9 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Add mutation rate adaptation based on diversity
-# 2. Implement generation-based scoring weights
+# 1. Implement generation-based scoring weights
+# 2. Add diversity tracking to population statistics
+# 3. Optimize LLM prompt validation
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -108,6 +109,10 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
     metrics = score_chromosome(chromosome)
     assert 0 <= metrics['a_density'] <= 1, "Invalid a_density score"
     assert 0 <= metrics['repeating_pairs'] <= 1, "Invalid repeating_pairs score"
+
+    # Generation-based weighting using sigmoid function
+    gen_weight = 1 / (1 + np.exp(-generation/15))  # Scales from 0.5 to 1 as generations increase
+    assert 0.5 <= gen_weight <= 1.0, f"Invalid gen_weight {gen_weight} at generation {generation}"
 
     # Fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
     fitness = 0.0
@@ -469,22 +474,22 @@ def create_next_generation(next_gen, problem, mutation_rate, generation):
         
     return next_gen
 
-def apply_mutations(generation, mutation_rate, problem):
+def calculate_diversity(population: List[dict]) -> float:
+    """Calculate population diversity ratio [0-1]"""
+    unique_chromosomes = len({agent["chromosome"] for agent in population})
+    return unique_chromosomes / len(population) if population else 0.0
+
+def apply_mutations(generation, base_mutation_rate, problem):
     """Auto-adjust mutation rate based on population diversity"""
-    # Calculate normalized population diversity [0-1]
-    unique_chromosomes = len({agent["chromosome"] for agent in generation})
-    diversity_ratio = unique_chromosomes / len(generation)
+    # Calculate diversity and adapt mutation rate using Pareto distribution
+    diversity_ratio = calculate_diversity(generation)
+    mutation_rate = base_mutation_rate * (1.0 - np.log1p(diversity_ratio))
     
-    # Dynamically adapt mutation rate using diversity-based Pareto scaling
-    min_rate, max_rate = 0.1, 0.8
-    mutation_rate = min_rate + (max_rate - min_rate) * (1 - diversity_ratio)
-    mutation_rate = np.clip(mutation_rate, min_rate, max_rate)
+    # Apply mutations with rate clamping
+    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)
+    assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
     
-    # Validate mutation parameters
-    assert 0 <= diversity_ratio <= 1, f"Invalid diversity ratio: {diversity_ratio}"
-    assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate out of bounds: {mutation_rate}"
-    
-    # Apply mutations using vectorized operations
+    # Vectorized mutation application
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
