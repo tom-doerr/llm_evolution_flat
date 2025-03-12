@@ -177,7 +177,7 @@ def mutate_with_llm(agent: dict) -> str:
     return next(valid_mutations, chromosome[:23] + ''.join(random.choices(
         string.ascii_letters.lower(), 
         k=max(0, len(chromosome)-23))
-    )
+    ))
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
