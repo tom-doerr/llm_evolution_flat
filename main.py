@@ -409,7 +409,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
                 len(population),
                 size=max_population,
                 replace=False,
-                p=np.array(pop_weights)/sum(pop_weights))
+                p=np.array(pop_weights)/sum(pop_weights)
             )
         ]
         
