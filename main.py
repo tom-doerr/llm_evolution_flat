@@ -62,8 +62,10 @@ def score_chromosome(chromosome: str) -> dict:
     a_count = repeats = 0
     prev_char = None
     for i, c in enumerate(core):
-        a_count += c == 'a'
-        repeats += i > 0 and c == prev_char
+        if c == 'a':
+            a_count += 1
+        if i > 0 and c == prev_char:
+            repeats += 1
         prev_char = c
     
     return {
@@ -136,8 +138,9 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
     candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
     weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    weights = 1.0 / (1.0 + np.argsort(-weights))  # Pareto distribution
-    weights /= weights.sum()
+    
+    # Apply Pareto distribution and normalize in one step
+    weights = (1.0 / (1.0 + np.argsort(-weights))) / np.sum(1.0 / (1.0 + np.argsort(-weights)))
     
     sample_size = min(len(candidates)//2, MAX_POPULATION)
     return [candidates[i] for i in np.random.choice(len(candidates), sample_size, p=weights, replace=False)]
@@ -213,13 +216,14 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid = [c for c in candidates if validate_mating_candidate(c, parent)]
-    if not valid:
+    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid_candidates:
         raise ValueError("No valid mates")
 
+    candidate_chromosomes = [c["chromosome"] for c in valid_candidates]
     response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid],
+        candidate_chromosomes=candidate_chromosomes,
         temperature=0.7,
         top_p=0.9
     )
