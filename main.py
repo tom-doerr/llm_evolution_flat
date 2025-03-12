@@ -1,11 +1,9 @@
 import random
 import string
 import gzip
-import json
 import numpy as np
 from typing import List
 from rich.console import Console
-from rich.table import Table
 import dspy
 
 # Completed:
@@ -404,7 +402,7 @@ def run_genetic_algorithm(
 
         # Log population with generation stats and diversity
         current_diversity = calculate_diversity(population)
-        log_population(population, generation, mean_fitness, median_fitness, std_fitness, current_diversity, log_file)
+        log_population(population, generation, stats['mean'], stats['median'], stats['std'], current_diversity, log_file)
 
         # Display statistics from sliding window
         display_generation_stats(generation, generations, population, best, stats['mean'], stats['std'], fitness_window)
@@ -429,11 +427,19 @@ def run_genetic_algorithm(
 
 
 
+def main():
+    """Main entry point"""
+    PROBLEM = "Optimize string patterns through evolutionary processes"
+    dspy.configure(problem=PROBLEM)  # Store in DSPy settings
+    run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
+
 if __name__ == "__main__":
     main()
+MAX_POPULATION = 1_000_000  # Hard limit per spec
+
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
-    return 1_000_000
+    return MAX_POPULATION
 
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
     """Log gzipped population data with rotation"""
