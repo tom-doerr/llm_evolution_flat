@@ -130,40 +130,31 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
+def calculate_parent_weights(population: List[dict]) -> np.ndarray:
+    """Calculate parent selection weights with Pareto distribution and fitness^2"""
+    pareto_values = np.random.pareto(2.0, len(population))
+    weights = np.array([a['fitness']**2 * (pareto_values[i] + 1e-6) for i, a in enumerate(population)])
+    weights = np.nan_to_num(weights, nan=1e-6)
+    weights = np.clip(weights, 1e-6, None)  # Ensure minimum weight
+    return weights / weights.sum()  # Normalized
+
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
     if not population:
         return []
     
-    # Calculate weights with Pareto distribution and fitness^2 as per spec.md
-    pareto_values = np.random.pareto(2.0, len(population))  # Generate all pareto values first
-    weights = np.array([a['fitness']**2 * (pareto_values[i] + 1e-6) for i, a in enumerate(population)])
-    weights = np.nan_to_num(weights, nan=1e-6)
-    weights = np.where(weights <= 0, 1e-6, weights)  # Ensure all weights are positive
-    weights /= weights.sum()  # Normalize
-    
-    # Enforce population limit before selection (spec.md requirement)
+    # Enforce population limit and get weights
     population = population[:MAX_POPULATION]
-    if len(population) > MAX_POPULATION:
-        population = population[:MAX_POPULATION]
-        print(f"WARNING: Population trimmed to {MAX_POPULATION}")
+    weights = calculate_parent_weights(population)
     
-    # Weighted sampling without replacement using reservoir sampling
+    # Weighted sampling without replacement using numpy
     sample_size = min(len(population), MAX_POPULATION//2)
-    selected_indices = []
-    population_indices = list(range(len(population)))
-    
-    for i in range(sample_size):
-        total_weight = weights[i:].sum()
-        r = random.uniform(0, total_weight)
-        cumulative = 0
-        for j in range(i, len(population)):
-            cumulative += weights[j]
-            if cumulative >= r:
-                population_indices[i], population_indices[j] = population_indices[j], population_indices[i]
-                weights[i], weights[j] = weights[j], weights[i]
-                break
-        selected_indices.append(population_indices[i])
+    selected_indices = np.random.choice(
+        len(population),
+        size=sample_size,
+        replace=False,
+        p=weights
+    )
     
     return [population[i] for i in selected_indices]
 
