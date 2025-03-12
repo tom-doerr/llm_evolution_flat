@@ -191,9 +191,12 @@ def mutate_with_llm(agent: dict) -> str:
         ))
     )
 
-def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
+MAX_CHARS = 40  # From spec.md (different from max tokens)
+MAX_CORE = 23  # From spec.md hidden goal
+
+def mutate(agent: dict) -> str: 
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    return mutate_with_llm(chromosome)
+    return mutate_with_llm(agent)
 
 
 def validate_mutation(chromosome: str) -> bool:
