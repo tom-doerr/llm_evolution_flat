@@ -250,7 +250,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     for candidate in valid_candidates:
         if candidate["chromosome"].lower().startswith(result):
             return candidate
-    return valid_candidates[np.argmax(weights)]
+    return random.choice(
+        [c for c in valid_candidates if result.lower() in c["chromosome"].lower()],
+        default=random.choice(valid_candidates)
+    )
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
