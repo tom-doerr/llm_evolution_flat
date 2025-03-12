@@ -22,6 +22,26 @@ dspy.configure(lm=lm)
 assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
+def calculate_window_statistics(fitness_window: list, window_size: int = 100) -> dict:
+    """Calculate statistics for current fitness window using vectorized operations"""
+    window = fitness_window[-window_size:]
+    if not window:
+        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0}
+    
+    arr = np.array(window)
+    return {
+        "mean": float(np.mean(arr)),
+        "median": float(np.median(arr)),
+        "std": float(np.std(arr)),
+        "best": float(np.max(arr)),
+        "worst": float(np.min(arr))
+    }
+
+def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
+    """Update sliding window efficiently using deque-like behavior"""
+    combined = (fitness_window[-window_size:] if fitness_window else []) + new_fitnesses
+    return combined[-window_size:]
+
 def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     if isinstance(chromosome, list):
@@ -319,10 +339,6 @@ def run_genetic_algorithm(
         population = create_next_generation(next_gen, problem, mutation_rate, generation)
 
 
-# Import optimized statistics functions
-import helpers
-
-# Helper functions needed by run_genetic_algorithm
 
 if __name__ == "__main__":
     main()
@@ -351,7 +367,6 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     )
     console.print(panel)
 
-from helpers import calculate_window_statistics, update_fitness_window
 
 def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
