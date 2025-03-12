@@ -389,8 +389,19 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        stats, fitness_window = update_generation_stats(population, fitness_window, generation)
-        handle_generation_output(stats, population)
+        population = evaluate_population(population)
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
+        
+        handle_generation_output({
+            **calculate_window_statistics(fitness_window),
+            'generation': generation,
+            'population_size': len(population),
+            'diversity': calculate_diversity(population),
+            'best': max(population, key=lambda x: x["fitness"])["fitness"],
+            'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
+            'worst': min(a["fitness"] for a in population)
+        }, population)
+        
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
