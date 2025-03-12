@@ -318,8 +318,8 @@ def run_genetic_algorithm(pop_size: int) -> None:
 
 def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
+    assert MAX_POPULATION == 1_000_000, "Population limit mismatch with spec.md"
     population = population[:MAX_POPULATION]  # Ensure initial population size limit
-    """Continuous evolution loop separated to reduce statement count"""
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
         
