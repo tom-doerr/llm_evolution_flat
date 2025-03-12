@@ -179,17 +179,18 @@ def mutate_with_llm(agent: dict) -> str:
                           "Change 1-2 characters after position 23 while keeping first 23 intact")
     
     try:
-        # Use DSPy predictor directly without caching
+        # Batch processing: Prepare multiple mutations for validation
         predictor = dspy.Predict(MutateSignature)
-        response = predictor(chromosome=chromosome, instructions=instruction)
-        mutated = str(response.mutated_chromosome).strip()[:40].lower()
+        responses = predictor(chromosome=chromosome, instructions=instruction, n=3)
         
-        # Validate mutation preserves core and improves 'a' count
-        if (len(mutated) >= 23 and mutated.isalpha() and
-            mutated[:23] == chromosome[:23] and
-            mutated[:23].count('a') >= chromosome[:23].count('a')):
-            return mutated
-    except Exception as e:
+        # Validate mutations in batch
+        for response in responses.completions:
+            mutated = str(response).strip()[:40].lower()
+            if (len(mutated) >= 23 and mutated.isalpha() and
+                mutated[:23] == chromosome[:23] and
+                mutated[:23].count('a') >= chromosome[:23].count('a')):
+                return mutated
+    except (ValueError, RuntimeError) as e:  # Specific exceptions from DSPy
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
 
