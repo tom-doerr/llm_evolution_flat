@@ -181,8 +181,8 @@ def mutate_with_llm(agent: dict) -> str:
     chromosome = agent["chromosome"]
     
     # Validate mutation parameters from chromosome
-    raw_temp = float(agent["mutation_chromosome"][:3] or 0.7
-    raw_top_p = float(agent["mutation_chromosome"][3:7] or 0.9
+    raw_temp = float(agent["mutation_chromosome"][:3] or 0.7)
+    raw_top_p = float(agent["mutation_chromosome"][3:7] or 0.9)
     temperature = max(0.0, min(1.0, raw_temp))
     top_p = max(0.0, min(1.0, raw_top_p))
     
