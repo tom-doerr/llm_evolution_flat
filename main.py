@@ -9,9 +9,9 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Add chromosome validation before LLM mating selection
-# 2. Optimize fitness window statistics calculations
-# 3. Add population size monitoring/limiting
+# 1. Optimize fitness window statistics calculations
+# 2. Add population size monitoring/limiting
+# 3. Implement chromosome structure scoring metrics
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -158,13 +158,22 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
-    # Filter and validate candidates
+    # Pre-validation checks
+    validate_chromosome(parent["chromosome"])
+    assert parent["fitness"] > 0, "Parent must have positive fitness"
+    
+    # Filter and validate candidates with additional checks
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mating candidates available")
     
+    # Enforce chromosome structure before LLM selection
+    for c in valid_candidates:
+        c["chromosome"] = validate_chromosome(c["chromosome"])
+        assert 23 <= len(c["chromosome"]) <= 40, "Candidate length violation"
+    
     # Create indexed list of first 23 chars (core segment)
-    candidate_list = [f"{idx}: {c['chromosome'][:23]}" 
+    candidate_list = [f"{idx}: {c['chromosome'][:23]} (fitness: {c['fitness']})" 
                     for idx, c in enumerate(valid_candidates)]
     
     # LLM selection with validation constraints
