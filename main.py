@@ -22,7 +22,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
-debug = False  # Control debug output
+DEBUG = False  # Control debug output
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -206,7 +206,7 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
-def mutate_with_llm(chromosome: str, problem: str) -> str:
+def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
     """Mutate chromosome using LLM-based rephrasing with problem context""" 
     validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
     
@@ -221,7 +221,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
             raise ValueError(f"Length out of bounds (23-40): {len(result)}")
         return result
 
-    mutate_prompt = dspy.structured.StructuredPrompt(
+    mutate_prompt = dspy.Predict(
         "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
         validate_output=validate_mutation,
         instructions="MUTATION RULES:\n1. Preserve/exceed 'a' count in first 23 chars\n2. Change 2-3 characters\n3. Maintain 23-40 length\n4. Letters only\n5. Maximize structural score"
@@ -255,12 +255,12 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
             raise ValueError(f"Invalid mutation: {mutated}")
         
         return mutated
-    except (TimeoutError, RuntimeError, AssertionError) as e:
+    except (TimeoutError, RuntimeError, AssertionError):
         print(f"Mutation failed: {str(e)}")
         # Fallback to random mutation without recursion
         return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
-def mutate(chromosome: str) -> str:
+def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
     return mutate_with_llm(chromosome)
 
@@ -457,10 +457,9 @@ def run_genetic_algorithm(
 
 
 if __name__ == "__main__":
-    """Main entry point"""
     PROBLEM = "Optimize string patterns through evolutionary processes"
-    dspy.configure(problem=PROBLEM)  # Store in DSPy settings
-    run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
+    dspy.configure(problem=PROBLEM)
+    run_genetic_algorithm(PROBLEM, generations=20)
 
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
@@ -561,8 +560,3 @@ def validate_improvement(response):
         and all(c in string.ascii_letters + " " for c in response.completions[0])
     )
 
-def main():
-    """Main entry point"""
-    PROBLEM = "Optimize string patterns through evolutionary processes"
-    dspy.configure(problem=PROBLEM)  # Store in DSPy settings
-    run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
