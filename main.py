@@ -150,6 +150,7 @@ def select_parents(population: List[dict]) -> List[dict]:
         size=min(len(population), MAX_POPULATION//2),
         p=weights,
         replace=False
+    )
     
     return [population[i] for i in selected_indices]
 
