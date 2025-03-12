@@ -42,8 +42,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         }
 
     arr = np.array(window, dtype=np.float64)
-    current_best = arr[-1] if len(arr) > 0 else 0.0
-    current_worst = arr[-1] if len(arr) > 0 else 0.0
+    current_best_worst = (arr[-1], arr[-1]) if len(arr) > 0 else (0.0, 0.0)
     
     return {
         'mean': float(np.nanmean(arr)),
@@ -337,8 +336,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md requirements
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        f.write("")  # Explicit truncation per spec.md
+    open("evolution.log", "w", encoding="utf-8").close()  # Truncate file
     
     evolution_loop(population)
 
