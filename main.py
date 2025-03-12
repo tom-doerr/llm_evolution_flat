@@ -401,7 +401,7 @@ def log_population(population: List[dict], generation: int, stats: dict) -> None
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
+def display_generation_stats(generation: int, generations: int, stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
     best = stats['best']
@@ -437,10 +437,10 @@ def calculate_diversity(population: List[dict]) -> float:
 def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     diversity_ratio = calculate_diversity(generation)
+    # Calculate final mutation rate and apply mutations
     mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
-    # Track mutations with validated unique count
-    unique_post = len({a["chromosome"] for a in generation})
+    # Apply mutations and track unique chromosomes
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
