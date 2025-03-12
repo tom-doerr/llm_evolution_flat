@@ -305,8 +305,9 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     next_gen.extend(
         crossover(random.choice(parents), population)
         if random.random() < 0.9 else  # 90% crossover, 10% mutation
-        create_agent(mutate(random.choice(parents)["chromosome"]))
+        create_agent(mutate(random.choice(parents)["chromosome"])
         for _ in range(max_children)
+    )
     
     # Hard limit enforcement per spec.md
     next_gen = next_gen[:MAX_POPULATION]
