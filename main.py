@@ -159,14 +159,16 @@ def select_parents(population: List[dict]) -> List[dict]:
     total_weight = sum(weights)
     probs = [w / total_weight for w in weights]
     
-    # Weighted sampling without replacement with numpy
+    # Weighted sampling without replacement using reservoir sampling
     sample_size = min(len(population), MAX_POPULATION//2)
-    selected_indices = np.random.choice(
-        len(population),
-        size=sample_size,
-        replace=False,
-        p=probs
-    )
+    selected_indices = []
+    for i, w in enumerate(probs):
+        if len(selected_indices) < sample_size:
+            selected_indices.append(i)
+        else:
+            j = random.choices(range(sample_size), weights=[probs[x] for x in selected_indices])[0]
+            if random.random() < w / probs[selected_indices[j]]:
+                selected_indices[j] = i
     return [population[i] for i in selected_indices]
 
 # TODO: Implement mutation rate validation
