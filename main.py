@@ -32,14 +32,12 @@ dspy.configure(lm=lm)
 assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
-def calculate_window_statistics(fitness_window: list, window_size: int = 100) -> dict:
+def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations"""
-    # Validate input before processing
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
-    assert window_size > 0, "Window size must be positive"
     
-    # Use exact window size with validation
-    window = fitness_window[-window_size:] if len(fitness_window) >= window_size else fitness_window.copy()
+    # Use fixed 100-item window per spec
+    window = fitness_window[-100:] if len(fitness_window) >= 100 else fitness_window.copy()
     assert 0 <= len(window) <= window_size, f"Window size violation: {len(window)}"
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
@@ -237,8 +235,7 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
         assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
             original_chromosome=f"Original: {chromosome[:40]}\n"
-                              f"Problem: {problem}\n"
-                              "Mutation Rules:\n"
+                              "Mutation Rules:\n"  # Removed undefined problem reference
                               "1. Modify exactly 2-3 characters\n"
                               "2. Preserve first 23 characters\n"
                               "3. Use only letters/spaces\n"
@@ -304,7 +301,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified
                 
                 
         except AssertionError as e:
-            if debug:
+            if DEBUG:  # Fixed invalid-name warning
                 pass  # Debug placeholder for invalid candidate rejection
             pass  # Required indented block even if debug is False
     
