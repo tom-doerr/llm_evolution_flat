@@ -41,18 +41,18 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Ensure chromosome is a string
     chromosome = str(agent["chromosome"])
 
-    # Calculate fitness per spec: +1 per 'a' in first 23, -1 per char beyond 23
+    # Calculate fitness per spec: +2 per 'a'/-2 per other in first 23 chars
     fitness = 0.0
-
-    # First 23 characters: +2 for 'a's, -2 for other letters (case-insensitive)
-    first_part = chromosome[:23].lower()
-    a_count = first_part.count("a")
-    other_count = len(first_part) - a_count
-    fitness += (a_count * 2) - (other_count * 2)
+    core_segment = chromosome[:23].lower()
+    assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     
-    # Debug assertions
-    assert a_count >= 0, f"Invalid a_count {a_count} for {chromosome}"
-    assert other_count >= 0, f"Invalid other_count {other_count} for {chromosome}"
+    core_score = core_segment.count("a") * 2
+    penalty = (len(core_segment) - core_segment.count("a")) * 2
+    fitness += core_score - penalty
+    
+    # Validation assertions
+    assert core_score >= 0, f"Core score cannot be negative: {core_score}"
+    assert penalty >= 0, f"Penalty cannot be negative: {penalty}"
     if a_count == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
@@ -267,11 +267,14 @@ def run_genetic_algorithm(
         window_size = 100
         all_fitness = [agent["fitness"] for agent in population]
         
-        # Maintain sliding window of last 100 evaluations
+        # Maintain sliding window of last 100 evaluations including best/worst
         if not hasattr(run_genetic_algorithm, "fitness_window"):
             run_genetic_algorithm.fitness_window = []
+            
+        # Add best and worst from current population to window
+        window_values = all_fitness + [best["fitness"], worst["fitness"]]
         run_genetic_algorithm.fitness_window = (
-            run_genetic_algorithm.fitness_window + all_fitness
+            run_genetic_algorithm.fitness_window + window_values
         )[-window_size:]
         
         # Calculate robust statistics
