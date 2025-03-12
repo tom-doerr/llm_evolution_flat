@@ -461,22 +461,17 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, population: list, best: dict, 
+def display_generation_stats(generation: int, generations: int, population: list, best: dict,
                            mean_fitness: float, std_fitness: float, fitness_window: list):
-    from rich.panel import Panel  # Fix missing import
     """Rich-formatted display with essential stats"""
+    from rich.panel import Panel
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
     diversity = calculate_diversity(population)
     
-    suffix = ''
+    # Track diversity in window stats
+    stats['diversity'] = diversity
     current_pop_size = len(population)
-    if current_pop_size >= 1_000_000:
-        display_size = f"{current_pop_size/1_000_000:.1f}M"
-    elif current_pop_size >= 1_000:
-        display_size = f"{current_pop_size/1_000:.1f}K"
-    else:
-        display_size = str(current_pop_size)
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
