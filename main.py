@@ -38,15 +38,15 @@ def calculate_window_statistics(fitness_window: list) -> dict:
                 best=0.0, worst=0.0, q25=0.0, q75=0.0)
 
     arr = np.array(window, dtype=np.float64)
-    return dict(
-        mean=float(np.nanmean(arr)),
-        median=float(np.nanmedian(arr)),
-        std=float(np.nanstd(arr)),
-        best=float(np.nanmax(arr)),
-        worst=float(np.nanmin(arr)),
-        q25=float(np.nanpercentile(arr, 25)),
-        q75=float(np.nanpercentile(arr, 75))
-    )
+    return {
+        'mean': float(np.nanmean(arr)),
+        'median': float(np.nanmedian(arr)),
+        'std': float(np.nanstd(arr)),
+        'best': float(np.nanmax(arr)),
+        'worst': float(np.nanmin(arr)),
+        'q25': float(np.nanpercentile(arr, 25)),
+        'q75': float(np.nanpercentile(arr, 75))
+    }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
@@ -132,15 +132,14 @@ def select_parents(population: List[dict]) -> List[dict]:
     candidates = population[-WINDOW_SIZE:]
     weights = [a['fitness']**2 + 1e-6 for a in candidates]
     
-    # Weighted sampling without replacement (Pareto distribution)
+    # Weighted sampling without replacement with list comprehension
     selected = []
-    for _ in range(min(len(candidates)//2, MAX_POPULATION)):
-        idx = random.choices(range(len(candidates)), cum_weights=weights)[0]
+    max_select = min(len(candidates)//2, MAX_POPULATION)
+    while len(selected) < max_select and candidates:
+        idx = random.choices(range(len(candidates)), weights=weights, k=1)[0]
         selected.append(candidates.pop(idx))
         weights.pop(idx)
-        if not candidates:
-            break
-            
+        
     return selected
 
 
