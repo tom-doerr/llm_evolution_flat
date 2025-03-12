@@ -275,6 +275,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
 
     population = initialize_population(pop_size)
     fitness_window = []
+    
+    # Enforce population limit before starting evolution
+    population = population[:MAX_POPULATION]
 
     # Initialize log file safely
     with open("evolution.log", "w", encoding="utf-8") as f:
@@ -289,7 +292,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         display_generation_stats(generation, population, stats)
         
         parents = select_parents(population, fitness_window)
-        population = generate_children(parents, population)[:MAX_POPULATION]
+        population = generate_children(parents, population)
+        # Hard limit population size per spec.md requirement
+        population = population[:MAX_POPULATION]
 
 
 
