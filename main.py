@@ -263,7 +263,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
                 a['fitness']**2 + 1e-6 
                 for a in candidates 
                 if validate_mating_candidate(a, parent)
-            ])
+            ]))
             ])
         )]
     )
