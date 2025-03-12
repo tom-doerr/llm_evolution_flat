@@ -262,7 +262,7 @@ def run_genetic_algorithm(
 
     # Clear log file at start per spec
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        pass  # Empty file by opening in write mode
+        pass  # Empty file by opening in write mode (truncates existing)
 
     fitness_window = []  # Initialize window
     for generation in range(generations):
@@ -333,7 +333,7 @@ def calculate_window_statistics(fitness_window, window_size):
 
 if __name__ == "__main__":
     main()
-    
+
 # Remaining helper functions below
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
     """Log population data with generation statistics"""
@@ -356,7 +356,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     table.add_column(style="yellow")
     
     table.add_row("Generation", f"{generation+1}/{generations}")
-    table.add_row("Population", f"{len(population)}")
+    table.add_row("Population", f"{len(population):,}")  # Format with commas
     table.add_row("Best Fitness", f"{best['fitness']:.0f}")
     table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
     table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
@@ -430,4 +430,4 @@ def main():
     """Main entry point"""
     PROBLEM = "Optimize string patterns through evolutionary processes"
     dspy.configure(problem=PROBLEM)  # Store in DSPy settings
-    run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)
+    run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
