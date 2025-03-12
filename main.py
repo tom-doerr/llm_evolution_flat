@@ -176,7 +176,7 @@ def mutate_with_llm(agent: dict) -> str:
     assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
 
     response = dspy.Predict(MutateSignature)(
-        chromosome=agent_chrom,
+        chromosome=agent["chromosome"],
         instructions=mc,
         temperature=temperature,
         top_p=top_p,
