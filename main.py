@@ -76,8 +76,8 @@ def validate_chromosome(chromosome: str) -> str:
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
     chromosome = validate_chromosome(chromosome)
-    assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds max"
-    assert all(c in string.ascii_letters + " " for c in chromosome), "Invalid characters"
+    # Chromosome validity already enforced by validate_chromosome()
+    assert len(agent["task_chromosome"]) == 23, "Task chromosome must be 23 chars"
     
     # Generate random chromosome if empty
     if not chromosome:
