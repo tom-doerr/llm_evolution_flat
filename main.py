@@ -196,6 +196,11 @@ def mutate_with_llm(agent: dict) -> str:
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
+MAX_CHARS = 40  # Must be 40 per task spec
+
+# Validate hidden goal constants from spec.md
+assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
+assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
