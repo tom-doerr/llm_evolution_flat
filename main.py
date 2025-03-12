@@ -130,18 +130,17 @@ def initialize_population(pop_size: int) -> List[dict]:
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
     # Combined selection logic with numpy for vectorization
-    candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
-    
-    if not candidates:
+    # Pareto distribution weighted by fitness^2
+    if not population:
         return []
     
-    # Calculate max selections using numpy
-    max_select = np.clip(len(candidates)//2, 1, MAX_POPULATION)
+    candidates = population[-WINDOW_SIZE:]
+    weights = [a['fitness']**2 + 1e-6 for a in candidates]
+    
     return random.choices(
-        candidates,
+        population=candidates,
         weights=weights,
-        k=max_select
+        k=min(len(population), MAX_POPULATION//2)
     )
 
 
