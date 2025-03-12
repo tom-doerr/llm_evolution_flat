@@ -235,21 +235,16 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     weights = np.array([a["fitness"]**2 + 1e-6 for a in candidates])
     selected_mate = llm_select_mate(parent, random.choices(
         candidates,
-        weights=weights/weights.sum(),  # Proper weighted sampling without replacement
+        weights=weights/weights.sum(),
         k=min(5, len(population))
     ))
-    
-    # Chromosome switching with hotspot logic
-    parent_chrom = parent["chromosome"]
-    mate_chrom = selected_mate["chromosome"]
-    new_chrom = []
-    switch_prob = 1/len(parent_chrom)  # Average one switch per chromosome
-    
-    for c1, c2 in itertools.zip_longest(parent_chrom, mate_chrom, fillvalue=' '):
-        if random.random() < switch_prob or c1 in {'.', '!', '?', ' '}:
-            new_chrom.append(c2 if c2 else ' ')
-        else:
-            new_chrom.append(c1)
+
+    # Chromosome switching with list comprehension and inlined variables
+    switch_prob = 1/len(parent["chromosome"])
+    return create_agent(''.join(
+        (mate_chrom[i] if (random.random() < switch_prob or c in {'.', '!', '?', ' '}) else c)
+        for i, c in enumerate(parent["chromosome"])
+    )[:40]) if (mate_chrom := selected_mate["chromosome"]) else create_agent(parent["chromosome"])
     
     return create_agent(''.join(new_chrom)[:40])
 
@@ -295,7 +290,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     with open("evolution.log", "w", encoding="utf-8"):
         pass  # Just create/empty the file
     
-    evolution_loop(population)
+    evolution_loop(population, population)
 
 def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
