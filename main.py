@@ -473,9 +473,11 @@ def calculate_diversity(population: List[dict]) -> float:
 
 def evaluate_population(population: List[dict]) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
-    for agent in population:
-        evaluate_agent(agent)
-    return population
+    return [
+        agent.update({"fitness": evaluate_agent(agent)}) or agent
+        for agent in population
+        if validate_chromosome(agent["chromosome"])
+    ]
 
 def update_population_stats(fitness_window: list, population: list) -> dict:
     """Helper to calculate population statistics"""
