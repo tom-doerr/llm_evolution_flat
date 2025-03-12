@@ -31,23 +31,19 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
     window = fitness_window[-WINDOW_SIZE:]  # Strictly last 100 evals
+    current_pop = fitness_window[-len(fitness_window)//10:]  # Last 10% as "current"
     
-    if len(window) < WINDOW_SIZE:
-        return {
-            'mean': 0.0, 'median': 0.0, 'std': 0.0,
-            'best_current': 0.0, 'worst_current': 0.0,
-            'best_window': 0.0, 'worst_window': 0.0
-        }
-
-    arr = np.array(window, dtype=np.float64)
+    window_arr = np.array(window, dtype=np.float64)
+    current_arr = np.array(current_pop, dtype=np.float64) if current_pop else window_arr
+    
     return {
-        'mean': float(np.nanmean(arr)),
-        'median': float(np.nanmedian(arr)),
-        'std': float(np.nanstd(arr)),
-        'best_current': float(np.nanmax(arr)),
-        'worst_current': float(np.nanmin(arr)),
-        'best_window': float(np.nanmax(arr)),
-        'worst_window': float(np.nanmin(arr))
+        'mean': float(np.nanmean(window_arr)),
+        'median': float(np.nanmedian(window_arr)),
+        'std': float(np.nanstd(window_arr)),
+        'best_current': float(np.nanmax(current_arr)),
+        'worst_current': float(np.nanmin(current_arr)),
+        'best_window': float(np.nanmax(window_arr)),
+        'worst_window': float(np.nanmin(window_arr))
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
