@@ -225,8 +225,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     )
 
     selected = str(response.selected_mate).strip()[:40]
-    found = next((c for c in valid if c["chromosome"] == selected), None)
-    return found or valid[np.argmax([c["fitness"]**2 for c in valid])]
+    for c in valid:
+        if c["chromosome"] == selected:
+            return c
+
+    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
+    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
