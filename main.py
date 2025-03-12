@@ -237,18 +237,15 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
-    candidates = population[-WINDOW_SIZE:]
+    candidates = population[-WINDOW_SIZE:] or population
     if not candidates:
         raise ValueError("No candidates available for crossover")
         
-    selected_mate = llm_select_mate(parent, [
-        candidates[i] for i in np.random.choice(
-            len(candidates),
-            size=min(5, len(candidates)),
-            replace=False,
-            p=np.array([a["fitness"]**2 + 1e-6 for a in candidates])/sum(a["fitness"]**2 + 1e-6 for a in candidates)
-        )
-    ])
+    selected_mate = llm_select_mate(parent, random.choices(
+        candidates,
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in candidates])/sum(a["fitness"]**2 + 1e-6 for a in candidates),
+        k=min(5, len(population))
+    )
     
     return create_agent(''.join(
         m_char if (random.random() < 1/len(parent["chromosome"])) or (p_char in {'.', '!', '?', ' '})
