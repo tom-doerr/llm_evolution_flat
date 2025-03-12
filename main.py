@@ -345,6 +345,9 @@ def run_genetic_algorithm(
         # Display statistics using sliding window
         display_generation_stats(generation, generations, population, best, stats)
         
+        # Trim population to MAX_POPULATION by fitness before continuing
+        population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
+        
         # Log stats for validation
         assert stats['mean'] >= 0, "Negative mean in window stats"
         assert stats['best'] >= stats['worst'], "Invalid best/worst relationship"
@@ -378,6 +381,9 @@ def get_population_limit() -> int:
     return MAX_POPULATION
 
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
+    """Log gzipped population data with rotation"""
+    # Trim population to MAX_POPULATION by fitness before logging
+    population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
     """Log gzipped population data with rotation"""
     # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
@@ -433,6 +439,7 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
             agent["chromosome"] = mutate(agent["chromosome"])
     
     # Fixed logging with validated unique_post variable
+    unique_post = len({a["chromosome"] for a in generation})
     print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_post}/{len(generation)}")
     
     return generation
