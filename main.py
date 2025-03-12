@@ -132,11 +132,11 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     candidates = population[-WINDOW_SIZE:]  # Use most recent window per spec
     weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
     return [candidates[i] for i in np.random.default_rng().choice(
-        len(candidates), 
+        len(candidates),
         size=min(len(candidates)//2, MAX_POPULATION),
         p=weights/np.sum(weights),
         replace=False
-    )]  # Fixed extra parenthesis that caused syntax error
+    )]  # Weighted sampling without replacement per spec.md
 
 
 
