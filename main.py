@@ -1,7 +1,8 @@
-from typing import List
 import itertools
 import random
 import string
+from typing import List
+
 import numpy as np
 from rich.console import Console
 from rich.panel import Panel
