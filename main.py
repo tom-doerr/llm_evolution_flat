@@ -287,10 +287,12 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
-    p_chrom = parent["chromosome"]
-    m_chrom = mate["chromosome"]
-    switch = random.choice(get_hotspots(p_chrom))
-    return f"{p_chrom[:switch]}{m_chrom[switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] if switch else p_chrom
+    switch = random.choice(get_hotspots(parent["chromosome"]))
+    return (
+        f"{parent['chromosome'][:switch]}"
+        f"{mate['chromosome'][switch]}"
+        f"{parent['chromosome'][switch+1:]}"
+    )[:MAX_CHARS] if switch else parent["chromosome"]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
@@ -385,17 +387,13 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     new_fitness = [a["fitness"] for a in evaluated_pop]
     updated_window = update_fitness_window(fitness_window, new_fitness)
     
-    stats = {
+    return ({
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
         **calculate_window_statistics(updated_window),
-        **extreme_values(evaluated_pop),
-        'best_current': max(new_fitness),
-        'worst_current': min(new_fitness)
-    }
-    
-    return stats, updated_window[-WINDOW_SIZE:]
+        **extreme_values(evaluated_pop)
+    }, updated_window[-WINDOW_SIZE:])
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
