@@ -364,13 +364,15 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     new_fitness = [a["fitness"] for a in evaluated_pop]
     window = update_fitness_window(fitness_data[0], new_fitness)
     
-    return ({
+    stats = {
         'generation': fitness_data[1],
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
         **calculate_window_statistics(window),
-        **extreme_values(evaluated_pop)
-    }, window[-WINDOW_SIZE:])
+        **extreme_values(evaluated_pop),
+        'window_size': min(len(window), WINDOW_SIZE)  # Add actual window size used
+    }
+    return (stats, window[-WINDOW_SIZE:])
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
@@ -425,8 +427,9 @@ def log_population(stats: dict) -> None:
             f"{stats['std']:.1f}\t"
             f"{stats['best']:.1f}\t"
             f"{stats['worst']:.1f}\t"
-            f"{stats['diversity']:.2f}\t"
-            f"{stats['best_core']}\n"
+            f"{stats['diversity']:.3f}\t"
+            f"{stats['best_core']}\t"
+            f"w{stats['window_size']}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
@@ -454,8 +457,15 @@ def extreme_values(population: List[dict]) -> dict:
     }
 
 def calculate_diversity(population: List[dict]) -> float:
-    """Calculate population diversity ratio [0-1]"""
-    return sum(1 for a in population if a["chromosome"] != population[0]["chromosome"])/len(population) if population else 0.0
+    """Calculate population diversity using pairwise differences"""
+    if len(population) <= 1:
+        return 0.0
+    # Sample 100 random pairs for efficiency
+    sample_size = min(100, len(population))
+    pairs = itertools.combinations(random.sample(population, sample_size), 2)
+    differences = sum(1 for a,b in pairs if a["chromosome"] != b["chromosome"])
+    max_pairs = sample_size * (sample_size - 1) / 2
+    return differences / max_pairs if max_pairs > 0 else 0.0
 
 
 
