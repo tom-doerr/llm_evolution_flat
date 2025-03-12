@@ -111,15 +111,12 @@ def create_agent(chromosome: str) -> dict:
 
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
-    try:
-        chromosome = str(agent["chromosome"])
-        assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
-        
-        metrics = score_chromosome(chromosome)
-        a_count = int(metrics['a_density'] * 23)
+    chromosome = str(agent["chromosome"])
+    assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
     
+    metrics = score_chromosome(chromosome)
     # Fitness calculation simplified
-    fitness = (2 * a_count - 23) - (len(chromosome) - 23)
+    fitness = (2 * int(metrics['a_density'] * 23 - 23) - (len(chromosome) - 23)
     fitness = np.sign(fitness) * (fitness ** 2)
     
     # Validation
@@ -148,9 +145,9 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
     sorted_pop = sorted(population, key=lambda x: -x['fitness'])
     ranks = np.arange(1, len(sorted_pop) + 1)
+    fitness_squared = np.array([a['fitness']**2 for a in sorted_pop])
     
-    # Calculate weights using fitness^2 and Pareto distribution
-    weights = (np.array([a['fitness']**2 for a in sorted_pop]) / ranks**2)
+    weights = fitness_squared / ranks**2
     weights /= weights.sum()
     
     # Validate and select
@@ -166,19 +163,15 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
-def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
-    """Mutate chromosome using LLM-based rephrasing with problem context""" 
-    validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
-    
+def mutate_with_llm(chromosome: str) -> str:
+    """Mutate chromosome using LLM-based rephrasing"""
     def validate_mutation(response):
-        """Structured validation with error tracking"""
+        """Validate mutation maintains core requirements"""
         result = str(response).strip()
-        if not re.fullmatch(validation_pattern, result):
-            raise ValueError(f"Invalid mutation format: {result}")
-        if result[:23].count('a') < chromosome[:23].count('a'):
-            raise ValueError(f"Core 'a's decreased from {chromosome[:23].count('a')} to {result[:23].count('a')}")
-        if len(result) < 23 or len(result) > 40:
-            raise ValueError(f"Length out of bounds (23-40): {len(result)}")
+        if (len(result) < 23 or len(result) > 40 or 
+            not re.match(r"^[A-Za-z]{23,40}$", result) or
+            result[:23].count('a') < chromosome[:23].count('a')):
+            raise ValueError(f"Invalid mutation: {result}")
         return result
 
     mutate_prompt = dspy.Predict(
@@ -471,13 +464,13 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
     # Track mutations in single pass
-    unique_pre = len({a["chromosome"] for a in generation})
+    unique_post = len({a["chromosome"] for a in generation})
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
     
     # Simple logging without external dependencies
-    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_chromosomes}/{len(generation)}")
+    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_post}/{len(generation)}")
     
     return generation
 
