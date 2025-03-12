@@ -163,9 +163,8 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using adaptive weights based on diversity"""
-    # Calculate population diversity
-    unique_chromosomes = len({agent["chromosome"] for agent in population})
-    diversity = unique_chromosomes / len(population) if population else 0.0
+    # Calculate population diversity using evolution module
+    diversity = evolution.calculate_diversity(population)
     
     # Dynamically adapt weights using continuous diversity measure
     exponent = 1 + 2 * (1 - diversity)  # Scales from 1 (max diversity) to 3 (min diversity)
