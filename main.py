@@ -335,7 +335,7 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_genetic_algorithm(pop_size: int, max_population: int) -> None:
+def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, max_population))[:max_population]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
