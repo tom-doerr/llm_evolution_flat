@@ -191,8 +191,8 @@ def mutate_with_llm(agent: dict) -> str:
         agent["chromosome"][:23] + ''.join(random.choices(
             string.ascii_letters.lower(), 
             k=random.randint(0, max(0, len(agent["chromosome"])-23))
-    )  # 40-23=17 max extra chars
-        )
+        )  # 40-23=17 max extra chars
+    )
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
