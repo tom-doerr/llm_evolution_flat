@@ -549,14 +549,13 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     handle_generation_output(stats, population)
     
     updated_window = update_fitness_window(fitness_window, new_fitness)
-    return population, updated_window
+    return population, fitness_window
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
-    # Validate constants in single assertion
-    assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
-    assert MAX_CHARS == 40, "Max chromosome length must be 40 per spec.md" 
-    assert MAX_POPULATION == 1_000_000, "Population limit cannot be changed"
+    # Validate spec.md constants
+    assert MAX_CORE == 23 and MAX_CHARS == 40 and MAX_POPULATION == 1_000_000, \
+        "Configuration constants modified from spec.md requirements"
     
     # Validate fitness relationships
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
