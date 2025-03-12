@@ -169,16 +169,15 @@ def mutate_with_llm(agent: dict) -> str:
         top_p=top_p,
     )
 
-    # Remove unused agent_chrom variable
+    # Validate mutations preserve core 'a' count and structure
+    core_a_count = agent["chromosome"][:23].count('a')
     valid_mutations = (
         str(r).strip()[:40].lower()
         for r in response.completions
         if (len(str(r).strip()) >= 23 
-            and str(r).strip().startswith(agent["chromosome"][:23].lower())  # Validate core segment match
-            and str(r).strip()[:23].count('a') >= agent["chromosome"][:23].count('a'))  # Validate 'a' count
+            and str(r).strip().startswith(agent["chromosome"][:23].lower())
+            and str(r).strip()[:23].count('a') >= core_a_count)
     )
-    
-    # Return first valid mutation or fallback to core + random
     return next(
         valid_mutations,
         agent["chromosome"][:23] + ''.join(
