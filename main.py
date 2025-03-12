@@ -505,8 +505,9 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation, base_mutation_rate, problem):  # Add missing problem param
+def apply_mutations(generation: List[dict], base_mutation_rate: float, problem: str) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
+    # Calculate diversity and adapt mutation rate using logarithmic scaling
     # Calculate diversity and adapt mutation rate using Pareto distribution
     diversity_ratio = calculate_diversity(generation)
     mutation_rate = base_mutation_rate * (1.0 - np.log1p(diversity_ratio))
