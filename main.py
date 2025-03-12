@@ -11,31 +11,36 @@ class GeneticAgent:
         self.fitness = 0.0
 
     def evaluate(self, problem_description: str) -> float:
-        """Evaluate the agent by making an LLM request"""
-        try:
-            # Create a proper prompt
-            prompt = f"Problem: {problem_description}\nSolution: {self.chromosome}\n\nEvaluate this solution's quality on a scale from 0 to 10, where 10 is perfect:"
-            
-            # Get LLM response
-            response = lm(prompt)
-            
-            # Try to extract a numeric score from the response
-            try:
-                # Look for a number between 0 and 10 in the response
-                self.fitness = float(next((word for word in response.split() if word.replace('.', '').isdigit()), 1.0))
-                # Ensure fitness is between 0 and 10
-                self.fitness = max(0.0, min(10.0, self.fitness))
-                return self.fitness
-            except (ValueError, StopIteration):
-                # If we can't parse a number, use default fitness
-                return 1.0
-        except RuntimeError as e:
-            print(f"Error in LLM request: {e}")
-            return 0.0
+        """Evaluate the agent based on the optimization target"""
+        # Limit chromosome length to 40 characters
+        chromosome = self.chromosome[:40]
+        
+        # Calculate fitness based on the target rules
+        fitness = 0.0
+        
+        # First 23 characters: +1 for each 'a'
+        first_part = chromosome[:23]
+        fitness += first_part.lower().count('a')
+        
+        # Remaining characters: -1 for each character
+        remaining = chromosome[23:]
+        fitness -= len(remaining)
+        
+        # Ensure fitness is not negative
+        self.fitness = max(0.0, fitness)
+        return self.fitness
 
 def initialize_population(pop_size: int) -> List[GeneticAgent]:
     """Create initial population with random chromosomes"""
-    return [GeneticAgent(chromosome=f"Initial chromosome {i}") for i in range(pop_size)]
+    import random
+    import string
+    
+    def random_chromosome():
+        # Generate random string with letters and spaces
+        length = random.randint(20, 40)
+        return ''.join(random.choices(string.ascii_letters + ' ', k=length))
+    
+    return [GeneticAgent(chromosome=random_chromosome()) for _ in range(pop_size)]
 
 def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5):
     """Run basic genetic algorithm"""
@@ -48,5 +53,5 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
             print(f"Chromosome: {agent.chromosome[:50]}... | Fitness: {fitness}")
 
 if __name__ == "__main__":
-    PROBLEM = "Optimize this solution for maximum efficiency"
-    run_genetic_algorithm(PROBLEM)
+    PROBLEM = "Generate a string with many 'a's in first 23 chars and short after"
+    run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
