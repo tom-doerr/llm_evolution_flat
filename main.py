@@ -131,12 +131,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using fitness^2 weighted sampling without replacement"""
     candidates = population[-WINDOW_SIZE:]
     weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    probs = weights / weights.sum()
     
     return list(np.random.choice(
         candidates,
         size=min(len(candidates)//2, MAX_POPULATION),
-        p=probs,
+        p=weights/weights.sum(),
         replace=False
     ))
 
@@ -272,20 +271,20 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)[:MAX_POPULATION]
     fitness_window = []
 
-    # Main evolution loop
     for generation in range(1, generations+1):
-        # Combined population evaluation and stats calculation
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
+        
         stats = calculate_window_statistics(fitness_window)
-        stats['diversity'] = calculate_diversity(population)
+        stats.update({
+            'diversity': calculate_diversity(population),
+            'generation': generation,
+            'population_size': len(population)
+        })
         
         log_population(generation, stats)
-        display_generation_stats(generation, stats)
-        
-        # Streamlined child generation
-        parents = select_parents(population)
-        population = generate_children(parents, population)[:MAX_POPULATION]
+        display_generation_stats(stats)
+        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
 
@@ -307,12 +306,10 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, stats: dict) -> None:
+def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
-    pop_count = stats.get('population_size', 0)
-    diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
-        f"[bold]Gen {stats['generation']}[/]\n"  # Get generation from stats
+        f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
         f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
