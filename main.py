@@ -189,7 +189,7 @@ def mutate_with_llm(agent: dict) -> str:
             k=len(chromosome)-23
         )))
         
-    except Exception as e:  # Catch-all for LLM operation errors
+    except (ValueError, Exception) as e:  # Simplified exception handling
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
         return chromosome[:23] + ''.join(random.choices(
@@ -339,7 +339,7 @@ def run_genetic_algorithm(
         stats = calculate_window_statistics(fitness_window)
         
         # Get population extremes
-        best, _ = get_population_extremes(population)
+        best = get_population_extremes(population)[0]
 
         # Calculate and log population statistics using sliding window
         current_diversity = calculate_diversity(population)
