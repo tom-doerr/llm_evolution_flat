@@ -135,22 +135,23 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
-def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using fitness-weighted sampling without replacement"""
-    weights = np.array([a['fitness']**2 for a in population], dtype=np.float64)
+def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
+    """Select parents using sliding window of fitness^2 weighted sampling"""
+    # Get sliding window of recent evaluations from fitness window
+    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
     
-    if np.sum(weights) <= 0:  # Handle zero fitness case
-        weights = np.ones(len(population)) / len(population)
-    else:
-        weights /= weights.sum()
+    # Calculate Pareto distribution weights from spec.md
+    fitness_values = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_values))  # Pareto distribution
+    weights = pareto_weights / pareto_weights.sum()
     
     selected_idx = np.random.choice(
-        len(population),
-        size=min(len(population)//2, MAX_POPULATION),
+        len(candidates),
+        size=min(len(candidates)//2, MAX_POPULATION),
         p=weights,
         replace=False
     )
-    return [population[i] for i in selected_idx]
+    return [candidates[i] for i in selected_idx]
 
 
 
