@@ -228,7 +228,7 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
     )
     try:
         # Strict input validation
-        problem = dspy.settings.get("problem")
+        # Problem parameter removed per spec.md's "completely unguided" requirement
         assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
         assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
@@ -275,7 +275,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     except AssertionError:
         return False
 
-def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
+def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified signature
     """Select mate using LLM prompt with validated candidate chromosomes"""
     parent_chrom = validate_chromosome(parent["chromosome"])
     
@@ -509,7 +509,7 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation: List[dict], base_mutation_rate: float, problem: str) -> List[dict]:
+def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:  # Removed unused problem param
     """Auto-adjust mutation rate based on population diversity"""
     # Calculate diversity and adapt mutation rate using logarithmic scaling
     # Calculate diversity and adapt mutation rate using Pareto distribution
