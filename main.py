@@ -142,9 +142,10 @@ def select_parents(population: List[dict]) -> List[dict]:
     window_size = min(WINDOW_SIZE, len(population))
     candidates = population[-window_size:]
     
-    # Calculate fitness^2 weights with epsilon to avoid zero-division
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    weights /= weights.sum()
+    # Calculate Pareto distribution weights from spec.md
+    fitness_values = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_values))  # Pareto distribution
+    weights = pareto_weights / pareto_weights.sum()
     
     # Calculate selection size using square root scaling
     selection_size = min(
@@ -175,15 +176,13 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
-    instruction = agent.get("mutation_chromosome", 
-                          "Change 1-2 characters after position 23 while keeping first 23 intact")
     
     try:
         # Batch process and validate mutations in one step
-        predictor = dspy.Predict(MutateSignature)
-        responses = predictor(
+        responses = dspy.Predict(MutateSignature)(
             chromosome=chromosome,
-            instructions=instruction,
+            instructions=agent.get("mutation_chromosome", 
+                                 "Change 1-2 characters after position 23 while keeping first 23 intact"),
             n=3,
             temperature=0.7,
             top_p=0.9
