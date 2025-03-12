@@ -39,7 +39,9 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
         "median": float(np.median(arr)),
         "std": float(np.std(arr)),
         "best": float(np.max(arr)),
-        "worst": float(np.min(arr))
+        "worst": float(np.min(arr)),
+        "q25": float(np.percentile(arr, 25)),
+        "q75": float(np.percentile(arr, 75))
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
@@ -189,7 +191,6 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context"""
-    import re
     validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
     
     def validate_mutation(response):
@@ -493,8 +494,7 @@ def display_generation_stats(generation: int, generations: int, population: list
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
         f"📈 Median: {stats['median']:.2f} (IQR {stats['q25']:.1f}-{stats['q75']:.1f}) | 📉 Std: {std_fitness:.2f}\n"
-        f"🌐 Diversity: {stats['diversity']:.2%} | " 
-        f"🧬 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
+        f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
         f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
         title="Evolution Progress",
         style="blue"
