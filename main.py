@@ -113,13 +113,8 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
     assert 0 <= metrics['a_density'] <= 1, "Invalid a_density score"
     assert 0 <= metrics['repeating_pairs'] <= 1, "Invalid repeating_pairs score"
 
-    # Generation-based weighting using sigmoid function (spec requirement)
-    gen_weight = 1 / (1 + np.exp(-generation/15))  # Scales from 0.5 to 1 as generations increase
-    assert 0.5 <= gen_weight <= 1.0, f"Invalid gen_weight {gen_weight} at generation {generation}"
-
     # Base fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
     core_segment = chromosome[:23].lower()
-    # Apply generation weighting to base fitness components
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     
     # Simplified calculation that actually matches the described hidden goal
@@ -127,8 +122,9 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
     core_non_a = len(core_segment) - core_a
     remaining_len = len(chromosome[23:])
     
-    # Apply generation-based weighting to core components
-    fitness = (core_a * gen_weight) - (core_non_a * (1 - gen_weight)) - remaining_len
+    # Calculate raw fitness then square it for selection weighting
+    fitness = core_a - core_non_a - remaining_len
+    fitness = np.sign(fitness) * (abs(fitness) ** 2)  # Square fitness values per spec
     
     # Validation assertions
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
