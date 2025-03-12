@@ -129,14 +129,17 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using fitness^2 weighted sampling without replacement"""
-    candidates = population[-WINDOW_SIZE:]  # Most recent window per spec.md
+    candidates = population[-WINDOW_SIZE:]
     weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
-    return [candidates[i] for i in np.random.default_rng().choice(
+    weights += 1e-6  # Prevent zero division
+    probs = weights / np.sum(weights)
+    
+    return [candidates[i] for i in np.random.choice(
         len(candidates),
         size=min(len(candidates)//2, MAX_POPULATION),
-        p=weights/np.sum(weights),
+        p=probs,
         replace=False
-    )]  # Corrected parenthesis balance
+    )]
 
 
 
@@ -223,21 +226,23 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    candidates = random.choices(
-        population=population[-WINDOW_SIZE:],
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]], dtype=np.float64),
-        k=min(5, len(population))
-    )
+    window_pop = population[-WINDOW_SIZE:]
+    weights = np.array([a["fitness"]**2 + 1e-6 for a in window_pop])
+    candidates = random.choices(window_pop, weights=weights, k=min(5, len(window_pop)))
     
     mate = llm_select_mate(parent, candidates)
-    split_point = random.randint(1, len(parent["chromosome"])-1)
     
     try:
-        new_chromosome = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
-        validate_chromosome(new_chromosome)
-        if new_chromosome[:23].count('a') < parent["chromosome"][:23].count('a'):
+        # Combine chromosomes with one average crossover point
+        split = random.randint(1, len(parent["chromosome"])-1)
+        child_chrom = parent["chromosome"][:split] + mate["chromosome"][split:]
+        validate_chromosome(child_chrom)
+        
+        # Validate core 'a' count
+        if child_chrom[:23].count('a') < parent["chromosome"][:23].count('a'):
             raise ValueError("Core 'a' count decreased")
-        return create_agent(new_chromosome)
+            
+        return create_agent(child_chrom)
     except (AssertionError, ValueError):
         return create_agent(mutate(parent["chromosome"]))
 
@@ -269,17 +274,13 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     assert generations > 0, "Generations must be positive"
 
-    population = initialize_population(pop_size)
+    population = initialize_population(pop_size)[:MAX_POPULATION]
     fitness_window = []
-    
-    # Enforce population limit before starting evolution
-    population = population[:MAX_POPULATION]
 
-    # Initialize log file safely
     with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Just truncate without separate write call
+        pass  # Truncate log
 
-    for generation in range(generations):
+    for generation in range(1, generations+1):
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         stats = calculate_window_statistics(fitness_window)
@@ -287,10 +288,8 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         log_population(generation, stats)
         display_generation_stats(generation, stats)
         
-        parents = select_parents(population, fitness_window)
-        population = generate_children(parents, population)
-        # Hard limit population size per spec.md requirement
-        population = population[:MAX_POPULATION]
+        parents = select_parents(population)
+        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
