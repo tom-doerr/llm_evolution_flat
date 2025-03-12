@@ -156,7 +156,7 @@ def select_parents(population: List[dict]) -> List[dict]:
 # Configuration constants from spec.md
 MUTATION_RATE = 0.1  # Base mutation probability 
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
-HOTSPOT_RANDOM_PROB = 0.1  # Probability to create hotspot at space
+HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
 
 def validate_mutation_rate(chromosome: str) -> None:
@@ -278,7 +278,7 @@ def get_hotspots(chromosome: str) -> list:
         if c in HOTSPOT_CHARS:
             hotspots.append(i)
         # Include spaces with 10% probability
-        elif c == ' ' and random.random() < HOTSPOT_RANDOM_PROB:
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
             hotspots.append(i)
         # Small chance to create hotspot anywhere
         elif random.random() < 0.02:  # ~1 hotspot per 50 chars on average
@@ -320,7 +320,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     return create_agent(build_child_chromosome(parent, mate))
 
-# TODO: Implement chromosome switching probability tuning per spec.md hotspots
+# Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
@@ -375,8 +375,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file using with statement
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Just truncate the file
+    with open("evolution.log", "w", encoding="utf-8") as _:  # File is intentionally empty
+        pass  # Truncate file without keeping reference
     
     evolution_loop(population, max_population)
 
@@ -385,20 +385,19 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
     
-    # Calculate stats in consolidated way
-    stats = calculate_window_statistics(
-        update_fitness_window(fitness_window, [a["fitness"] for a in evaluated_pop])
-    )
-    best_agent = max(evaluated_pop, key=lambda x: x["fitness"])
+    # Get all fitness scores first
+    fitness_scores = [a["fitness"] for a in evaluated_pop]
     
+    # Combine stats calculation
     return {
-        **stats,
+        **calculate_window_statistics(
+            update_fitness_window(fitness_window, fitness_scores)),
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        'best': best_agent["fitness"],
-        'best_core': best_agent["metrics"]["core_segment"],
-        'worst': min(a["fitness"] for a in evaluated_pop)
+        'best': max(fitness_scores),
+        'best_core': max(evaluated_pop, key=lambda x: x["fitness"])["metrics"]["core_segment"],
+        'worst': min(fitness_scores)
     }, fitness_window[-WINDOW_SIZE:]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
