@@ -157,11 +157,10 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
-    instructions = agent.get("mutation_chromosome", "Change 1-2 characters after position 23")
     
     response = dspy.Predict(MutateSignature)(
-        chromosome=[chromosome]*3,
-        instructions=[instructions]*3,
+        chromosome=[agent["chromosome"]]*3,
+        instructions=[agent.get("mutation_chromosome", "Change 1-2 characters after position 23")]*3,
         temperature=0.7,
         top_p=0.9
     )
@@ -169,17 +168,18 @@ def mutate_with_llm(agent: dict) -> str:
     # Validate and select first viable mutation
     for r in response.completions:
         mutated = str(r).strip()[:40].lower()
-        if (len(mutated) >= 23 and mutated[:23] == chromosome[:23] and
-            mutated[:23].count('a') >= chromosome[:23].count('a')):
+        if (len(mutated) >= 23 
+           and mutated.startswith(chromosome[:23])
+           and mutated[:23].count('a') >= chromosome[:23].count('a')):
             return mutated
     
-    # Fallback mutation if no valid responses
+    # Fallback mutation with specific error handling
     try:
         return chromosome[:23] + ''.join(random.choices(
             string.ascii_letters.lower(), 
-            k=len(chromosome)-23
+            k=max(0, len(chromosome)-23)
         ))
-    except ValueError as e:  # Only catch specific errors
+    except ValueError as e:
         if DEBUG_MODE:
             print(f"Fallback mutation error: {e}")
         return chromosome  # Return original on error
