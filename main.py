@@ -228,6 +228,9 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
     candidates = population[-WINDOW_SIZE:]
+    if not candidates:
+        raise ValueError("No candidates available for crossover")
+        
     weights = np.array([a["fitness"]**2 + 1e-6 for a in candidates])
     selected_mate = llm_select_mate(parent, random.choices(
         candidates,
@@ -289,9 +292,11 @@ def run_genetic_algorithm(pop_size: int) -> None:
     with open("evolution.log", "w", encoding="utf-8"):
         pass  # Just create/empty the file
     
-    evolution_loop(population, population)
+    evolution_loop(population)
 
 def evolution_loop(population: List[dict]) -> None:
+    """Continuous evolution loop separated to reduce statement count"""
+    population = population[:MAX_POPULATION]  # Ensure initial population size limit
     """Continuous evolution loop separated to reduce statement count"""
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
