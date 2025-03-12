@@ -418,11 +418,11 @@ def run_genetic_algorithm(
         )
 
         # Display statistics using sliding window
-        display_generation_stats(generation, generations, population, best, fitness_window)
+        display_generation_stats(generation, generations, population, best, stats)
         
         # Log window stats for validation
-        assert window_stats['mean'] >= 0, "Negative mean in window stats"
-        assert window_stats['best'] >= window_stats['worst'], "Invalid best/worst relationship"
+        assert stats['mean'] >= 0, "Negative mean in window stats"
+        assert stats['best'] >= stats['worst'], "Invalid best/worst relationship"
 
         # Validate population state and size
         validate_population_state(best, worst)
