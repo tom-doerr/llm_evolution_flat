@@ -133,11 +133,11 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
     
     metrics = score_chromosome(chromosome)
-    core_a = int(metrics['a_density'] * 23)  # Recalculate from stored metric
-    remaining_len = len(chromosome) - 23
+    core_segment = metrics['core_segment']
+    a_count = int(metrics['a_density'] * 23)
     
-    # Combined fitness calculation in single step
-    fitness = (core_a - (23 - core_a) - remaining_len)
+    # Combined fitness calculation
+    fitness = (a_count - (23 - a_count) - (len(chromosome) - 23))
     fitness = np.sign(fitness) * (abs(fitness) ** 2)
     
     # Validation assertions
@@ -145,18 +145,9 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     if core_segment.count("a") == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
-    # After 23: -1 per character
-    remaining = chromosome[23:]
-    fitness -= len(remaining)
-
-    # Length enforced by truncation in create_agent
-    assert (
-        len(chromosome) <= 40
-    ), f"Chromosome length {len(chromosome)} exceeds maximum allowed"
-
-    # Use squared fitness for selection weighting as per spec
+    # Update agent state
     agent["fitness"] = fitness ** 2
-    agent["metrics"] = metrics  # Store metrics for analysis
+    agent["metrics"] = metrics
     return agent["fitness"]
 
 
@@ -499,8 +490,7 @@ def display_generation_stats(generation: int, generations: int, population: list
 
 def create_next_generation(next_gen, mutation_rate):
     """Handle mutation and periodic improvement of new generation"""
-    next_gen = apply_mutations(next_gen, mutation_rate, problem)
-    
+    next_gen = apply_mutations(next_gen, mutation_rate)
     return next_gen
 
 def calculate_diversity(population: List[dict]) -> float:
