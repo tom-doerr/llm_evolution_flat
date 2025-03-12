@@ -15,12 +15,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Reduced code complexity
 # - Basic population trimming
 
-# TODOs sorted by priority:
-# HIGH:
-# TODO: Optimize LLM prompt performance with batch processing
-# LOW:
-# TODO: Add chromosome compression for storage
-
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
 DEBUG_MODE = False  # Control debug output
@@ -196,7 +190,7 @@ def mutate_with_llm(agent: dict) -> str:
             k=len(chromosome)-23
         )))
         
-    except (ValueError, dspy.DSPyException) as e:
+    except Exception as e:  # Catch-all for LLM operation errors
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
         return chromosome[:23] + ''.join(random.choices(
@@ -345,7 +339,7 @@ def run_genetic_algorithm(
         stats = calculate_window_statistics(fitness_window)
         
         # Get population extremes
-        best, worst = get_population_extremes(population)
+        best, _ = get_population_extremes(population)
 
         # Calculate and log population statistics using sliding window
         current_diversity = calculate_diversity(population)
