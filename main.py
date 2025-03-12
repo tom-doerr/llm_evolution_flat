@@ -186,11 +186,11 @@ def mutate_with_llm(agent: dict) -> str:
          if (len(str(r).strip()) >= 23 
             and str(r).strip().startswith(agent["chromosome"][:23].lower())
             and str(r).strip()[:23].count('a') >= core_a_count
-        ),
+        )),
         # Fallback mutation if no valid responses
         agent["chromosome"][:23] + ''.join(
             random.choices(string.ascii_letters.lower(),
-                           k=random.randint(0, max(0, len(agent["chromosome"])-23)))
+                           k=random.randint(0, max(0, len(agent["chromosome"])-23))))
     )
     )
 
