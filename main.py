@@ -21,10 +21,12 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
-    # Ensure chromosome is a non-empty string
+    # Validate and normalize chromosome
     if isinstance(chromosome, list):
         chromosome = ''.join(chromosome)
-    chromosome = str(chromosome).strip()
+    chromosome = str(chromosome).strip()[:40]  # Enforce max length
+    if len(chromosome) < 1:
+        raise ValueError("Chromosome cannot be empty")
     if not chromosome:
         # Fallback to random chromosome if empty
         length = random.randint(20, 40)
@@ -50,8 +52,8 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     remaining = chromosome[23:]
     fitness -= len(remaining)
     
-    # Ensure fitness is not negative
-    agent['fitness'] = max(0.0, fitness)
+    # Allow negative fitness as per spec
+    agent['fitness'] = fitness
     return agent['fitness']
 
 def initialize_population(pop_size: int) -> List[dict]:
@@ -70,9 +72,18 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome by replacing one random character"""
+    if not chromosome:
+        raise ValueError("Cannot mutate empty chromosome")
+    
     idx = random.randint(0, len(chromosome)-1)
     new_char = random.choice(string.ascii_letters + ' ')
-    return chromosome[:idx] + new_char + chromosome[idx+1:]
+    new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
+    
+    # Validate mutation result
+    assert len(new_chromosome) == len(chromosome), "Mutation changed chromosome length"
+    assert new_chromosome != chromosome, "Mutation had no effect"
+    
+    return new_chromosome
 
 def crossover(parent1: dict, parent2: dict) -> dict:
     """Create child by combining parts of parent chromosomes"""
