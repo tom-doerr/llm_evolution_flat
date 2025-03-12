@@ -30,12 +30,12 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
-    # Combine window and current population calculations to reduce locals
-    window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
-    current_arr = np.array(
-        fitness_window[-len(fitness_window)//10:] if fitness_window else [],
-        dtype=np.float64
-    )
+    # Optimized window slicing using itertools
+    window = list(itertools.islice(fitness_window, max(0, len(fitness_window)-WINDOW_SIZE), None))
+    
+    # Pre-allocate numpy arrays for performance
+    window_arr = np.array(window, dtype=np.float64, copy=False)
+    current_arr = window_arr[-len(window_arr)//10:]  # View of last 10%
     
     return {
         'mean': float(np.nanmean(window_arr)),
