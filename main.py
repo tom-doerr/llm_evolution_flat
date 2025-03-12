@@ -131,14 +131,19 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     """Calculate parent selection weights with Pareto distribution and fitness^2"""
-    pareto_values = np.random.pareto(2.0, len(population))
-    weights = np.array([
-        a['fitness']**2 * (pareto_values[i] + 1e-6)
-        for i, a in enumerate(population)
-    ])
+    # Spec.md requires Pareto distribution weighted by fitness^2
+    fitness_scores = np.array([a['fitness']**2 for a in population], dtype=np.float64)
+    pareto_shape = 2.0  # Alpha parameter for Pareto distribution
+    pareto_weights = np.random.pareto(pareto_shape, len(population)) + 1
+    
+    # Combine fitness and Pareto weights with numeric stability
+    weights = fitness_scores * pareto_weights
     weights = np.nan_to_num(weights, nan=1e-6)
-    weights = np.clip(weights, 1e-6, None)  # Ensure minimum weight
-    return weights / weights.sum()  # Normalized
+    weights = np.clip(weights, 1e-6, np.finfo(np.float64).max)
+    
+    # Normalize using L1 norm for probability distribution
+    total = weights.sum()
+    return weights / total if total > 0 else np.ones_like(weights)/len(weights)
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
