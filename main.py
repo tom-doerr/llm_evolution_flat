@@ -351,9 +351,10 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     # Trim population with fitness-priority while maintaining recent mutations
     population = sorted(
         population,
-        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000),  # Fitness priority with diversity
+        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000)  # Fitness priority with diversity
     )[:max_population]
-    assert len(population) <= max_population, f"Population exceeded {max_population} limit"
+    assert len(population) <= max_population and max_population == MAX_POPULATION, \
+        f"Population {len(population)} exceeded {max_population} limit (MAX_POPULATION={MAX_POPULATION})"
     fitness_window = []
     
     for generation in itertools.count(0):
@@ -379,18 +380,6 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
 
 
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
-    parser.add_argument('--pop-size', type=int, default=1000,
-                       help='Initial population size')
-    parser.add_argument('--max-population', type=int, default=1_000_000,
-                       help='Maximum population size (per spec.md)')
-    args = parser.parse_args()
-    
-    run_genetic_algorithm( 
-        pop_size=min(args.pop_size, args.max_population)
-    )
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
