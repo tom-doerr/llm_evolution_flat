@@ -209,27 +209,27 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid_mates = [c for c in candidates if validate_mating_candidate(c, parent)]
-    if not valid_mates:
+    valid = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid:
         raise ValueError("No valid mates")
 
-    # Get LLM selection or fallback to weighted choice
-    selected = dspy.Predict(MateSelectionSignature)(
+    # Get LLM selection or fallback
+    response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid_mates],
+        candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
-    ).selected_mate.strip()[:40]
+    )
+    selected = response.selected_mate.strip()[:40]
 
-    # Check if LLM selection is valid
-    valid_selected = [c for c in valid_mates if c["chromosome"] == selected]
-    if valid_selected:
-        return valid_selected[0]
-
-    # Fallback to fitness-weighted selection with numerical stability
-    weights = np.array([c["fitness"]**2 for c in valid_mates], dtype=np.float64)
-    sum_weights = np.sum(weights) + 1e-6
-    return valid_mates[np.random.choice(len(valid_mates), p=weights/sum_weights)]
+    # Check validity or fallback
+    llm_match = next((c for c in valid if c["chromosome"] == selected), None)
+    if llm_match:
+        return llm_match
+        
+    # Fitness-weighted fallback
+    probs = [c["fitness"]**2 + 1e-6 for c in valid]
+    return random.choices(valid, weights=probs, k=1)[0]
     # Fallback to fitness-weighted selection
     weights = np.array([c["fitness"]**2 + 1e-6 for c in valid_mates])
     return valid_mates[np.random.choice(len(valid_mates), p=weights/weights.sum())]
