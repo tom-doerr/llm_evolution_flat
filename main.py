@@ -294,12 +294,10 @@ def evolution_loop(population: List[dict]) -> None:
             'generation': generation,
             'population_size': len(population),
             'diversity': calculate_diversity(population),
-            **calculate_window_statistics([a["fitness"] for a in population][-WINDOW_SIZE:])
-        }
-        stats.update({
+            **calculate_window_statistics([a["fitness"] for a in population][-WINDOW_SIZE:]),
             'best': max(a["fitness"] for a in population),
             'worst': min(a["fitness"] for a in population)
-        })
+        }
         
         # Handle logging/display in one step
         log_and_display(stats)
