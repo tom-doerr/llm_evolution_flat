@@ -263,7 +263,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
                 a['fitness']**2 + 1e-6 
                 for a in candidates 
                 if validate_mating_candidate(a, parent)
-            ])
+            ]))
         )]
     )
     
@@ -337,14 +337,18 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
-    open("evolution.log", "w", encoding="utf-8").close()  # More explicit file clearing
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        pass  # Explicitly clear log while ensuring file handle closure
     
     evolution_loop(population, max_population)
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop separated to reduce statement count"""
-    # Dynamic population trimming with priority to newer/higher fitness members
-    population = sorted(population, key=lambda x: x["fitness"], reverse=True)[:max_population]
+    # Trim population with fitness-priority while maintaining recent mutations
+    population = sorted(
+        population,
+        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000),  # Fitness priority with diversity
+    )[:max_population]
     assert len(population) <= max_population, f"Population exceeded {max_population} limit"
     fitness_window = []
     
