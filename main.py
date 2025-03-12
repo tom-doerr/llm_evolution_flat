@@ -131,6 +131,7 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     """Calculate parent selection weights with Pareto distribution and fitness^2"""
+    assert len(population) > 0, "Cannot calculate weights for empty population"
     # Spec.md requires Pareto distribution weighted by fitness^2
     fitness_scores = np.array([a['fitness']**2 for a in population], dtype=np.float64)
     pareto_shape = 2.0  # Alpha parameter for Pareto distribution
