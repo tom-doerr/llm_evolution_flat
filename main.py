@@ -271,17 +271,15 @@ def get_hotspots(chromosome: str) -> list:
         # Space characters have 10% chance to be hotspot
         elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
             hotspots.append(i)
-        # All characters have base chance to be hotspot
-        if random.random() < HOTSPOT_ANYWHERE_PROB:
+        # All characters have base chance to be hotspot (adjusted for avg 1 per chrom)
+        if random.random() < 1/len(chromosome) if chromosome else 0:
             hotspots.append(i)
     
-    # Ensure at least one hotspot per chromosome and remove duplicates
-    hotspots = list(set(hotspots))
-    target_hotspots = max(MIN_HOTSPOTS, len(chromosome) // 40)
-    while len(hotspots) < target_hotspots:
+    # Ensure average 1 hotspot per chromosome (spec.md requirement)
+    if len(chromosome) > 0 and len(hotspots) < 1:
         hotspots.append(random.randint(0, len(chromosome)-1))
     
-    return hotspots if hotspots else [random.randint(0, len(chromosome)-1)]
+    return list(set(hotspots))  # Remove duplicates
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
