@@ -131,15 +131,15 @@ def select_parents(population: List[dict]) -> List[dict]:  # fitness_window remo
     """Select parents using fitness^2 weighted sampling without replacement"""
     candidates = population[-WINDOW_SIZE:]
     weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
-    weights += 1e-6  # Prevent zero division
-    probs = weights / np.sum(weights)
+    sum_weights = np.sum(weights) + 1e-6
+    probs = weights / sum_weights
     
-    return [candidates[i] for i in np.random.choice(
-        len(candidates),
+    return list(np.random.choice(
+        candidates,
         size=min(len(candidates)//2, MAX_POPULATION),
         p=probs,
         replace=False
-    )]
+    ))
 
 
 
@@ -222,10 +222,14 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     ).selected_mate.strip()[:40]
 
     # Check if LLM selection is valid
-    llm_choice = next((c for c in valid_mates if c["chromosome"] == selected), None)
-    if llm_choice:
-        return llm_choice
-        
+    valid_selected = [c for c in valid_mates if c["chromosome"] == selected]
+    if valid_selected:
+        return valid_selected[0]
+
+    # Fallback to fitness-weighted selection with numerical stability
+    weights = np.array([c["fitness"]**2 for c in valid_mates], dtype=np.float64)
+    sum_weights = np.sum(weights) + 1e-6
+    return valid_mates[np.random.choice(len(valid_mates), p=weights/sum_weights)]
     # Fallback to fitness-weighted selection
     weights = np.array([c["fitness"]**2 + 1e-6 for c in valid_mates])
     return valid_mates[np.random.choice(len(valid_mates), p=weights/weights.sum())]
