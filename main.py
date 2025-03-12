@@ -227,12 +227,9 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if llm_match:
         return llm_match
         
-    # Fitness-weighted fallback
-    probs = [c["fitness"]**2 + 1e-6 for c in valid]
-    return random.choices(valid, weights=probs, k=1)[0]
-    # Fallback to fitness-weighted selection
-    weights = np.array([c["fitness"]**2 + 1e-6 for c in valid_mates])
-    return valid_mates[np.random.choice(len(valid_mates), p=weights/weights.sum())]
+    # Single fallback implementation with numerical stability
+    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64) + 1e-6
+    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
@@ -285,18 +282,16 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)[:MAX_POPULATION]
     fitness_window = []
 
-    open("evolution.log", "w", encoding="utf-8").close()  # Truncate log
-
+    # Main evolution loop
     for generation in range(1, generations+1):
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        
         stats = calculate_window_statistics(fitness_window)
+        
         log_population(generation, stats)
         display_generation_stats(generation, stats, population)
         
-        parents = select_parents(population)
-        population = generate_children(parents, population)[:MAX_POPULATION]
+        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
 
