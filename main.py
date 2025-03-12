@@ -380,8 +380,6 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
         **calculate_window_statistics(update_fitness_window(fitness_window, new_fitness)),
         **extreme_values(evaluated_pop)
     }, fitness_window[-WINDOW_SIZE:])
-    
-    return stats, fitness_window[-WINDOW_SIZE:]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
