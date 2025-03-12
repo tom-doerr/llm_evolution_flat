@@ -3,7 +3,6 @@ import string
 import gzip
 import json
 import numpy as np
-import numpy as np
 from typing import List
 from rich.console import Console
 from rich.table import Table
@@ -179,7 +178,7 @@ def select_parents(population: List[dict]) -> List[dict]:
         size=len(population)//2,
         replace=False,
         p=weights
-    ))
+    )
     return [population[i] for i in selected_indices]
 
 
