@@ -318,7 +318,7 @@ def display_generation_stats(generation: int, stats: dict, population: list) -> 
     Console().print(Panel(
         f"[bold]Gen {generation}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
-        f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n"
+        f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
         f"Δ{diversity:.0%} 👥{len(population)}/{MAX_POPULATION}",
         title="Evolution Progress",
         style="blue"
