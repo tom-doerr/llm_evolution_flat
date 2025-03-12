@@ -211,6 +211,8 @@ def run_genetic_algorithm(
     assert generations > 0, "Number of generations must be positive"
 
     population = initialize_population(pop_size)
+    fitness_window = []
+    window_size = 100
     assert (
         len(population) == pop_size
     ), f"Population size mismatch {len(population)} != {pop_size}"
@@ -262,10 +264,33 @@ def run_genetic_algorithm(
         population = next_gen
 
 
+# Helper functions needed by run_genetic_algorithm
+def update_fitness_window(fitness_window, new_fitnesses, window_size):
+    """Update sliding window of fitness values"""
+    if not fitness_window:
+        fitness_window = []
+    fitness_window.extend(new_fitnesses)
+    return fitness_window[-window_size:]
+
+def calculate_window_statistics(fitness_window, window_size):
+    """Calculate statistics for current fitness window"""
+    window_data = fitness_window[-window_size:]
+    mean = sum(window_data)/len(window_data) if window_data else 0
+    sorted_data = sorted(window_data)
+    n = len(sorted_data)
+    
+    median = 0.0
+    if n:
+        mid = n // 2
+        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
+    
+    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
+    return mean, median, std
+
 if __name__ == "__main__":
     main()
     
-# New helper functions below
+# Remaining helper functions below
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
     """Log population data with generation statistics"""
     with gzip.open(log_file, "at", encoding="utf-8") as f:
