@@ -276,17 +276,17 @@ def run_genetic_algorithm(
                 for agent in population
             ) + "\n")
 
-        # Rich formatted output
+        # Rich formatted output with spec-compliant stats
         console = Console()
         table = Table(show_header=False, box=None, padding=0)
         table.add_column(style="cyan")
         table.add_column(style="yellow")
         
-        table.add_row("Gen", f"{generation+1}/{generations}")
-        table.add_row("Pop", f"{pop_size}")
-        table.add_row("Best", f"{best['chromosome'][:20]}...[green]({best['fitness']:.0f})")
-        table.add_row("Worst", f"{worst['chromosome'][:20]}...[red]({worst['fitness']:.0f})")
-        table.add_row("Stats", f"μ={mean_fitness:.0f} ±{std_fitness:.0f} med={median_fitness:.0f}")
+        table.add_row("Generation", f"{generation+1}/{generations}")
+        table.add_row("Population", f"{len(population)}")
+        table.add_row("Best Fitness", f"{best['fitness']:.0f}")
+        table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
+        table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
         
         console.print(table)
 
