@@ -439,7 +439,8 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f} (window)\n"
-        f"▲{stats['best_current']:.1f} ▼{stats['worst_current']:.1f}\n"
+        f"Best: {stats['best']:.1f} Worst: {stats['worst']:.1f}\n"
+        f"Core: {stats['best_core']}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         style="blue"
