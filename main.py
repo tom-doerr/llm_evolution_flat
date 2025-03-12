@@ -364,7 +364,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     })
     return stats
 
-def validate_population_state(best, worst):
+def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
     # Validate population invariants
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
