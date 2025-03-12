@@ -60,12 +60,9 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
-    window_size = 100
-    assert len(new_fitnesses) <= window_size, "Cannot add more items than window size"
     assert isinstance(fitness_window, list), "Window must be list type"
-    # Use efficient window slicing
-    window = (fitness_window + new_fitnesses)[-window_size:]
-    return window  # Already size-limited by slicing
+    # Use fixed window size from spec.md
+    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Simple slicing for fixed size
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
