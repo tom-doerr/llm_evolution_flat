@@ -431,9 +431,16 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
                 p=weights
             )
             population = [population[i] for i in selected_indices]
-            
-        population, fitness_window = evaluate_generation(population, fitness_window, generation)
-        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
+        
+        # Evaluate and update population
+        population = evaluate_population(population)
+        new_fitness = [a["fitness"] for a in population]
+        fitness_window = update_fitness_window(fitness_window, new_fitness)
+        stats = calculate_window_statistics(fitness_window)
+        
+        # Generate next generation
+        parents = select_parents(population)
+        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
