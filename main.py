@@ -189,11 +189,13 @@ def mutate_with_llm(agent: dict) -> str:
             and str(r).strip().startswith(agent_chrom[:23].lower())
             and str(r).strip()[:23].count('a') >= agent_chrom[:23].count('a'))
     )
-
-    return next(valid_mutations,
+    
+    # Return first valid mutation or fallback to core + random
+    return next(
+        valid_mutations,
         agent_chrom[:23] + ''.join(random.choices(
-            string.ascii_letters.lower(),
-            k=max(0, len(agent_chrom)-23)
+            string.ascii_letters.lower(), 
+            k=random.randint(0, 17)  # 40-23=17 max additional chars
         ))
     )
 
