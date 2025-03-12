@@ -147,10 +147,14 @@ def select_parents(population: List[dict]) -> List[dict]:
     assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
     
     # Weighted sampling without replacement with combined probability calculation
+    # Normalize weights and handle zero-sum case
+    weights_sum = weights.sum() + 1e-9
+    normalized_weights = weights / weights_sum
+    
     selected_indices = np.random.choice(
         len(population),
         size=min(len(population), MAX_POPULATION//2),
-        p=(weights / weights.sum() if weights.sum() > 0 else None),
+        p=normalized_weights,
         replace=False
     )
     
