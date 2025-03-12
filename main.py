@@ -325,27 +325,29 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        f.truncate(0)  # More explicit clearing
+    open("evolution.log", "w", encoding="utf-8").close()  # More efficient clearing
     
     evolution_loop(population, max_population)
 
-def update_generation_stats(generation: int, population: List[dict], fitness_window: list) -> dict:
+def update_generation_stats(generation: int, population: List[dict], fitness_window: list) -> tuple:
     """Calculate statistics for current generation"""
-    population = evaluate_population(population)
-    fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-    stats = calculate_window_statistics(fitness_window)
+    evaluated_pop = evaluate_population(population)
+    new_fitnesses = [a["fitness"] for a in evaluated_pop]
+    updated_window = update_fitness_window(fitness_window, new_fitnesses)
     
-    best_agent = max(population, key=lambda x: x["fitness"])
+    stats = calculate_window_statistics(updated_window)
+    best_agent = max(evaluated_pop, key=lambda x: x["fitness"])
+    worst_fitness = min(a["fitness"] for a in evaluated_pop)
+    
     stats.update({
         'generation': generation,
-        'population_size': len(population),
-        'diversity': calculate_diversity(population),
+        'population_size': len(evaluated_pop),
+        'diversity': calculate_diversity(evaluated_pop),
         'best': best_agent["fitness"],
         'best_core': best_agent["metrics"]["core_segment"],
-        'worst': min(a["fitness"] for a in population)
+        'worst': worst_fitness
     })
-    return stats, fitness_window
+    return stats, updated_window
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
