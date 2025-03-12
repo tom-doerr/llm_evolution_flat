@@ -192,9 +192,10 @@ def validate_mutation(chromosome: str) -> bool:
     """Validate mutation meets criteria"""
     return (
         len(chromosome) >= 23 and
-        chromosome.isalpha() and
         len(chromosome) <= 40 and
-        chromosome[:23].count('a') >= chromosome[:23].count('a')  # Must maintain a-count
+        all(c.isalpha() or c == ' ' for c in chromosome) and  # From spec.md
+        chromosome == chromosome.strip() and  # From spec.md
+        chromosome[:23].count('a') >= chromosome[:23].count('a')  # Hidden spec
     )
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
@@ -294,7 +295,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8"):
         pass  # Just create/empty the file
     
     evolution_loop(population)
@@ -315,7 +316,8 @@ def evolution_loop(population: List[dict]) -> None:
         }
         
         # Handle logging/display in one step
-        log_and_display(stats)
+        log_population(stats)
+        display_generation_stats(stats)
         validate_population_extremes(population)
         
         parents = select_parents(population)
