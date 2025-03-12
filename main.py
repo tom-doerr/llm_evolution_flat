@@ -59,14 +59,9 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    a_count = repeats = 0
-    prev_char = None
-    for i, c in enumerate(core):
-        if c == 'a':
-            a_count += 1
-        if i > 0 and c == prev_char:
-            repeats += 1
-        prev_char = c
+    # Calculate metrics in vectorized style
+    a_count = core.count('a')
+    repeats = sum(1 for a, b in zip(core, core[1:]) if a == b)
     
     return {
         'a_density': a_count / 23,
@@ -136,14 +131,19 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    window = fitness_window[-WINDOW_SIZE:]
+    candidates = [a for a in population if a['fitness'] in window]
     
-    # Apply Pareto distribution and normalize in one step
-    weights = (1.0 / (1.0 + np.argsort(-weights))) / np.sum(1.0 / (1.0 + np.argsort(-weights)))
-    
-    sample_size = min(len(candidates)//2, MAX_POPULATION)
-    return [candidates[i] for i in np.random.choice(len(candidates), sample_size, p=weights, replace=False)]
+    # Combined Pareto weighting and sampling in one step
+    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_scores))
+    selected_indices = np.random.default_rng().choice(
+        len(candidates), 
+        size=min(len(candidates)//2, MAX_POPULATION),
+        p=pareto_weights/np.sum(pareto_weights),
+        replace=False
+    )
+    return [candidates[i] for i in selected_indices]
 
 
 
