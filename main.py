@@ -14,9 +14,11 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Chromosome validation during crossover
 # - Sliding window statistics
 # - Reduced code complexity
+# - Basic population trimming
 
 # TODO: Optimize LLM prompt performance (HIGH)
-# TODO: Implement efficient population trimming (MEDIUM)
+# TODO: Implement sliding window mate selection (MEDIUM)
+# TODO: Add chromosome compression for storage (LOW)
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -341,6 +343,7 @@ def run_genetic_algorithm(
     log_file: str = "evolution.log.gz"
 ) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
+    # Remove unused window_size per issues.txt
     # Enforce population limits with validation
     pop_size = min(pop_size, get_population_limit())
     assert 1 < pop_size <= get_population_limit(), f"Population size must be 2-{get_population_limit()}"
@@ -360,7 +363,6 @@ def run_genetic_algorithm(
 
         # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
-        window_size = 100
         fitness_window = update_fitness_window(fitness_window, all_fitness)
         stats = calculate_window_statistics(fitness_window)
         
