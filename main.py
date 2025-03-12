@@ -283,19 +283,22 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     ]
     
     mates = []  # Initialize mates list to prevent possible-used-before-assign
-    # Weighted selection using numpy
+    # Combined weighted selection with numpy and fallback
+    mates = []
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
-        mates = [
-            valid_candidates[i] for i in np.random.choice(
-                len(valid_candidates),
-                size=min(5, len(valid_candidates)),
-                replace=False,
-                p=weights/weights.sum()
-            )
-        ]
+        sum_weights = weights.sum()
+        if sum_weights > 0:
+            mates = [
+                valid_candidates[i] for i in np.random.choice(
+                    len(valid_candidates),
+                    size=min(5, len(valid_candidates)),
+                    replace=False,
+                    p=weights/sum_weights
+                )
+            ]
     
-    mate = llm_select_mate(parent, mates) if mates else parent  # Fallback to parent if no mates
+    mate = llm_select_mate(parent, mates) if mates else parent
     
     return create_agent(build_child_chromosome(parent, mate))
 
