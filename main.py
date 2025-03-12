@@ -109,17 +109,6 @@ def select_parents(population: List[dict]) -> List[dict]:
     # Deduplicate while preserving order using dictionary (insertion ordered in Python 3.7+)
     return list({agent["chromosome"]: population[i] for i in selected_indices}.values())
 
-    # Find candidate using list comprehension to avoid undefined i
-    cumulative = 0
-    selected_index = next(i for i, w in enumerate(weights) if (cumulative := cumulative + w) >= r)
-    chosen = candidates[selected_index]
-    
-    selected.append(chosen)
-    unique_chromosomes.add(chosen["chromosome"])
-    
-    # Remove selected candidate and weight using index
-    del candidates[selected_index]
-    del weights[selected_index]
 
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
@@ -199,6 +188,60 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     return create_agent(new_chromosome)
 
 
+def update_fitness_window(fitness_window, new_fitnesses, window_size):
+    """Update sliding window of fitness values"""
+    if not fitness_window:
+        fitness_window = []
+    fitness_window.extend(new_fitnesses)
+    return fitness_window[-window_size:]
+
+def calculate_window_statistics(fitness_window, window_size):
+    """Calculate statistics for current fitness window"""
+    window_data = fitness_window[-window_size:]
+    mean = sum(window_data)/len(window_data) if window_data else 0
+    sorted_data = sorted(window_data)
+    n = len(sorted_data)
+    
+    median = 0.0
+    if n:
+        mid = n // 2
+        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
+    
+    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
+    return mean, median, std
+
+def generate_children(parents, population, pop_size, problem):
+    """Generate new population through crossover/mutation"""
+    next_gen = parents.copy()
+    
+    while len(next_gen) < pop_size:
+        if parents:
+            parent = random.choice(parents)
+            child = crossover(parent, population, problem)
+        else:
+            parent = random.choice(parents) if parents else create_agent("")
+            child = create_agent(mutate(parent["chromosome"]))
+        next_gen.append(child)
+    return next_gen
+
+def improve_top_candidates(next_gen, problem):
+    """Improve top candidates using LLM optimization"""
+    for i in range(min(2, len(next_gen))):
+        improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
+        try:
+            response = improve_prompt(
+                original_chromosome=next_gen[i]["chromosome"],
+                problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE VOWEL DENSITY IN FIRST 23\n2. TRUNCATE BEYOND 23 CHARACTERS\n3. LETTERS ONLY\n4. MAX LENGTH 40\n5. ENHANCE STRUCTURAL INTEGRITY",
+            )
+            if validate_improvement(response):
+                next_gen[i]["chromosome"] = response.completions[0].strip()[:40]
+            else:
+                next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
+        except (TimeoutError, RuntimeError) as e:
+            print(f"LLM improvement failed: {str(e)}")
+            next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
+    return next_gen
+
 def run_genetic_algorithm(
     problem: str,
     generations: int = 10,
@@ -221,6 +264,7 @@ def run_genetic_algorithm(
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
         pass  # Empty file by opening in write mode
 
+    fitness_window = []  # Initialize window
     for generation in range(generations):
         # Evaluate all agents
         for agent in population:
