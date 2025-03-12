@@ -260,7 +260,7 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def run_genetic_algorithm(pop_size: int) -> None:  # Remove default per spec's continuous evolution
+def run_genetic_algorithm(pop_size: int) -> None:  # No generations param per spec.md
     """Run continuous genetic algorithm per spec.md"""
     pop_size = min(pop_size, MAX_POPULATION)
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
