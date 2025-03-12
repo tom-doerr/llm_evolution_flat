@@ -465,13 +465,13 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     diversity_ratio = calculate_diversity(generation)
     mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
-    # Track mutations in single pass
+    # Track mutations with validated unique count
     unique_post = len({a["chromosome"] for a in generation})
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
     
-    # Simple logging without external dependencies
+    # Fixed logging with validated unique_post variable
     print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_post}/{len(generation)}")
     
     return generation
