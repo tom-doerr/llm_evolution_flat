@@ -10,7 +10,11 @@ import dspy
 # 1. Implement generation-based scoring weights
 
 # TODO List (sorted by priority):
-# 1. Optimize LLM prompt validation
+# 1. Fix undefined variables in stats display
+# 2. Implement sliding window statistics
+# 3. Optimize LLM prompt validation
+# 4. Add mutation rate logging
+# 5. Validate chromosome structure in crossover
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -407,11 +411,13 @@ def run_genetic_algorithm(
         log_population(population, generation, stats['mean'], stats['median'], stats['std'], current_diversity, log_file)
 
         # Display statistics from sliding window
-        display_generation_stats(generation, generations, population, best, stats['mean'], stats['std'], fitness_window)
+        display_generation_stats(generation, generations, population, best, len(population), 
+                               stats['mean'], stats['std'], fitness_window)
 
         # Validate population state and size
         validate_population_state(best, worst)
         assert len(population) <= MAX_POPULATION, f"Population overflow {len(population)} > {MAX_POPULATION}"
+        pop_size = len(population)  # Get current population size
         pop_size = len(population)  # Track current population size
         
         # Generate next generation with size monitoring
@@ -455,7 +461,8 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window):
+def display_generation_stats(generation: int, generations: int, population: list, best: dict, 
+                           pop_size: int, mean_fitness: float, std_fitness: float, fitness_window: list):
     from rich.panel import Panel  # Fix missing import
     """Rich-formatted display with essential stats"""
     console = Console()
