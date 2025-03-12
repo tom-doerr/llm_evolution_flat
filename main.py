@@ -133,13 +133,9 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
         len(chromosome) <= 40
     ), f"Chromosome length {len(chromosome)} exceeds maximum allowed"
 
-    # Generation-weighted metric incorporation
-    time_decay = 0.95 ** generation  # Gradually reduce metric influence
-    fitness *= (metrics['vowel_ratio'] * (1 + metrics['uniqueness'])) ** (0.5 + time_decay)
-    fitness -= metrics['consecutive_repeats'] * (0.2 * time_decay)
-    fitness += metrics['length_score'] * (5 * time_decay)
-    fitness += metrics['positional_diversity'] * (2 * time_decay)
-    # Note: a_count is already accounted for in base fitness
+    # Generation-based scoring weights (exponential decay)
+    gen_weight = 0.95 ** generation
+    fitness *= gen_weight  # Gradually reduce fitness magnitude over generations
     
     # Allow negative fitness as per spec
     agent["fitness"] = fitness
