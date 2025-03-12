@@ -32,16 +32,21 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Ensure chromosome is a string
     chromosome = str(agent['chromosome'])
     
-    # Calculate fitness based on the strict target rules
+    # Calculate fitness with stronger incentives for 'a's and harsher penalties for length
     fitness = 0.0
     
-    # First 23 characters: +1 for each 'a'
+    # First 23 characters: +2 for each 'a', -1 for other characters
     first_part = chromosome[:23]
-    fitness += first_part.lower().count('a')
+    fitness += 2 * first_part.count('a')  # Stronger reward for actual 'a's
+    fitness -= len(first_part) - first_part.count('a')  # Penalize non-a characters
     
-    # Remaining characters: -1 for each character
+    # After 23: -2 per character to encourage shorter strings
     remaining = chromosome[23:]
-    fitness -= len(remaining)
+    fitness -= 2 * len(remaining)
+    
+    # Extra penalty for exceeding 40 characters (should never happen due to truncation)
+    fitness -= 10 * max(0, len(chromosome) - 40)
+    assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds maximum allowed"
     
     # Allow negative fitness as per spec
     agent['fitness'] = fitness
