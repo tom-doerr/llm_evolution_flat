@@ -274,26 +274,28 @@ def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
-    fitness_window = []
     
     # Empty log file at program start per spec.md
     open("evolution.log", "w").close()
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
+        # Evaluate and update population in one step
         population = evaluate_population(population)[:MAX_POPULATION]
-        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        stats = update_population_stats(fitness_window, population)
-        stats['generation'] = generation  # Set generation directly
+        # Get stats and log with reset window each iteration
+        stats = update_population_stats(
+            update_fitness_window([], [a["fitness"] for a in population]),  # Fresh window
+            population
+        )
+        stats.update({'generation': generation})
         log_population(stats)
         display_generation_stats(stats)
         
-        # Validate population extremes
+        # Validate population and generate next
         validate_population_state(
             max(population, key=lambda x: x["fitness"]),
             min(population, key=lambda x: x["fitness"])
         )
-        
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
