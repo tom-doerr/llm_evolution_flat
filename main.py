@@ -309,7 +309,7 @@ def display_generation_stats(stats: dict) -> None:
     pop_count = stats.get('population_size', 0)
     diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
-        f"[bold]Gen {stats.get('generation', 0)}[/]\n"
+        f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
         f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
