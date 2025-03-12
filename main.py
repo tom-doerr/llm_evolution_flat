@@ -216,10 +216,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
-    ).selected_mate.strip()[:40]
+    )
 
     return next(
-        (c for c in valid if c["chromosome"] == response),
+        (c for c in valid if c["chromosome"] == response.selected_mate.strip()[:40]),
         random.choices(valid, weights=[c["fitness"]**2 + 1e-6 for c in valid])[0]
     )
 
