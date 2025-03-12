@@ -64,16 +64,16 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Track metrics with reduced variables
-    counts = {'vowels': 0, 'a_count': 0, 'repeats': 0, 'prev_char': None}
+    vowels = a_count = repeats = 0
+    prev_char = None
     unique_chars = set()
     
     for c in core:
         unique_chars.add(c)
-        counts['vowels'] += c in 'aeiou'
-        counts['a_count'] += c == 'a'
-        counts['repeats'] += c == counts['prev_char']
-        counts['prev_char'] = c
+        vowels += c in 'aeiou'
+        a_count += c == 'a'
+        repeats += c == prev_char
+        prev_char = c
     
     return {
         'vowel_ratio': vowels / 23,
@@ -380,7 +380,7 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
+def log_population(population, generation, stats, diversity, log_file):
     """Log gzipped population data with rotation"""
     # Trim population to MAX_POPULATION by fitness before logging
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
@@ -390,7 +390,7 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
         f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()} | Diversity: {diversity:.2f}\n")
-        f.write(f"Mean: {mean_fitness:.2f}, Median: {median_fitness:.2f}, Std: {std_fitness:.2f}\n")
+        f.write(f"Mean: {stats['mean']:.2f}, Median: {stats['median']:.2f}, Std: {stats['std']:.2f}\n")
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
