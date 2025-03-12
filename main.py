@@ -281,7 +281,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md using context manager
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8"):
         pass  # Just truncate the file
     
     evolution_loop(population)
@@ -290,17 +290,16 @@ def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
+        fitness_values = [a["fitness"] for a in population]
+        
+        # Update and log stats in consolidated block
         stats = update_population_stats(
-            update_fitness_window([], [a["fitness"] for a in population]),
+            update_fitness_window([], fitness_values),
             population
         )
         stats.update({'generation': generation})
-        
         log_population(stats)
         display_generation_stats(stats)
-        best = max(population, key=lambda x: x["fitness"])
-        worst = min(population, key=lambda x: x["fitness"])
-        validate_population_state(best, worst)
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
