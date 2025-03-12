@@ -182,7 +182,7 @@ def mutate_with_llm(agent: dict) -> str:
     except ValueError as e:  # Only catch specific errors
         if DEBUG_MODE:
             print(f"Fallback mutation error: {e}")
-        return chromosome  # Return original on any error
+        return chromosome  # Return original on error
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
