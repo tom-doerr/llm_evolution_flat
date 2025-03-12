@@ -68,28 +68,23 @@ def score_chromosome(chromosome: str) -> dict:
     assert len(core) == 23, "Core segment must be 23 characters"
     
     # Combined analysis with reduced variables
-    vowel_count = 0
-    a_count = 0
+    counts = {'vowels': 0, 'a': 0, 'repeats': 0}
     unique_chars = set()
-    repeats = 0
     prev_char = None
     
     for c in core:
         unique_chars.add(c)
-        if c in 'aeiou':
-            vowel_count += 1
-        if c == 'a':
-            a_count += 1
-        if c == prev_char:
-            repeats += 1
+        counts['vowels'] += c in 'aeiou'
+        counts['a'] += c == 'a'
+        counts['repeats'] += c == prev_char
         prev_char = c
     
     return {
-        'vowel_ratio': vowel_count / 23,
-        'consonant_ratio': (23 - vowel_count) / 23,
+        'vowel_ratio': counts['vowels'] / 23,
+        'consonant_ratio': (23 - counts['vowels']) / 23,
         'uniqueness': len(unique_chars) / 23,
-        'a_density': a_count / 23,
-        'repeating_pairs': repeats / 22,
+        'a_density': counts['a'] / 23,
+        'repeating_pairs': counts['repeats'] / 22,
         'core_segment': core
     }
 
@@ -126,7 +121,6 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
     
     metrics = score_chromosome(chromosome)
-    core_segment = metrics['core_segment']
     a_count = int(metrics['a_density'] * 23)
     
     # Combined fitness calculation
