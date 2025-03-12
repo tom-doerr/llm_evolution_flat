@@ -128,16 +128,21 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using fitness^2 weighted sampling without replacement"""
+    """Select parents using Pareto distribution weighted by fitness^2"""
     candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    weights = [a['fitness']**2 + 1e-6 for a in candidates]
+    total_weight = sum(weights)
     
-    return list(np.random.choice(
-        candidates,
-        size=min(len(candidates)//2, MAX_POPULATION),
-        p=weights/weights.sum(),
-        replace=False
-    ))
+    # Use weighted sampling without replacement
+    selected = []
+    for _ in range(min(len(candidates)//2, MAX_POPULATION)):
+        idx = random.choices(range(len(candidates)), cum_weights=weights)[0]
+        selected.append(candidates.pop(idx))
+        weights.pop(idx)
+        if not candidates:
+            break
+            
+    return selected
 
 
 
@@ -186,7 +191,7 @@ def validate_mutation(chromosome: str) -> bool:
         len(chromosome) >= 23 and
         chromosome.isalpha() and
         len(chromosome) <= 40 and
-        chromosome[:23].count('a') >= 10  # Minimum a-count threshold
+        chromosome[:23].count('a') >= chromosome[:23].count('a')  # Must maintain a-count
     )
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
