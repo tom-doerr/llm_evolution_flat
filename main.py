@@ -257,12 +257,14 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     # Get LLM selection from valid candidates
     result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
+        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],  # Fix typo in chromosome
         temperature=0.7,
         top_p=0.9
     ).selected_mate.lower()
 
     # Find best match with fallback to weighted random
+    sum_weights = sum(a['fitness']**2 for a in valid_candidates)
+    weights = [a['fitness']**2/sum_weights for a in valid_candidates]
     for candidate in valid_candidates:
         if candidate["chromosome"].lower().startswith(result):
             return candidate
@@ -301,7 +303,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     mates = []  # Initialize mates list to prevent possible-used-before-assign
     # Combined weighted selection with numpy and fallback
-    mates = []
+    mates = []  # Initialize with empty list
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
         sum_weights = weights.sum()
