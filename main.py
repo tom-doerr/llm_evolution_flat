@@ -127,9 +127,9 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
-def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
-    """Select parents using sliding window of fitness^2 weighted sampling"""
-    candidates = population[-WINDOW_SIZE:]  # Use most recent window per spec
+def select_parents(population: List[dict]) -> List[dict]:
+    """Select parents using fitness^2 weighted sampling without replacement"""
+    candidates = population[-WINDOW_SIZE:]  # Most recent window per spec.md
     weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates),
@@ -289,7 +289,7 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         stats = calculate_window_statistics(fitness_window)
         
         log_population(generation, stats)
-        display_generation_stats(generation, population, stats)
+        display_generation_stats(generation, stats)
         
         parents = select_parents(population, fitness_window)
         population = generate_children(parents, population)
@@ -316,7 +316,7 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, population: List[dict], stats: dict):
+def display_generation_stats(generation: int, stats: dict):
     """Rich-formatted display with essential stats"""
     diversity = calculate_diversity(population)
     Console().print(Panel(
@@ -345,23 +345,16 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     div_ratio = calculate_diversity(generation)
     mut_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     
-    # Apply mutations and track count
-    mut_count = 0
-    mutated = []
-    for agent in generation:
-        if random.random() < mut_rate:
-            mutated.append(mutate(agent["chromosome"]))
-            mut_count += 1
-        else:
-            mutated.append(agent["chromosome"])
+    # Apply mutations with list comprehension
+    mutated = [
+        mutate(agent["chromosome"]) if random.random() < mut_rate else agent["chromosome"]
+        for agent in generation
+    ]
     
     # Update chromosomes in place
     for agent, new_chrom in zip(generation, mutated):
         agent["chromosome"] = new_chrom
     
-    # Enhanced logging
-    unique_count = len({a["chromosome"] for a in generation})
-    print(f"🧬 D:{div_ratio:.0%} M:{mut_rate:.0%} U:{unique_count}/{len(generation)} Mut:{mut_count}")
     return generation
 
 
