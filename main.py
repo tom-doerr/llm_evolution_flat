@@ -134,7 +134,10 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
 
     # Incorporate structural metrics into fitness
     fitness *= metrics['vowel_ratio'] * (1 + metrics['uniqueness'])
-    fitness += metrics['consonant_ratio'] * 0.5  # Bonus for consonant diversity
+    fitness -= metrics['consecutive_repeats'] * 0.2  # Penalize repeats
+    fitness += metrics['length_score'] * 5  # Favor longer chromosomes
+    fitness += metrics['positional_diversity'] * 2  # Reward spaced diversity
+    # Note: a_count is already accounted for in base fitness
     
     # Allow negative fitness as per spec
     agent["fitness"] = fitness
