@@ -100,9 +100,9 @@ def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromosome = validate_chromosome(agent["chromosome"])
     
-    # Inline calculation to reduce variables
+    # Combined calculations to reduce locals
     agent["fitness"] = (
-        (score_chromosome(chromosome)['a_density'] * 23 * 2 - 23) 
+        (score_chromosome(chromosome)['a_density'] * 46 - 23) 
         - (len(chromosome) - 23)
     ) ** 2
     
