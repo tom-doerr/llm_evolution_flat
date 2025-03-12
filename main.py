@@ -123,15 +123,15 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate combined weights in one step
-    weights = (
+    # Combined weights calculation and sampling in one vectorized operation
+    weights = np.nan_to_num(
         np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) * 
-        (np.random.pareto(3.0, len(population)) + 1)
-    )
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
+        (np.random.pareto(3.0, len(population)) + 1),
+        nan=1e-6
+    ).clip(1e-6)
+    
     weights /= weights.sum()  # Normalize
     
-    # Select without replacement using weighted probabilities
     selected_indices = np.random.choice(
         len(population),
         size=min(len(population), MAX_POPULATION//2),
@@ -371,14 +371,19 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
     new_fitness = [a["fitness"] for a in evaluated_pop]
+    updated_window = update_fitness_window(fitness_window, new_fitness)
     
-    return ({
+    stats = {
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitness)),
-        **extreme_values(evaluated_pop)
-    }, fitness_window[-WINDOW_SIZE:])
+        **calculate_window_statistics(updated_window),
+        **extreme_values(evaluated_pop),
+        'best_current': max(new_fitness),
+        'worst_current': min(new_fitness)
+    }
+    
+    return stats, updated_window[-WINDOW_SIZE:]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
