@@ -466,18 +466,34 @@ def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
 
 def create_next_generation(next_gen, problem, mutation_rate, generation):
     """Handle mutation and periodic improvement of new generation"""
-    next_gen = apply_mutations(next_gen, mutation_rate)
+    next_gen = apply_mutations(next_gen, mutation_rate, problem)
     
     if generation % 5 == 0:
         next_gen = improve_top_candidates(next_gen, problem)
         
     return next_gen
 
-def apply_mutations(generation, mutation_rate):
-    """Apply mutations to generation based on mutation rate"""
+def apply_mutations(generation, mutation_rate, problem):
+    """Auto-adjust mutation rate based on population diversity"""
+    # Calculate population diversity
+    unique_chromosomes = len({agent["chromosome"] for agent in generation})
+    diversity_ratio = unique_chromosomes / len(generation)
+    
+    # Adjust mutation rate using inverse square relationship to diversity
+    mutation_rate *= (1.0 - diversity_ratio) ** 2
+    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)  # Keep within sane bounds
+    
+    # Apply mutations with adapted rate
     for i in range(len(generation)):
         if random.random() < mutation_rate:
-            generation[i]["chromosome"] = mutate(generation[i]["chromosome"])
+            generation[i]["chromosome"] = mutate(generation[i]["chromosome"], problem)
+    
+    # Log adaptation metrics
+    console = Console()
+    console.print(f"\nMutation Rate Adaptation:\n"
+                f"Diversity: {diversity_ratio:.1%} → Rate: {mutation_rate:.1%}\n"
+                f"Unique Chromosomes: {unique_chromosomes}/{len(generation)}")
+    
     return generation
 
 def evaluate_population(population: List[dict], problem: str, generation: int) -> List[dict]:
