@@ -312,23 +312,20 @@ if __name__ == "__main__":
     
     run_genetic_algorithm(generations=args.generations, pop_size=args.pop_size)
 
-def log_population(population: List[dict], generation: int, stats: dict) -> None:
+def log_population(generation: int, stats: dict) -> None:
     """Log population data with rotation"""
     with open("evolution.log", "a" if generation else "w", encoding='utf-8') as f:
-        best = max(population, key=lambda x: x['fitness'])
-        worst = min(population, key=lambda x: x['fitness'])
-        f.write(f"Generation {generation} | Size: {len(population)} | "
-                f"Mean: {stats['mean']:.2f} | Best: {best['fitness']:.2f} | "
-                f"Worst: {worst['fitness']:.2f}\n")
+        f.write(f"Gen{generation} | μ:{stats['mean']:.1f} | σ:{stats['std']:.1f} | "
+                f"Q1:{stats['q25']:.1f} | Q3:{stats['q75']:.1f}\n")
 
-def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
+def display_generation_stats(generation: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats"""
     diversity = calculate_diversity(population)
     Console().print(Panel(
-        f"[bold]Generation {generation}/{generations}[/]\n"
-        f"📊 Mean: {stats['mean']:.2f} | 📈 Best: {stats['best']:.2f}\n"
-        f"📉 Median: {stats['median']:.2f} | σ: {stats['std']:.2f}\n"
-        f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}",
+        f"[bold]Gen {generation}[/]\n"
+        f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
+        f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n"
+        f"Δ{diversity:.0%} 👥{len(population)}",
         title="Evolution Progress",
         style="blue"
     ))
@@ -348,18 +345,13 @@ def calculate_diversity(population: List[dict]) -> float:
 def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     diversity_ratio = calculate_diversity(generation)
-    # Calculate final mutation rate and apply mutations
     mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
-    # Apply mutations and track unique chromosomes
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
     
-    # Fixed logging with validated unique_post variable
-    unique_post = len({a["chromosome"] for a in generation})
-    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_post}/{len(generation)}")
-    
+    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%}")
     return generation
 
 def evaluate_population(population: List[dict]) -> List[dict]:
