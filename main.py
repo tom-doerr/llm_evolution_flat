@@ -343,8 +343,8 @@ def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     
     # Use list comprehension to reduce locals
     mutated = [
-        {**agent, "chromosome": mutate(agent["chromosome"]) 
-        if random.random() < rate else agent["chromosome"]
+        {**agent, "chromosome": mutate(agent["chromosome"])} 
+        if random.random() < rate else agent
         for agent in generation
     ]
     
