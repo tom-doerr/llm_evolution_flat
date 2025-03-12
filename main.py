@@ -252,17 +252,16 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     ))
     
     parent_chrom = parent["chromosome"]
-    return create_agent(
-        ''.join(
-            m_char if (random.random() < 1/len(parent_chrom)) or (p_char in {'.', '!', '?', ' '})
-            else p_char
-            for p_char, m_char in itertools.zip_longest(
-                parent_chrom,
-                selected_mate["chromosome"],
-                fillvalue=' '
-            )
-        )[:40]
-    )
+    return create_agent(''.join([
+        (llm_select_mate(parent, random.choices(
+            candidates,
+            weights=weights/weights.sum(),
+            k=min(5, len(population))
+        )["chromosome"][i] 
+        if (random.random() < 1/len(parent["chromosome"]) or c in {'.', '!', '?', ' '}
+        else c
+        for i, c in enumerate(parent["chromosome"])
+    ])[:40])
 
 
 
