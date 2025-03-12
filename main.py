@@ -187,11 +187,6 @@ def mutate_with_llm(agent: dict) -> str:
         string.ascii_letters.lower(), 
         k=len(chromosome)-23
     ))
-        
-    except (ValueError, dspy.DSPyException) as e:  # Specific exceptions only
-        if DEBUG_MODE:
-            print(f"Mutation error: {e}")
-        return chromosome  # Return original chromosome on error
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
