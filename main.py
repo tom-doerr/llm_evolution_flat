@@ -86,14 +86,13 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
-    # Sort by fitness descending and calculate Pareto weights
+    # Filter and sort by fitness descending
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
-    fitness_values = [max(agent["fitness"], 0)**2 for agent in sorted_pop]
     
-    # Apply Pareto distribution (alpha=2) weights to sorted fitness values
+    # Calculate Pareto weights with alpha=2
+    fitness_values = [max(a["fitness"], 0)**2 for a in sorted_pop]
     ranks = range(1, len(sorted_pop)+1)
-    pareto_weights = [f * (1/r)**2 for f, r in zip(fitness_values, ranks)]
-    total_weight = sum(pareto_weights)
+    pareto_weights = [f * (1/(r**2)) for f, r in zip(fitness_values, ranks)]  # Alpha=2 Pareto distribution
     
     if total_weight <= 0:
         raise ValueError("All agents have zero fitness - cannot select parents")
@@ -149,12 +148,12 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     candidate_list = [f"{idx}: {agent['chromosome'][:23]}" 
                     for idx, agent in enumerate(candidates)]
     
-    # Create prompt with mating rules aligned with hidden goal
+    # Create mating prompt with hidden selection criteria
     prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
     response = prompt(
         parent_chromosome=parent["chromosome"],
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nRULES:\n1. SEEK SYNERGIC COMBINATIONS\n2. PRESERVE CORE ELEMENTS\n3. ENHANCE STRUCTURAL INTEGRITY\n4. PRIORITIZE DENSITY",
+        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY\n4. PRIORITIZE COMPACTNESS",
     )
     
     # Validate and parse response
@@ -188,12 +187,13 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     return create_agent(new_chromosome)
 
 
-def update_fitness_window(fitness_window, new_fitnesses, window_size):
-    """Update sliding window of fitness values"""
-    if not fitness_window:
-        fitness_window = []
-    fitness_window.extend(new_fitnesses)
-    return fitness_window[-window_size:]
+def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
+    """Maintain sliding window of last 100 evaluations"""
+    # Combine new fitness values with existing window
+    combined = (fitness_window[-window_size:] if fitness_window else []) + new_fitnesses
+    
+    # Trim to only keep the newest entries up to window size
+    return combined[-window_size:]
 
 def calculate_window_statistics(fitness_window, window_size):
     """Calculate statistics for current fitness window"""
