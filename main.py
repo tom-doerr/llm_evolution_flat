@@ -353,6 +353,23 @@ def update_generation_stats(generation: int, population: List[dict], fitness_win
     })
     return stats, updated_window
 
+def update_generation_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+    """Calculate and return updated statistics"""
+    population = evaluate_population(population)
+    fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
+    stats = calculate_window_statistics(fitness_window)
+    
+    best_agent = max(population, key=lambda x: x["fitness"])
+    stats.update({
+        'generation': generation,
+        'population_size': len(population),
+        'diversity': calculate_diversity(population),
+        'best': best_agent["fitness"],
+        'best_core': best_agent["metrics"]["core_segment"],
+        'worst': min(a["fitness"] for a in population)
+    })
+    return stats, fitness_window
+
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
     population = sorted(population, 
@@ -362,22 +379,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        # Combined evaluation and stats update
-        population = evaluate_population(population)
-        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        stats = calculate_window_statistics(fitness_window)
-        
-        best_agent = max(population, key=lambda x: x["fitness"])
-        handle_generation_output({
-            **stats,
-            'generation': generation,
-            'population_size': len(population),
-            'diversity': calculate_diversity(population),
-            'best': best_agent["fitness"],
-            'best_core': best_agent["metrics"]["core_segment"],
-            'worst': min(a["fitness"] for a in population)
-        }, population)
-        
+        stats, fitness_window = update_generation_stats(population, fitness_window, generation)
+        handle_generation_output(stats, population)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
