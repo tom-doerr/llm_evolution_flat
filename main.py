@@ -314,13 +314,13 @@ def evolution_loop(population: List[dict]) -> None:
         stats = calculate_window_statistics(fitness_window)
         
         # Combined stats update
-        stats.update({
-            'generation': generation,
-            'population_size': len(population),
-            'diversity': calculate_diversity(population),
-            'best': max(a["fitness"] for a in population),
-            'worst': min(a["fitness"] for a in population)
-        })
+        stats.update(
+            generation=generation,
+            population_size=len(population),
+            diversity=calculate_diversity(population),
+            best=max(a["fitness"] for a in population),
+            worst=min(a["fitness"] for a in population)
+        )
         
         log_and_display(stats, population)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
