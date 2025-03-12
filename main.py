@@ -144,24 +144,30 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2 with sliding window"""
-    # Get top candidates from sliding window of recent evaluations
-    candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
+    """Select parents using sliding window of fitness^2 weighted sampling"""
+    # Get sliding window of recent evaluations
+    window_size = min(WINDOW_SIZE, len(population))
+    candidates = population[-window_size:]
     
-    # Handle zero-sum weights case
-    if np.sum(weights) <= 0:
-        weights = np.ones(len(candidates)) / len(candidates)
-    else:
-        weights /= weights.sum()
+    # Calculate fitness^2 weights with epsilon to avoid zero-division
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    weights /= weights.sum()
     
-    # Vectorized weighted sampling without replacement
-    selected_indices = np.random.choice(
-        len(candidates),
-        size=min(len(candidates), len(population)//2),
-        p=weights,
-        replace=False
+    # Calculate selection size using square root scaling
+    selection_size = min(
+        int(np.sqrt(len(population))),  # Square root scaling
+        len(candidates)
     )
+    
+    # Perform weighted sampling without replacement using latest numpy method
+    selected_indices = np.random.default_rng().choice(
+        len(candidates),
+        size=selection_size,
+        p=weights,
+        replace=False,
+        shuffle=False
+    )
+    
     return [candidates[i] for i in selected_indices]
 
 
@@ -180,23 +186,38 @@ def mutate_with_llm(agent: dict) -> str:
                           "Change 1-2 characters after position 23 while keeping first 23 intact")
     
     try:
-        # Batch processing: Prepare multiple mutations for validation
+        # Batch process and validate mutations in one step
         predictor = dspy.Predict(MutateSignature)
-        responses = predictor(chromosome=chromosome, instructions=instruction, n=3)
+        responses = predictor(
+            chromosome=chromosome,
+            instructions=instruction,
+            n=3,
+            temperature=0.7,
+            top_p=0.9
+        )
         
-        # Validate mutations in batch
-        for response in responses.completions:
-            mutated = str(response).strip()[:40].lower()
-            if (len(mutated) >= 23 and mutated.isalpha() and
-                mutated[:23] == chromosome[:23] and
-                mutated[:23].count('a') >= chromosome[:23].count('a')):
-                return mutated
-    except (ValueError, RuntimeError) as e:  # Specific exceptions from DSPy
+        # Use generator expression for efficient validation
+        valid_mutations = (
+            str(r).strip()[:40].lower()
+            for r in responses.completions
+            if (len(str(r).strip()) >= 23 
+                and str(r).strip()[:23] == chromosome[:23]
+                and str(r).strip()[:23].count('a') >= chromosome[:23].count('a'))
+        )
+        
+        # Return first valid mutation or fallback
+        return next(valid_mutations, chromosome[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(), 
+            k=len(chromosome)-23
+        )))
+        
+    except (ValueError, RuntimeError) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
-
-    # Fallback: Random mutation after core segment
-    return chromosome[:23] + ''.join(random.choices(string.ascii_letters.lower(), k=len(chromosome)-23))
+        return chromosome[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(), 
+            k=len(chromosome)-23
+        ))
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
