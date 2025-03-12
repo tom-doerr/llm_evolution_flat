@@ -179,11 +179,11 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
     
-    # Validate mutation parameters from chromosome
-    raw_temp = float(agent["mutation_chromosome"][:3] or 0.7)
-    raw_top_p = float(agent["mutation_chromosome"][3:7] or 0.9)
-    temperature = max(0.0, min(1.0, raw_temp))
-    top_p = max(0.0, min(1.0, raw_top_p))
+    # Extract and clamp mutation parameters in one step
+    temp_str = agent["mutation_chromosome"][:3] or '0.7'
+    top_p_str = agent["mutation_chromosome"][3:7] or '0.9'
+    temperature = max(0.0, min(1.0, float(temp_str)))
+    top_p = max(0.0, min(1.0, float(top_p_str)))
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
@@ -289,18 +289,19 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with multiple switches using hotspots (spec.md average 1 per chrom)"""
-    p_chrom = parent["chromosome"]
-    m_chrom = mate["chromosome"]
+    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
     hotspots = get_hotspots(p_chrom)
     
-    # Create switches at ~1 hotspot per chromosome on average
-    chrom_parts = []
-    last_pos = 0
-    for pos in sorted(random.sample(hotspots, min(len(hotspots), len(p_chrom)//40 + 1))):
-        chrom_parts.append(m_chrom[last_pos:pos+1] if random.random() < 0.5 else p_chrom[last_pos:pos+1])
-        last_pos = pos + 1
+    # Create switches with exactly 1 crossover point on average
+    switch_points = sorted(random.sample(hotspots, min(len(hotspots), max(MIN_HOTSPOTS, len(p_chrom)//40)))
     
-    chrom_parts.append(m_chrom[last_pos:] if random.random() < 0.5 else p_chrom[last_pos:])
+    # Build chromosome parts in list comprehension
+    last_pos, parts = 0, []
+    parts.extend(
+        (m_chrom if random.random() < 0.5 else p_chrom)[last_pos:(pos+1)]
+        for pos in switch_points
+    )
+    parts.append((m_chrom if random.random() < 0.5 else p_chrom)[last_pos:])
     return ''.join(chrom_parts)[:MAX_CHARS]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
