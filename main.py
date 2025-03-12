@@ -30,11 +30,12 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
-    window = fitness_window[-WINDOW_SIZE:]  # Strictly last 100 evals
-    current_pop = fitness_window[-len(fitness_window)//10:]  # Last 10% as "current"
-    
-    window_arr = np.array(window, dtype=np.float64)
-    current_arr = np.array(current_pop, dtype=np.float64) if current_pop else window_arr
+    # Combine window and current population calculations to reduce locals
+    window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
+    current_arr = np.array(
+        fitness_window[-len(fitness_window)//10:] if fitness_window else [],
+        dtype=np.float64
+    )
     
     return {
         'mean': float(np.nanmean(window_arr)),
@@ -184,11 +185,17 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
     
+    # Validate mutation parameters from chromosome
+    raw_temp = float(agent["mutation_chromosome"][:3] or 0.7
+    raw_top_p = float(agent["mutation_chromosome"][3:7] or 0.9
+    temperature = max(0.0, min(1.0, raw_temp))
+    top_p = max(0.0, min(1.0, raw_top_p))
+    
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=agent["mutation_chromosome"],
-        temperature=min(1.0, float(agent["mutation_chromosome"][:3] or 0.7)),
-        top_p=min(1.0, float(agent["mutation_chromosome"][3:7] or 0.9)),
+        temperature=temperature,
+        top_p=top_p,
     )
     
     # Validate mutations with generator expression
@@ -276,7 +283,8 @@ def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
     # Force at least one hotspot and ensure ~1 switch per combination on average
     forced_hotspots = [i for i, c in enumerate(chromosome) if c in {'.', '!', '?', ' '}]
-    random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.15]
+    # 10% base probability per spec.md requirement
+    random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.1]
     return list(set(forced_hotspots + random_hotspots)) or [0]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
