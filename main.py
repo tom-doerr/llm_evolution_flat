@@ -233,18 +233,15 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    # Combine validation and weighting in one comprehension
+    # Combined validation, weighting and sum check in one comprehension
     weighted_candidates = [
         (c, c['fitness']**2 + 1e-6) 
         for c in candidates 
         if validate_mating_candidate(c, parent)
+        and (c['fitness']**2 + 1e-6) > 0
     ]
     if not weighted_candidates:
         raise ValueError("No valid mates")
-
-    _, weights = zip(*weighted_candidates)
-    sum_weights = sum(weights)
-    assert sum_weights > 0, "All candidate weights are zero"
     weights = [w/sum_weights for w in weights]
 
     # Get LLM selection
