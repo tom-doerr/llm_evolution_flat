@@ -403,11 +403,13 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
         # Weighted sampling without replacement using fitness² weighting
         pop_weights = [a['fitness']**2 + 1e-6 for a in population]
         population = population if len(population) <= max_population else [
-            population[i] for i in np.random.choice(
+            population[i] 
+            for i in np.random.choice(
                 len(population),
                 size=max_population,
                 replace=False,
-                p=np.array(pop_weights)/sum(pop_weights)
+                p=np.array(pop_weights)/sum(pop_weights))
+            ]
         ]
         
         population = evaluate_population(population)
