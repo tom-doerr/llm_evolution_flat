@@ -61,7 +61,7 @@ def score_chromosome(chromosome: str) -> dict:
     
     # Sequence pattern analysis
     a_density = core.count('a') / 23
-    repeating_chars = sum(1 for i in range(1, len(core)) if core[i] == core[i-1] else 0)
+    repeating_chars = sum(1 if core[i] == core[i-1] else 0 for i in range(1, len(core)))
     
     # Structural validation
     assert 0 <= vowels <= 23, "Invalid vowel count"
