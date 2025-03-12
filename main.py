@@ -155,13 +155,11 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Combined extraction and validation
-    # Extract and validate parameters from mutation chromosome
+    # Extract and validate parameters from mutation chromosome in one step
     mc = agent["mutation_chromosome"]
     temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))
     top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))
-    assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
-    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
+    assert 0.0 <= temperature <= 2.0 and 0.0 <= top_p <= 1.0, "Invalid mutation params"
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
@@ -287,25 +285,21 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
-    # Get validated candidates in one operation
-    valid_candidates = [
-        a for a in (population[-WINDOW_SIZE:] or population)[:100]
-        if validate_mating_candidate(a, parent)
-    ]
+    # Streamlined candidate processing with numpy
+    candidates = (population[-WINDOW_SIZE:] or population)[:100]
+    valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
     
-    # Weighted sampling without replacement using numpy
+    # Handle mate selection in one numpy operation
+    mates = []
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
         weights /= weights.sum()
-        selected_indices = np.random.choice(
+        mates = [valid_candidates[i] for i in np.random.choice(
             len(valid_candidates), 
             size=min(5, len(valid_candidates)),
             replace=False,
             p=weights
-        )
-        mates = [valid_candidates[i] for i in selected_indices]
-    else:
-        mates = []
+        )]
     
     mate = llm_select_mate(parent, mates) if mates else parent  # Fallback to parent if no mates
     
