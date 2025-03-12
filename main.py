@@ -165,16 +165,17 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
-def mutate_with_llm(chromosome: str) -> str:
+def mutate_with_llm(agent: dict) -> str:
     """Mutate chromosome using LLM-based rephrasing with optimized prompt"""
+    chromosome = agent["chromosome"]
     # Core validation checks
     assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
     assert chromosome.isalpha(), "Invalid characters in chromosome"
     
     mutate_prompt = dspy.Predict(
         "chromosome -> mutated_chromosome",
-        validate_output=validate_mutation,
-        instructions="Keep 23+ 'a's start|Change 2-3 chars|Len 23-40|Letters only"
+        instructions=agent.get("mutation_chromosome", 
+                             "Modify 1-3 characters while maintaining core structure")
     )
     try:
         response = mutate_prompt(chromosome=chromosome)
