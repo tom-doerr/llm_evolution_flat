@@ -226,7 +226,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 class MateSelectionSignature(dspy.Signature):
     """Select mate using DNA-loaded candidates and mate-selection chromosome (spec.md mating)"""
-    parent_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent")
+    mate_selection_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent") 
     candidate_chromosomes = dspy.InputField(desc="Potential mates filtered by validation")
     selected_mate = dspy.OutputField(desc="Chromosome of selected mate from candidates list")
 
