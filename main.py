@@ -109,7 +109,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str, _generation: int) -> float:
+def evaluate_agent(agent: dict, _problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
     # Validate input before scoring
     chromosome = str(agent["chromosome"])
@@ -418,7 +418,13 @@ def run_genetic_algorithm(
         log_population(population, generation, current_mean, current_median, current_std, current_diversity, log_file)
 
         # Display statistics from sliding window
+        # Get window stats and display them
+        window_stats = calculate_window_statistics(fitness_window)
         display_generation_stats(generation, generations, population, best, fitness_window)
+        
+        # Log window stats for validation
+        assert window_stats['mean'] >= 0, "Negative mean in window stats"
+        assert window_stats['best'] >= window_stats['worst'], "Invalid best/worst relationship"
 
         # Validate population state and size
         validate_population_state(best, worst)
