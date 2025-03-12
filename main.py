@@ -307,11 +307,10 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, stats: dict, population: List[dict]) -> None:
+def display_generation_stats(generation: int, stats: dict) -> None:
     """Rich-formatted display with essential stats"""
-    pop_count = len(population)
-    diversity = calculate_diversity(population)
-    """Rich-formatted display with essential stats"""
+    pop_count = stats.get('population_size', 0)
+    diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"  # Get generation from stats
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
@@ -335,12 +334,15 @@ def calculate_diversity(population: List[dict]) -> float:
 
 def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
-    div_ratio = calculate_diversity(generation)
-    mutation_rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
+    # Combined calculations to reduce locals
+    mutation_rate = np.clip(
+        base_rate * (1.0 - np.log1p(calculate_diversity(generation))),
+        0.1, 
+        0.8
+    )
     return [
-        {**agent, "chromosome": mutate(agent["chromosome"])} 
-        if random.random() < mutation_rate
-        else agent
+        ({**agent, "chromosome": mutate(agent["chromosome"])} 
+         if random.random() < mutation_rate else agent)
         for agent in generation
     ]
 
