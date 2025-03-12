@@ -1,4 +1,6 @@
 import dspy
+import random
+import string
 from typing import List
 
 # Configure DSPy with OpenRouter
@@ -42,15 +44,60 @@ def initialize_population(pop_size: int) -> List[GeneticAgent]:
     
     return [GeneticAgent(chromosome=random_chromosome()) for _ in range(pop_size)]
 
+def select_parents(population: List[GeneticAgent]) -> List[GeneticAgent]:
+    """Select top 50% of population as parents"""
+    sorted_pop = sorted(population, key=lambda x: x.fitness, reverse=True)
+    return sorted_pop[:len(population)//2]
+
+def mutate(chromosome: str) -> str:
+    """Mutate a chromosome by replacing one random character"""
+    import random
+    idx = random.randint(0, len(chromosome)-1)
+    new_char = random.choice(string.ascii_letters + ' ')
+    return chromosome[:idx] + new_char + chromosome[idx+1:]
+
+def crossover(parent1: GeneticAgent, parent2: GeneticAgent) -> GeneticAgent:
+    """Create child by combining parts of parent chromosomes"""
+    split = random.randint(1, len(parent1.chromosome)-1)
+    new_chromosome = parent1.chromosome[:split] + parent2.chromosome[split:]
+    return GeneticAgent(new_chromosome)
+
 def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5):
-    """Run basic genetic algorithm"""
+    """Run genetic algorithm with LLM-assisted evolution"""
     population = initialize_population(pop_size)
     
     for generation in range(generations):
-        print(f"\nGeneration {generation + 1}")
+        # Evaluate all agents
         for agent in population:
-            fitness = agent.evaluate(problem)
-            print(f"Chromosome: {agent.chromosome[:50]}... | Fitness: {fitness}")
+            agent.evaluate(problem)
+        
+        # Print current generation
+        print(f"\nGeneration {generation + 1}")
+        sorted_pop = sorted(population, key=lambda x: x.fitness, reverse=True)
+        for agent in sorted_pop:
+            print(f"Chromosome: {agent.chromosome[:50]}... | Fitness: {agent.fitness}")
+        
+        # Select parents and create next generation
+        parents = select_parents(population)
+        next_gen = parents.copy()
+        
+        # Create children through crossover
+        while len(next_gen) < pop_size:
+            parent1, parent2 = random.sample(parents, 2)
+            child = crossover(parent1, parent2)
+            next_gen.append(child)
+        
+        # Mutate some children
+        for i in range(len(next_gen)//2):
+            next_gen[i].chromosome = mutate(next_gen[i].chromosome)
+        
+        # Use LLM to improve top candidates
+        for i in range(min(2, len(next_gen))):
+            prompt = f"Improve this solution: {next_gen[i].chromosome}\nThe goal is: {problem}"
+            response = lm(prompt)
+            next_gen[i].chromosome = response[:40]  # Limit to 40 chars
+        
+        population = next_gen
 
 if __name__ == "__main__":
     PROBLEM = "Generate a string with many 'a's in first 23 chars and short after"
