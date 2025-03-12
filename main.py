@@ -149,13 +149,6 @@ HOTSPOT_ANYWHERE_PROB = 0.023  # ~1 hotspot per 40 char chromosome on average (s
 # Probability tuned to achieve average 1 switch per chrom combined with punctuation
 HOTSPOT_ANYWHERE_PROB = 0.02  # Reduced from 0.02 to 0.015 to better match spec.md requirement
 
-def validate_mutation_rate(chromosome: str) -> None:
-    """Ensure mutation parameters stay within valid ranges"""
-    temp = float(chromosome[:3] or 0.7)
-    top_p = float(chromosome[3:7] or 0.9)
-    assert 0.0 <= temp <= 2.0, f"Invalid temperature {temp}"
-    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
-
 
 
 
@@ -371,8 +364,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file using with statement
-    with open("evolution.log", "w", encoding="utf-8"):
-        pass  # Just truncate the file
+    # Empty log file per spec.md requirement
+    open("evolution.log", "w", encoding="utf-8").close()
     
     evolution_loop(population, max_population)
 
@@ -515,11 +508,9 @@ if __name__ == "__main__":
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
     # Validate constants in single assertion
-    assert all([
-        MAX_CORE == 23,
-        MAX_CHARS == 40,
-        MAX_POPULATION == 1_000_000
-    ]), "Critical constants modified"
+    assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
+    assert MAX_CHARS == 40, "Max chromosome length must be 40 per spec.md" 
+    assert MAX_POPULATION == 1_000_000, "Population limit cannot be changed"
     
     # Validate fitness relationships
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
