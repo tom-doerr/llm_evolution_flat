@@ -59,7 +59,10 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
     """Maintain sliding window of last 100 evaluations"""
-    return (fitness_window + new_fitnesses)[-window_size:]
+    # Enforce window size strictly with type validation
+    assert isinstance(fitness_window, list), "Window must be list type"
+    combined = fitness_window + new_fitnesses
+    return combined[-window_size:] if len(combined) > window_size else combined
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate comprehensive structural scoring metrics with validation"""
