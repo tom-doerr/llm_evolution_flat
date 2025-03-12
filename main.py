@@ -29,11 +29,8 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
-    """Calculate statistics for sliding window of last 100 evaluations"""
-    assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
-    
+    """Calculate statistics for sliding window of last 100 evaluations"""    
     window = fitness_window[-WINDOW_SIZE:] if fitness_window else []
-    assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     
     if not window:
         return {
@@ -124,6 +121,7 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with random chromosomes using vectorized operations"""
+    # TODO: Optimize with true vectorization instead of list comprehensions
     # Generate lengths first for vectorization
     lengths = [random.randint(20, 40) for _ in range(pop_size)]
     # Batch create all chromosomes
@@ -258,6 +256,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             p=(lambda weights: weights/weights.sum() if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
                 np.array([a['fitness']**2 + 1e-6 for a in candidates])
             )
+    )
         )])
     
     # Implement spec.md chromosome switching rules
@@ -325,7 +324,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Truncate file by opening in write mode
+        pass  # Truncate file by opening in write mode (spec.md requirement)
     
     evolution_loop(population)
 
