@@ -224,8 +224,13 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     if candidate == parent:
         return False
     try:
-        validate_chromosome(candidate["chromosome"])
-        return True
+        validated = validate_chromosome(candidate["chromosome"])
+        # Ensure chromosomes are different and valid length (spec.md requirements)
+        return (
+            validated != parent["chromosome"] and 
+            len(validated) >= 23 and  # Core segment requirement
+            len(validated) <= 40
+        )
     except AssertionError:
         return False
 
@@ -294,8 +299,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    next_gen = parents.copy()
-    max_children = min(MAX_POPULATION - len(parents), len(parents)*2)
+    # Trim population first to stay under MAX_POPULATION (spec.md requirement)
+    next_gen = parents[:MAX_POPULATION//2].copy()
+    max_children = min(MAX_POPULATION - len(next_gen), len(parents)*2)
     
     # Enforce population limit before extending
     assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
