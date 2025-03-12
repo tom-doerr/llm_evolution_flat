@@ -289,7 +289,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     child_chrom = []
     prev = 0
     for point in switch_points:
-        child_chrom.append(parent_chrom[prev:point])
+        child_chrom.append(parent_chromosome[prev:point])
         child_chrom.append(mate_chrom[point])
         prev = point + 1
     child_chrom.append(parent_chrom[prev:])
@@ -342,7 +342,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
-    open("evolution.log", "w", encoding="utf-8").close()
+    with open("evolution.log", "w", encoding="utf-8") as _:
+        pass  # Explicitly clear log while ensuring file handle closure
     
     evolution_loop(population, max_population)
 
