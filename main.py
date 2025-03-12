@@ -108,10 +108,8 @@ def evaluate_agent(agent: dict) -> float:
     chromo = validate_chromosome(agent["chromosome"])
     metrics = score_chromosome(chromo)
     
-    # Simplified fitness calculation
-    base_score = metrics['a_density'] * 46 - 23
-    length_penalty = len(chromo) - 23
-    agent["fitness"] = base_score - length_penalty
+    # Combined fitness calculation to reduce locals
+    agent["fitness"] = metrics['a_density'] * 46 - len(chromo) - 23
     
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
     agent["metrics"] = metrics
