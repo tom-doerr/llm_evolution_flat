@@ -3,6 +3,7 @@ import random
 import string
 import gzip
 import numpy as np
+import dspy
 from rich.console import Console
 from rich.panel import Panel
 import dspy
@@ -75,11 +76,11 @@ def score_chromosome(chromosome: str) -> dict:
         prev_char = c
     
     return {
-        'vowel_ratio': counts['vowels'] / 23,
-        'consonant_ratio': (23 - counts['vowels']) / 23,
+        'vowel_ratio': vowels / 23,
+        'consonant_ratio': (23 - vowels) / 23,
         'uniqueness': len(unique_chars) / 23,
-        'a_density': counts['a_count'] / 23,
-        'repeating_pairs': counts['repeats'] / 22,
+        'a_density': a_count / 23,
+        'repeating_pairs': repeats / 22,
         'core_segment': core
     }
 
@@ -186,7 +187,7 @@ def mutate_with_llm(agent: dict) -> str:
             mutated.isalpha() and 
             mutated[:23].count('a') >= chromosome[:23].count('a')):
             return mutated
-    except Exception as e:
+    except (dspy.DSPyException, ValueError) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
             
@@ -201,6 +202,15 @@ def mutate(chromosome: str) -> str:  # Problem param removed since we get from d
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
     return mutate_with_llm(chromosome)
 
+
+def validate_mutation(chromosome: str) -> bool:
+    """Validate mutation meets criteria"""
+    return (
+        len(chromosome) >= 23 and
+        chromosome.isalpha() and
+        len(chromosome) <= 40 and
+        chromosome[:23].count('a') >= 10  # Minimum a-count threshold
+    )
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     """Validate candidate meets mating requirements"""
