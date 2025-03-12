@@ -9,15 +9,18 @@ dspy.configure(lm=lm)
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
+    # Ensure chromosome is a string
+    if isinstance(chromosome, list):
+        chromosome = ''.join(chromosome)
     return {
-        'chromosome': chromosome,
+        'chromosome': str(chromosome),
         'fitness': 0.0
     }
 
 def evaluate_agent(agent: dict, problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
-    # Limit chromosome length to 40 characters
-    chromosome = agent['chromosome'][:40]
+    # Ensure chromosome is a string and limit length to 40 characters
+    chromosome = str(agent['chromosome'])[:40]
     
     # Calculate fitness based on the target rules
     fitness = 0.0
