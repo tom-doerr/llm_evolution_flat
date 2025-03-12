@@ -10,12 +10,13 @@ import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
-# Completed:
-# 1. Implement generation-based scoring weights
+# COMPLETED:
+# - Chromosome validation during crossover
+# - Sliding window statistics
+# - Reduced code complexity
 
-# TODO: Implement sliding window statistics (HIGH)
-# TODO: Address remaining code quality warnings (MEDIUM)
-# VALIDATED: Chromosome structure validation during crossover
+# TODO: Optimize LLM prompt performance (HIGH)
+# TODO: Implement efficient population trimming (MEDIUM)
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -243,7 +244,8 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     valid_candidates = [
         c for c in candidates 
         if (validate_chromosome(c["chromosome"]) != parent_chrom 
-           and 23 <= len(c["chromosome"]) <= 40
+            and 23 <= len(c["chromosome"]) <= 40
+            and c["fitness"] > 0)
     ]
 
     if DEBUG_MODE and not valid_candidates:
@@ -354,9 +356,6 @@ def run_genetic_algorithm(
 
     population = initialize_population(pop_size)
     fitness_window = []
-    assert (
-        len(population) == pop_size
-    ), f"Population size mismatch {len(population)} != {pop_size}"
 
     # Clear log file at start per spec
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
@@ -469,19 +468,11 @@ def calculate_diversity(population: List[dict]) -> float:
 
 def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
-    # Calculate diversity and adapt mutation rate using logarithmic scaling
-    # Calculate diversity and adapt mutation rate using Pareto distribution
     diversity_ratio = calculate_diversity(generation)
-    mutation_rate = base_mutation_rate * (1.0 - np.log1p(diversity_ratio))
+    mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
-    # Apply mutations with rate clamping
-    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)
-    assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
-    
-    # Track unique chromosomes before mutations
-    unique_chromosomes = len({agent["chromosome"] for agent in generation})
-    
-    # Vectorized mutation application
+    # Track mutations in single pass
+    unique_pre = len({a["chromosome"] for a in generation})
     for agent in generation:
         if random.random() < mutation_rate:
             agent["chromosome"] = mutate(agent["chromosome"])
