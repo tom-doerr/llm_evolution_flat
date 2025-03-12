@@ -135,15 +135,14 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     candidates = [a for a in population if a['fitness'] in window]
     
     # Combined Pareto weighting and sampling in one step
-    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_scores))
-    selected_indices = np.random.default_rng().choice(
+    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64) ** 2  # Squared per spec
+    ranked_weights = 1.0 / (1.0 + np.argsort(-fitness_scores))
+    return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
-        p=pareto_weights/np.sum(pareto_weights),
+        p=ranked_weights/np.sum(ranked_weights),
         replace=False
-    )
-    return [candidates[i] for i in selected_indices]
+    )]
 
 
 
@@ -160,29 +159,24 @@ def mutate_with_llm(agent: dict) -> str:
     
     response = dspy.Predict(MutateSignature)(
         chromosome=[agent["chromosome"]]*3,
-        instructions=[agent.get("mutation_chromosome", "Change 1-2 characters after position 23")]*3,
+        instructions=[agent.get("mutation_chromosome", "Change 1-2 chars post-23")]*3,
         temperature=0.7,
         top_p=0.9
     )
     
-    # Validate and select first viable mutation
-    for r in response.completions:
-        mutated = str(r).strip()[:40].lower()
-        if (len(mutated) >= 23 
-           and mutated.startswith(chromosome[:23])
-           and mutated[:23].count('a') >= chromosome[:23].count('a')):
-            return mutated
+    # Validate mutations in generator expression
+    valid_mutation = next(
+        (str(r).strip()[:40].lower() for r in response.completions
+         if len(r) >= 23 
+         and r.startswith(chromosome[:23])
+         and r[:23].count('a') >= chromosome[:23].count('a')),
+        None
+    )
     
-    # Fallback mutation with specific error handling
-    try:
-        return chromosome[:23] + ''.join(random.choices(
-            string.ascii_letters.lower(), 
-            k=max(0, len(chromosome)-23)
-        ))
-    except ValueError as e:
-        if DEBUG_MODE:
-            print(f"Fallback mutation error: {e}")
-        return chromosome  # Return original on error
+    return valid_mutation or chromosome[:23] + ''.join(random.choices(
+        string.ascii_letters.lower(), 
+        k=max(0, len(chromosome)-23)
+    ))
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
