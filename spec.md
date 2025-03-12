@@ -9,13 +9,25 @@ there should be little, but information dense output so we don't fill up context
 the program should log more detailed information to a file
 the log file should be emptied when we start the program
 keep it simple
-the better the reward, the higher the probability for mating, pareto distribution
+parent selection should use:
+1. Pareto distribution weighting by fitness^2 
+2. Weighted sampling without replacement
+3. Deduplication of identical chromosomes
+4. Fallback to random selection if all weights zero
 include mean, median, std deviation for population reward
 set the default population size limit to one million
-mutation should be llm based, maybe by prompting the llm to rephrase the text
+mutation should be llm based, specifically requesting to:
+1. Maximize 'a's in first 23 characters
+2. Remove all other characters after first 23
+3. Never add non-letter characters
+4. Strictly keep length <=40
 mating should work by loading the dna of agents into the prompt and then using the mating chromosome/prompt of the agent allowed to mate to select one of the candidates
 the candidates list should be created by weighted sampling based on score without replacement
-statistics shown should be shown for the last 100 evaluations
+statistics should:
+1. Use sliding window of last 100 evaluations
+2. Show mean, median, std deviation
+3. Track best/worst in current population
+4. Log full details to compressed file
 
 
 as a task i want to optimize this hidden goal for testing: reward increases for every a for the first 23 characters and decreases for every character after 23 characters. limit token output to 40 for the dspy lm
