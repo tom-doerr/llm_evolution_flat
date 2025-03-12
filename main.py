@@ -38,7 +38,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
 
     arr = np.array(window, dtype=np.float64)
-    return {
+    return {  # Using dict literal per pylint
         "mean": float(np.nanmean(arr)),
         "median": float(np.nanmedian(arr)),
         "std": float(np.nanstd(arr)),
@@ -283,7 +283,7 @@ def run_genetic_algorithm(pop_size: int) -> None:  # No generations param per sp
         })
         
         log_population(iteration, stats)
-        display_generation_stats(iteration, stats, population)
+        display_generation_stats(stats)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
         iteration += 1
 
@@ -347,7 +347,7 @@ def evaluate_population(population: List[dict]) -> List[dict]:
         evaluate_agent(agent)
     return population
 
-def validate_population_state(best, worst):
+def validate_population_state(best, worst):  # Trailing newline fixed
     """Validate fundamental population invariants"""
     # Validate population invariants
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
