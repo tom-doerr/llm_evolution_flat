@@ -320,10 +320,6 @@ def display_generation_stats(stats: dict) -> None:
 
 
 
-def create_next_generation(next_gen: List[dict], mutation_rate: float) -> List[dict]:
-    """Create next generation with mutations"""
-    next_gen = apply_mutations(next_gen, mutation_rate)
-    return next_gen
 
 def calculate_diversity(population: List[dict]) -> float:
     """Calculate population diversity ratio [0-1]"""
@@ -346,9 +342,6 @@ def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
 
 
 
-def get_population_limit() -> int:
-    """Get hard population limit from spec"""
-    return MAX_POPULATION
 
 def evaluate_population(population: List[dict]) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
@@ -367,12 +360,4 @@ def validate_population_state(best, worst):
     assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
     assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
 
-def validate_improvement(response):
-    """Validate LLM improvement response meets criteria"""
-    return (
-        response["improved_chromosome"]
-        and len(response.completions[0]) > 0
-        and len(response.completions[0]) <= 40
-        and all(c in string.ascii_letters + " " for c in response.completions[0])
-    )
 
