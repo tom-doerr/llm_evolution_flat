@@ -256,9 +256,9 @@ def run_genetic_algorithm(
         len(population) == pop_size
     ), f"Population size mismatch {len(population)} != {pop_size}"
 
-    # Clear log file at start
+    # Clear log file at start per spec
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        pass  # Empty file as per spec
+        pass  # Empty file by opening in write mode
 
     for generation in range(generations):
         # Evaluate all agents
@@ -358,7 +358,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. OPTIMIZE CORE STRUCTURE\n2. TRUNCATE EXCESS ELEMENTS\n3. USE LETTERS ONLY\n4. STRICT SIZE LIMITS\n5. ENHANCE ESSENTIAL COMPONENTS",
+                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE VOWEL DENSITY IN FIRST 23\n2. TRUNCATE BEYOND 23 CHARACTERS\n3. LETTERS ONLY\n4. MAX LENGTH 40\n5. ENHANCE STRUCTURAL INTEGRITY",
                     )
                     # Validate and apply response
                     if (
