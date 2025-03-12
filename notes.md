@@ -2,10 +2,10 @@
 # Project Notes
 
 ## Key Learnings
-1. LLM integration requires robust error handling
-2. Mutation rate significantly impacts convergence
-3. Chromosome validation is critical for stability
-4. Fitness function design dominates evolution direction
+- LLM integration requires robust error handling  
+- Mutation rate significantly impacts convergence  
+- Chromosome validation is critical for stability  
+- Fitness function design dominates evolution direction  
 
 ## Current Challenges
 - LLM response consistency for improvement prompts

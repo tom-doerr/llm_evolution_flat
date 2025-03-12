@@ -177,15 +177,16 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
                             raise
                     # Ensure response is valid
                     # Validate response meets requirements
-                    if (isinstance(response, str) and 
-                        len(response) > 0 and 
-                        len(response) <= 40 and
-                        all(c in string.ascii_letters + ' ' for c in response)):
-                        next_gen[i]['chromosome'] = response.strip()[:40]
-                    else:
-                        # If invalid response, mutate instead
-                        next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
-                except (TimeoutError, RuntimeError) as e:
+                    try:
+                        if (isinstance(response, str) and 
+                            len(response) > 0 and 
+                            len(response) <= 40 and
+                            all(c in string.ascii_letters + ' ' for c in response)):
+                            next_gen[i]['chromosome'] = response.strip()[:40]
+                        else:
+                            # If invalid response, mutate instead
+                            next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
+                    except (TimeoutError, RuntimeError) as e:
                     print(f"LLM improvement failed: {str(e)}")
                     # If LLM fails, mutate instead
                     next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])

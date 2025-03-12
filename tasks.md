@@ -1,10 +1,10 @@
 # Genetic Algorithm Task List (Prioritized)
 
-1. Add test coverage for core functions
-2. Develop property-based tests for genetic operations
-3. Create concise console output with Rich formatting
-4. Consider adding crossover rate parameter
-5. Need better error handling for LM timeouts
+- Add test coverage for core functions  
+- Develop property-based tests for genetic operations  
+- Create concise console output with Rich formatting  
+- Consider adding crossover rate parameter  
+- Improve error handling for LM timeouts  
 
 ## Recently Completed
 [x] Add population statistics (mean/median/std)  
