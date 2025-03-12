@@ -169,6 +169,10 @@ def select_parents(population: List[dict]) -> List[dict]:
     )
     return [population[i] for i in selected_indices]
 
+# TODO: Implement mutation rate validation
+# TODO: Add hotspot probability tuning per spec.md
+# TODO: Optimize sliding window statistics calculation
+
 
 
 
