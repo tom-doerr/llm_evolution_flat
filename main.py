@@ -367,8 +367,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8") as _:  # Use _ for unused var
-        pass  # Opening in write mode automatically truncates the file
+    with open("evolution.log", "w", encoding="utf-8") as _:
+        pass  # Clear existing log content
     
     evolution_loop(population, max_population)
 
@@ -403,18 +403,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
                 p=pop_weights
             ))
             population = [population[i] for i in selected_indices]
-        population = evaluate_population(population)
-        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        
-        handle_generation_output({
-            **calculate_window_statistics(fitness_window),
-            'generation': generation,
-            'population_size': len(population),
-            'diversity': calculate_diversity(population),
-            'best': max(a["fitness"] for a in population),
-            'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
-            'worst': min(a["fitness"] for a in population)
-        }, population)
+        population, fitness_window = evaluate_generation(population, fitness_window, generation)
         
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
@@ -509,6 +498,24 @@ if __name__ == "__main__":
         run_genetic_algorithm(pop_size=min(args.pop_size, args.max_population))
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
+
+def evaluate_generation(population: List[dict], fitness_window: list, generation: int) -> tuple:
+    """Evaluate and log generation statistics"""
+    population = evaluate_population(population)
+    new_fitness = [a["fitness"] for a in population]
+    updated_window = update_fitness_window(fitness_window, new_fitness)
+    
+    handle_generation_output({
+        **calculate_window_statistics(updated_window),
+        'generation': generation,
+        'population_size': len(population),
+        'diversity': calculate_diversity(population),
+        'best': max(new_fitness),
+        'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
+        'worst': min(new_fitness)
+    }, population)
+    
+    return population, updated_window
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
