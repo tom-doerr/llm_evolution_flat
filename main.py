@@ -13,10 +13,9 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Completed:
 # 1. Implement generation-based scoring weights
 
-# TODO: Prioritize remaining tasks by spec.md
-# 1. Validate chromosome structure during crossover (HIGH)
-# 2. Implement sliding window statistics (MEDIUM)
-# 3. Address remaining code quality warnings (LOW)
+# TODO: Validate chromosome structure during crossover (HIGH)
+# TODO: Implement sliding window statistics (MEDIUM) 
+# TODO: Address remaining code quality warnings (LOW)
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -332,7 +331,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument c
 
 
 
-def generate_children(parents: List[dict], population: List[dict], pop_size: int) -> List[dict]:  # Removed unused problem param
+def generate_children(
+    parents: List[dict], 
+    population: List[dict], 
+    pop_size: int
+) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     pop_size = min(pop_size, 1_000_000)  # Hard cap
     next_gen = parents.copy()
