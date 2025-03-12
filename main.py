@@ -402,11 +402,9 @@ def run_genetic_algorithm(
         # Validate population state and size
         validate_population_state(best, worst)
         assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
-        pop_size = len(population)  # Track current population size
-        
         # Generate next generation with size monitoring
         parents = select_parents(population)
-        next_gen = generate_children(parents, population, pop_size)
+        next_gen = generate_children(parents, population, len(population))
         print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
         # Auto-adjust mutation rate based on diversity
@@ -429,7 +427,7 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
+def log_population(population, generation, stats, diversity, log_file):
     """Log gzipped population data with rotation"""
     # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
