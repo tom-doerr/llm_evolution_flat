@@ -281,10 +281,10 @@ def get_hotspots(chromosome: str) -> list:
     hotspots = []
     for i, c in enumerate(chromosome):
         # Always include punctuation hotspots
-        if c in {'.', ',', '!', '?', ';', ':'}:
+        if c in HOTSPOT_CHARS:
             hotspots.append(i)
         # Include spaces with 10% probability
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
+        elif c == ' ' and random.random() < HOTSPOT_RANDOM_PROB:
             hotspots.append(i)
         # Small chance to create hotspot anywhere
         elif random.random() < 0.02:  # ~1 hotspot per 50 chars on average
