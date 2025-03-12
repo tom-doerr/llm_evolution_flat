@@ -275,7 +275,8 @@ def run_genetic_algorithm(pop_size: int) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md
-    open("evolution.log", "w", encoding='utf-8').close()
+    with open("evolution.log", "w", encoding='utf-8') as f:
+        pass  # Just truncate the file
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         # Evaluate population and update stats
