@@ -323,8 +323,9 @@ def run_genetic_algorithm(
 
     # Initialize log file path and clear it per spec
     log_file = "evolution.log.gz"
+    # Empty log file per spec.md requirement
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        f.write("")  # Explicitly empty log file
+        pass  # Opening in 'wt' mode truncates existing file
 
     fitness_window = []  # Initialize window
     for generation in range(generations):
