@@ -35,10 +35,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'mean': float(np.nanmean(window_arr)),
         'median': float(np.nanmedian(window_arr)),
         'std': float(np.nanstd(window_arr)),
-        'best_current': float(np.nanmax(window_arr)),
-        'worst_current': float(np.nanmin(window_arr)),
-        'best_window': float(np.nanmax(window_arr)),
-        'worst_window': float(np.nanmin(window_arr))
+        'best': float(np.nanmax(window_arr)),
+        'worst': float(np.nanmin(window_arr))
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
@@ -120,38 +118,28 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
-def calculate_parent_weights(population: List[dict]) -> np.ndarray:
-    """Calculate parent selection weights with Pareto distribution and fitness^2"""
-    assert len(population) > 0, "Cannot calculate weights for empty population"
-    
-    # Combined fitness^2 and Pareto weighting with validation
-    fitness_scores = np.array([a['fitness'] ** 2 for a in population], dtype=np.float64)
-    assert not np.isnan(fitness_scores).any(), "NaN values detected in fitness scores"
-    
-    # Pareto distribution with shape parameter=3.0 as specified (fitness^2 * Pareto)
-    weights = fitness_scores * (np.random.pareto(3.0, len(population)) + 1)
-    
-    # Numeric stability with vectorized operations
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max, axis=0)
-    total = weights.sum()
-    assert total > 0 or len(population) == 0, "Weight total should be positive for non-empty population"
-    return weights / total if total > 0 else np.ones_like(weights)/len(weights)
-
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
     if not population:
         return []
     
-    # Optimized sampling with numpy and weight validation
-    population = population[:MAX_POPULATION]
-    return [
-        population[i] for i in np.random.choice(
-            len(population),
-            size=min(len(population), MAX_POPULATION//2),
-            replace=False,
-            p=calculate_parent_weights(population)
-        )
-    ]
+    # Calculate weights using vectorized operations
+    fitness_scores = np.array([a['fitness'] ** 2 for a in population], dtype=np.float64)
+    pareto_weights = np.random.pareto(3.0, len(population)) + 1
+    weights = fitness_scores * pareto_weights
+    
+    # Numeric stability and normalization
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
+    weights /= weights.sum()
+    
+    # Select without replacement using weighted probabilities
+    selected_indices = np.random.choice(
+        len(population),
+        size=min(len(population), MAX_POPULATION//2),
+        replace=False,
+        p=weights
+    )
+    return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
 MUTATION_RATE = 0.1  # Base mutation probability 
