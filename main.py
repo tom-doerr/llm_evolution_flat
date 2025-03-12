@@ -135,7 +135,7 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     
     # Pareto distribution weighting by fitness^2 per spec.md
     fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = fitness_scores  # Already squared per spec.md
+    pareto_weights = fitness_scores  # Use fitness^2 directly per spec
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
