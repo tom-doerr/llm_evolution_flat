@@ -90,7 +90,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     fitness_values = [agent["fitness"] for agent in population]
     
     # Square fitness values for Pareto weighting as per spec
-    squared_fitness = [f**2 for f in fitness_values]
+    squared_fitness = [max(f, 0)**2 for f in fitness_values]  # Ensure non-negative weights
     total_weight = sum(squared_fitness)
     
     # Fallback to random selection if all weights zero
@@ -142,7 +142,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nRULES:\n1. PRIORITIZE VOWEL DENSITY\n2. REMOVE EXCESS ELEMENTS\n3. ALPHABETIC ONLY\n4. STRICT SIZE LIMITS\n5. ENHANCE CORE ELEMENTS",  # More aligned with hidden goal
+            problem_description=f"{problem}\nCreate a mutated version following standard genetic optimization principles",  # Obfuscated prompt
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
@@ -266,15 +266,16 @@ def run_genetic_algorithm(
             evaluate_agent(agent, problem)
 
         # Track sliding window of last 100 evaluations as per spec
-        window_size = 100
         all_fitness = [agent["fitness"] for agent in population]
+        current_best = max(agent["fitness"] for agent in population)
+        current_worst = min(agent["fitness"] for agent in population)
         
         # Maintain sliding window of last 100 evaluations including best/worst
         if not hasattr(run_genetic_algorithm, "fitness_window"):
             run_genetic_algorithm.fitness_window = []
             
-        # Add best and worst from current population to window
-        window_values = all_fitness + [best["fitness"], worst["fitness"]]
+        # Add current population stats to window
+        window_values = all_fitness + [current_best, current_worst]
         run_genetic_algorithm.fitness_window = (
             run_genetic_algorithm.fitness_window + window_values
         )[-window_size:]
