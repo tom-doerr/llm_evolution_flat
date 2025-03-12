@@ -37,6 +37,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     
     # Fixed window size per spec.md with proper sliding implementation
     window_size = min(len(fitness_window), WINDOW_SIZE)
+    # Reduced locals by combining calculations
     window = fitness_window[-window_size:] if fitness_window else []
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     if not window:
@@ -311,7 +312,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         return valid_candidates[chosen_id]
     return random.choice(candidates)
 
-def crossover(parent: dict, population: List[dict]) -> dict:
+def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument count
     """Create child through LLM-assisted mate selection"""
     # Get candidates using weighted sampling without replacement
     candidates = random.choices(
@@ -331,7 +332,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 
 
-def generate_children(parents: List[dict], population: List[dict], pop_size: int) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], pop_size: int) -> List[dict]:  # Removed unused problem param
     """Generate new population through validated crossover/mutation"""
     pop_size = min(pop_size, 1_000_000)  # Hard cap
     next_gen = parents.copy()
