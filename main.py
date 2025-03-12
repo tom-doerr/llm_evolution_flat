@@ -310,6 +310,7 @@ def evolution_loop(population: List[dict]) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
+        # Population evaluation and stats
         # Evaluate, update and process in combined steps
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
