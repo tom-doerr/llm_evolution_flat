@@ -14,11 +14,11 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # 1. Implement generation-based scoring weights
 
 # TODO List (sorted by priority):
-# 1. Fix undefined variables in stats display
-# 2. Implement sliding window statistics
-# 3. Optimize LLM prompt validation
-# 4. Add mutation rate logging
-# 5. Validate chromosome structure in crossover
+# 1. Implement sliding window statistics (partial)
+# 2. Optimize LLM prompt validation
+# 3. Add mutation rate logging
+# 4. Validate chromosome structure in crossover
+# 5. Improve diversity tracking metrics
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
