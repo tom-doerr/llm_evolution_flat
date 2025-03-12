@@ -255,16 +255,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         
     selected_mate = llm_select_mate(
         parent,
-        [candidates[i] for i in np.random.choice(
-            len(candidates),
-            size=min(5, len(candidates)),
-            replace=False,
-            p=np.array([
-                a['fitness']**2 + 1e-6 
-                for a in candidates 
-                if validate_mating_candidate(a, parent)
-            ])
-        )]
+        random.choices(
+            population=candidates,
+            weights=[a['fitness']**2 + 1e-6 for a in candidates],
+            k=min(5, len(candidates))
+        ) if candidates else []
     )
     
     # Implement spec.md chromosome switching rules
