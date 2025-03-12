@@ -298,8 +298,12 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Trim population first to stay under MAX_POPULATION (spec.md requirement)
-    next_gen = parents[:MAX_POPULATION//2].copy()
+    parents = parents[:MAX_POPULATION//2]
+    next_gen = parents.copy()
     max_children = min(MAX_POPULATION - len(next_gen), len(parents)*2)
+    
+    # Enforce population limit before generation (spec.md requirement)
+    assert len(parents) <= MAX_POPULATION//2, "Parent population exceeds limit"
     
     # Enforce population limit before extending
     assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
