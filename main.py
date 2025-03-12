@@ -135,25 +135,22 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     candidates = population[-WINDOW_SIZE:]
-    weights = [a['fitness']**2 + 1e-6 for a in candidates]
-    total_weight = sum(weights)
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
+    total_weight = weights.sum()
     
-    assert total_weight > 0, "All weights cannot be zero"
-    assert len(candidates) == len(weights), "Candidate/weight length mismatch"
+    if total_weight <= 0:
+        return []
     
-    # Weighted sampling without replacement per spec.md
-    selected = []
-    for _ in range(min(len(population), MAX_POPULATION//2)):
-        idx = random.choices(range(len(candidates)), weights=weights, k=1)[0]
-        selected.append(candidates[idx])
-        # Remove selected candidate and its weight
-        del candidates[idx]
-        del weights[idx]
-        # Re-normalize if any candidates left
-        if candidates:
-            total_weight = sum(weights)
+    # Perform weighted sampling without replacement in one step
+    sample_size = min(len(population), MAX_POPULATION//2)
+    selected_indices = np.random.choice(
+        len(candidates),
+        size=sample_size,
+        replace=False,
+        p=weights/total_weight
+    )
     
-    return selected
+    return [candidates[i] for i in selected_indices]
 
 
 
@@ -317,7 +314,9 @@ def evolution_loop(population: List[dict]) -> None:
     assert MAX_POPULATION == 1_000_000, "Population limit mismatch with spec.md"
     population = population[:MAX_POPULATION]  # Ensure initial population size limit
     fitness_window = []
-    for generation in itertools.count(0):  # Continuous evolution per spec.md
+    
+    # Continuous evolution loop per spec.md
+    for generation in itertools.count(0):
         population = evaluate_population(population)[:MAX_POPULATION]
         
         # Update fitness window with new values
