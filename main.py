@@ -177,7 +177,7 @@ def mutate_with_llm(agent: dict) -> str:
         # Use generator expression for efficient validation
         valid_mutations = (
             str(r).strip()[:40].lower()
-            for r in responses.completions
+            for r in response.completions
             if (len(str(r).strip()) >= 23 
                 and str(r).strip()[:23] == chromosome[:23]
                 and str(r).strip()[:23].count('a') >= chromosome[:23].count('a'))
@@ -379,9 +379,6 @@ if __name__ == "__main__":
     dspy.configure(problem=PROBLEM)
     run_genetic_algorithm(generations=20)
 
-def get_population_limit() -> int:
-    """Get hard population limit from spec"""
-    return MAX_POPULATION
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     diversity = calculate_diversity(population)
@@ -451,6 +448,10 @@ def evaluate_population(population: List[dict]) -> List[dict]:
         evaluate_agent(agent)
     return population
 
+
+def get_population_limit() -> int:
+    """Get hard population limit from spec"""
+    return MAX_POPULATION
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
