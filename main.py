@@ -314,11 +314,23 @@ def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument c
     # Select mate using LLM prompt from qualified candidates
     mate = llm_select_mate(parent, candidates)
     
-    # Combine chromosomes
-    split = random.randint(1, len(parent["chromosome"]) - 1)
-    new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
-    validate_chromosome(new_chromosome)  # Validate during crossover
-    return create_agent(new_chromosome)
+    # Combine chromosomes with core validation
+    min_split = 23 - len(mate["chromosome"]) 
+    split = random.randint(max(1, min_split), len(parent["chromosome"]) - 1)
+    
+    try:
+        new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
+        validate_chromosome(new_chromosome)
+        # Core segment validation for hidden optimization goal
+        if new_chromosome[:23].count('a') < parent["chromosome"][:23].count('a'):
+            raise ValueError("Core 'a' count decreased during crossover")
+            
+        return create_agent(new_chromosome)
+    except (AssertionError, ValueError) as e:
+        if DEBUG_MODE:
+            print(f"Crossover validation failed: {e}, using mutation")
+        # Fallback to mutated parent chromosome
+        return create_agent(mutate(parent["chromosome"]))
 
 
 
@@ -472,6 +484,7 @@ def display_generation_stats(generation: int, generations: int, population: list
 
 
 def create_next_generation(next_gen: List[dict], mutation_rate: float) -> List[dict]:
+    """Create next generation with mutations"""
     """Handle mutation and periodic improvement of new generation"""
     next_gen = apply_mutations(next_gen, mutation_rate)
     return next_gen
