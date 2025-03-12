@@ -183,7 +183,6 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    validate_mutation_rate(agent["mutation_chromosome"])
     chromosome = agent["chromosome"]
     
     # Validate mutation parameters from chromosome
@@ -255,7 +254,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
         return False
 
 class MateSelectionSignature(dspy.Signature):
-    """Select best mate candidate using agent's mating strategy chromosome."""
+    """Select mate using DNA-loaded candidates and mate-selection chromosome (spec.md mating)"""
     parent_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent")
     candidate_chromosomes = dspy.InputField(desc="Potential mates filtered by validation")
     selected_mate = dspy.OutputField(desc="Chromosome of selected mate from candidates list")
@@ -295,12 +294,20 @@ def get_hotspots(chromosome: str) -> list:
     return hotspots or [random.randint(0, len(chromosome)-1)]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
-    """Construct child chromosome with single character switch using parent/mate DNA"""
+    """Construct child chromosome with multiple switches using hotspots (spec.md average 1 per chrom)"""
     p_chrom = parent["chromosome"]
     m_chrom = mate["chromosome"]
-    hotspots = get_hotspots(p_chrom) or [random.randint(0, len(p_chrom)-1)]
-    switch_point = random.choice(hotspots) if hotspots else 0
-    return f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:40]
+    hotspots = get_hotspots(p_chrom)
+    
+    # Create switches at ~1 hotspot per chromosome on average
+    chrom_parts = []
+    last_pos = 0
+    for pos in sorted(random.sample(hotspots, min(len(hotspots), len(p_chrom)//40 + 1))):
+        chrom_parts.append(m_chrom[last_pos:pos+1] if random.random() < 0.5 else p_chrom[last_pos:pos+1])
+        last_pos = pos + 1
+    
+    chrom_parts.append(m_chrom[last_pos:] if random.random() < 0.5 else p_chrom[last_pos:])
+    return ''.join(chrom_parts)[:MAX_CHARS]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
