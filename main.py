@@ -277,7 +277,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         hotspots = random.sample(range(len(parent["chromosome"])), k=1)
     
     # Perform switches at hotspots with vectorized operations
-    parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
     switch_points = sorted(random.sample(hotspots, min(len(hotspots), 1)))
     
@@ -338,7 +337,6 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     population = initialize_population(min(pop_size, max_population))[:max_population]
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
-    # Empty log file at program start per spec.md requirements
     # Empty log file at program start per spec.md requirements
     open("evolution.log", "w", encoding="utf-8").close()
     
