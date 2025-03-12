@@ -277,14 +277,14 @@ def run_genetic_algorithm(pop_size: int) -> None:  # No generations param per sp
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
         # Consolidated stats with window metrics
-        stats = calculate_window_statistics(fitness_window)
-        stats.update({
+        stats = {
+            **calculate_window_statistics(fitness_window),
             'diversity': calculate_diversity(population),
             'generation': iteration,
             'population_size': len(population),
             'best': max(a['fitness'] for a in population),
             'worst': min(a['fitness'] for a in population)
-        })
+        }
         
         log_population(iteration, stats)
         display_generation_stats(iteration, stats)
