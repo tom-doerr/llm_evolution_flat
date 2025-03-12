@@ -233,11 +233,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     )
     
     mate = llm_select_mate(parent, candidates)
+    split_point = random.randint(12, 34)
+    child_chromosome = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
     return create_agent(
-        (parent["chromosome"][:(split_point := random.randint(12, 34))] + 
-         mate["chromosome"][split_point:])[:40] if validate_chromosome(
-             (child := parent["chromosome"][:split_point] + mate["chromosome"][split_point:])
-         ) else mutate(parent["chromosome"])
+        child_chromosome[:40] if validate_chromosome(child_chromosome) 
+        else mutate(parent["chromosome"]))
     )
 
 
