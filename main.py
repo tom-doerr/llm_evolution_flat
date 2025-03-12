@@ -134,7 +134,7 @@ def evaluate_agent(agent: dict) -> float:  # Removed unused problem_description
     # Validation assertions using metrics
     core_segment = metrics['core_segment']
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
-    if metrics['a_count'] == 0:
+    if int(metrics['a_density'] * 23) == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
     # Update agent state
@@ -305,7 +305,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     try:
         chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Extract first number
     except (ValueError, IndexError):
-        if DEBUG:
+        if DEBUG_MODE:
             print(f"Invalid LLM response format: {raw_response}")
         return random.choice(candidates)
         
@@ -324,7 +324,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     )
     
     # Select mate using LLM prompt from qualified candidates
-    mate = llm_select_mate(parent, candidates, problem)
+    mate = llm_select_mate(parent, candidates)
     
     # Combine chromosomes
     split = random.randint(1, len(parent["chromosome"]) - 1)
@@ -364,7 +364,7 @@ def get_population_extremes(population: List[dict]) -> tuple:
 def run_genetic_algorithm(
     generations: int = 10,
     pop_size: int = 1_000_000,
-    log_file: str = "evolution.log.gz"  # Default per spec.md
+    log_file: str = "evolution.log.gz"
 ) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
@@ -386,7 +386,7 @@ def run_genetic_algorithm(
     fitness_window = []  # Initialize window
     for generation in range(generations):
         # Evaluate population
-        population = evaluate_population(population, problem, generation)
+        population = evaluate_population(population)
 
         # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
@@ -441,7 +441,7 @@ def run_genetic_algorithm(
 if __name__ == "__main__":
     PROBLEM = "Optimize string patterns through evolutionary processes"
     dspy.configure(problem=PROBLEM)
-    run_genetic_algorithm(PROBLEM, generations=20)
+    run_genetic_algorithm(generations=20)
 
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
@@ -514,7 +514,7 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     
     return generation
 
-def evaluate_population(population: List[dict], problem: str) -> List[dict]:
+def evaluate_population(population: List[dict]) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
     for agent in population:
         evaluate_agent(agent, problem)
