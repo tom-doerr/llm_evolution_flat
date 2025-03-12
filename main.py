@@ -297,12 +297,18 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         log_population(population, generation, stats)
         display_generation_stats(generation, generations, population, stats)
         
-        population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
-        parents = select_parents(population, fitness_window)
-        population = create_next_generation(
-            generate_children(parents, population),
-            0.8 - (0.7 * calculate_diversity(population))
+        # Trim population with weighted sampling
+        population = sorted(population, key=lambda x: -x['fitness'])
+        fitness_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
+        selected_indices = np.random.choice(
+            len(population),
+            size=min(len(population), MAX_POPULATION),
+            p=fitness_weights/fitness_weights.sum()
         )
+        population = [population[i] for i in selected_indices]
+        
+        parents = select_parents(population, fitness_window)
+        population = create_next_generation(generate_children(parents, population), 0.25)
 
 
 
@@ -313,17 +319,20 @@ if __name__ == "__main__":
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
-    mode = 'wt' if generation == 0 else 'at'
-    with gzip.open("evolution.log.gz", mode, encoding='utf-8') as f:
+    with gzip.open("evolution.log.gz", "at" if generation else "wt", encoding='utf-8') as f:
+        best = max(population, key=lambda x: x['fitness'])
+        worst = min(population, key=lambda x: x['fitness'])
         f.write(f"Generation {generation} | Size: {len(population)} | "
-                f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f}\n")
+                f"Mean: {stats['mean']:.2f} | Best: {best['fitness']:.2f} | "
+                f"Worst: {worst['fitness']:.2f}\n")
 
 def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats"""
+    diversity = calculate_diversity(population)
     Console().print(Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"📊 Mean: {stats['mean']:.2f} | 📈 Best: {stats['best']:.2f}\n"
-        f"🌐 Diversity: {stats['diversity']:.1%} | 👥 Size: {len(population)}",
+        f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}",
         title="Evolution Progress",
         style="blue"
     ))
