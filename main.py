@@ -22,6 +22,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
+debug = False  # Control debug output
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -290,7 +291,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
                 
         except AssertionError as e:
             if debug:
-                # print(f"Invalid candidate rejected: {str(e)}")
+            # print(f"Invalid candidate rejected: {str(e)}")
     
     if not valid_candidates:
         raise ValueError(f"No valid mates among {len(candidates)} candidates")
