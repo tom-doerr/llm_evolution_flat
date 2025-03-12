@@ -166,53 +166,34 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 def mutate_with_llm(chromosome: str) -> str:
-    """Mutate chromosome using LLM-based rephrasing"""
-    def validate_mutation(response):
-        """Validate mutation maintains core requirements"""
-        result = str(response).strip()
-        if (len(result) < 23 or len(result) > 40 or 
-            not re.match(r"^[A-Za-z]{23,40}$", result) or
-            result[:23].count('a') < chromosome[:23].count('a')):
-            raise ValueError(f"Invalid mutation: {result}")
-        return result
-
+    """Mutate chromosome using LLM-based rephrasing with optimized prompt"""
+    # Core validation checks
+    assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
+    assert chromosome.isalpha(), "Invalid characters in chromosome"
+    
     mutate_prompt = dspy.Predict(
-        "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
-        validate_output=validate_mutation,
-        instructions="MUTATION RULES:\n1. Preserve/exceed 'a' count in first 23 chars\n2. Change 2-3 characters\n3. Maintain 23-40 length\n4. Letters only\n5. Maximize structural score"
+        "chromosome -> mutated_chromosome",
+        instructions="Change 2-3 letters. Keep first 23 chars. Letters only. Length 23-40."
     )
     try:
-        # Strict input validation
-        # Problem parameter removed per spec.md's "completely unguided" requirement
-        assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-        assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
-        response = mutate_prompt(
-            original_chromosome=f"Original: {chromosome[:40]}\n"
-                              "Mutation Rules:\n"
-                              "1. Modify exactly 2-3 characters\n"
-                              "2. Preserve first 23 characters\n"
-                              "3. Use only letters/spaces\n"
-                              "4. Length 23-40\n"
-                              "5. Enhance core segment quality\n"
-                              "Mutated Version: ",
-        )
-        # Extract and validate mutation
-        mutated = str(response.mutated_chromosome).strip()[:40]
-        mutated = ''.join([c.lower() for c in mutated if c.isalpha()])
+        response = mutate_prompt(chromosome=chromosome)
+        mutated = str(response.mutated_chromosome).strip()[:40].lower()
         
-        # Core validation for hidden optimization goal
-        assert mutated[:23].count('a') >= 1, "Mutation lost core 'a' requirement"
-        mutated = mutated.ljust(23, 'a')[:40]  # Pad with a's if needed
-        
-        # Structured validation
-        if not (23 <= len(mutated) <= 40 and mutated.isalpha()):
-            raise ValueError(f"Invalid mutation: {mutated}")
-        
-        return mutated
-    except (TimeoutError, RuntimeError, AssertionError):
-        print("Mutation failed: Validation error")
-        # Fallback to random mutation without recursion
-        return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
+        # Validate and return or retry once
+        if (23 <= len(mutated) <= 40 and 
+            mutated.isalpha() and 
+            mutated[:23].count('a') >= chromosome[:23].count('a')):
+            return mutated
+    except Exception as e:
+        if DEBUG_MODE:
+            print(f"Mutation error: {e}")
+            
+    # Fallback to minimal mutation preserving 'a' count        
+    chars = list(chromosome)
+    for _ in range(2):
+        idx = random.randint(23, len(chars)-1)
+        chars[idx] = random.choice(string.ascii_letters.lower())
+    return ''.join(chars)
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
@@ -230,49 +211,27 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
         return False
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
-    """Select mate using LLM prompt with validated candidate chromosomes"""
-    parent_chrom = validate_chromosome(parent["chromosome"])
-    assert parent["fitness"] > 0, "Parent must have positive fitness"
-
-    # Validate candidates in single pass
+    """Select mate using fitness-weighted sampling without replacement"""
+    # Filter valid candidates once
     valid_candidates = [
         c for c in candidates 
-        if (validate_chromosome(c["chromosome"]) != parent_chrom 
-            and 23 <= len(c["chromosome"]) <= 40
-            and c["fitness"] > 0)
+        if c["chromosome"] != parent["chromosome"] 
+        and c["fitness"] > 0
     ]
-
-    if DEBUG_MODE and not valid_candidates:
-        print(f"No valid mates among {len(candidates)} candidates")
     
     if not valid_candidates:
-        raise ValueError(f"No valid mates among {len(candidates)} candidates")
-    
-    # Create indexed list of first 23 chars (core segment)
-    candidate_list = [f"{idx}: {c['chromosome'][:23]} (fitness: {c['fitness']})" 
-                    for idx, c in enumerate(valid_candidates)]
-    
-    # LLM selection with validation constraints
-    prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
-    response = prompt(
-        parent_chromosome=validate_chromosome(parent["chromosome"]),
-        candidates="\n".join(candidate_list),
-        problem="SELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY",
-    )
-    
-    # Parse and validate selection with error handling
-    raw_response = str(response.best_candidate_id).strip()
-    try:
-        chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Extract first number
-    except (ValueError, IndexError):
-        if DEBUG_MODE:
-            print(f"Invalid LLM response format: {raw_response}")
-        return random.choice(candidates)
+        raise ValueError("No valid mates")
         
-    # Validate selection is within range
-    if 0 <= chosen_id < len(valid_candidates):
-        return valid_candidates[chosen_id]
-    return random.choice(candidates)
+    # Use numpy for weighted sampling without replacement
+    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
+    weights /= weights.sum()
+    
+    selected_idx = np.random.choice(
+        len(valid_candidates), 
+        p=weights,
+        replace=False
+    )
+    return valid_candidates[selected_idx]
 
 def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument count
     """Create child through LLM-assisted mate selection"""
