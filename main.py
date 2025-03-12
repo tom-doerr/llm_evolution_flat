@@ -30,10 +30,9 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
-    window = fitness_window[-WINDOW_SIZE:] if fitness_window else []
-    window = window[-WINDOW_SIZE:]  # Ensure exact window size
+    window = fitness_window[-WINDOW_SIZE:]  # Strictly last 100 evals
     
-    if not window:
+    if len(window) < WINDOW_SIZE:
         return {
             'mean': 0.0, 'median': 0.0, 'std': 0.0,
             'best_current': 0.0, 'worst_current': 0.0,
