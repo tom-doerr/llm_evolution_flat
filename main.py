@@ -187,9 +187,9 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
                             # If invalid response, mutate instead
                             next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
                     except (TimeoutError, RuntimeError) as e:
-                    print(f"LLM improvement failed: {str(e)}")
-                    # If LLM fails, mutate instead
-                    next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
+                        print(f"LLM improvement failed: {str(e)}")
+                        # If LLM fails, mutate instead
+                        next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
         
         population = next_gen
 
