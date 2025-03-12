@@ -104,8 +104,9 @@ def evaluate_agent(agent: dict) -> float:
     metrics = score_chromosome(chromosome)
     # Fitness calculation simplified 
     # Calculate fitness based on hidden a-count optimization
-    fitness = (2 * metrics['a_density'] * 23 - 23) - (len(chromosome) - 23) 
-    fitness = np.sign(fitness) * (fitness ** 2)
+    a_count = metrics['a_density'] * 23
+    len_chromosome = len(chromosome)
+    fitness = (a_count * 2 - 23) - (len_chromosome - 23)  # Direct calculation per spec.md
     
     # Validation
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
@@ -266,9 +267,10 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def log_and_display(stats: dict) -> None:
+def log_and_display(stats: dict, population: list) -> None:
     """Combined logging and display operations"""
-    log_and_display(stats)
+    log_population(stats)
+    display_generation_stats(stats)
     validate_population_extremes(population)
 
 def validate_population_extremes(population: List[dict]) -> None:
