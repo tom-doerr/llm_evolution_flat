@@ -180,29 +180,22 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    mutation_chrom = agent["mutation_chromosome"]
+    # Combined extraction, prediction and validation in streamlined operations
+    mc = agent["mutation_chromosome"]
+    temp, top_p = (max(0.0, min(1.0, float(mc[i:i+3] or d)) for i, d in ((0, '0.7'), (3, '0.9'))
     
-    # Combined parameter extraction and validation with tuple unpacking
-    temperature, top_p = (
-        max(0.0, min(1.0, float(mutation_chrom[i:i+3] or default)))
-        for i, default in ((0, '0.7'), (3, '0.9'))
-    )
-    
-    response = dspy.Predict(MutateSignature)(
-        chromosome=chromosome,
-        instructions=mutation_chrom,
-        temperature=temperature,
-        top_p=top_p,
-    )
-    
-    # Validate mutations with generator expression
-    valid_mutations = (
+    return next((
         str(r).strip()[:40].lower()
-        for r in response.completions
+        for r in dspy.Predict(MutateSignature)(
+            chromosome=chromosome,
+            instructions=mc,
+            temperature=temp,
+            top_p=top_p,
+        ).completions
         if (len(str(r).strip()) >= 23 
             and str(r).strip().startswith(chromosome[:23].lower())
             and str(r).strip()[:23].count('a') >= chromosome[:23].count('a'))
-    )
+    ), chromosome[:23] + ''.join(random.choices(string.ascii_letters.lower(), k=max(0, len(chromosome)-23)))
 
     # Return first valid mutation or fallback
     return next(valid_mutations, 
@@ -290,10 +283,9 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
-    p_chrom = parent["chromosome"]
-    hotspots = get_hotspots(p_chrom)
-    return f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] \
-        if (switch := random.choice(hotspots)) else p_chrom
+    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
+    switch = random.choice(get_hotspots(p_chrom))
+    return f"{p_chrom[:switch]}{m_chrom[switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] if switch else p_chrom
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
@@ -376,17 +368,15 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     """Calculate and return updated statistics for current generation"""
     fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
+    new_fitness = [a["fitness"] for a in evaluated_pop]
     
-    # Use generator expressions and combined operations
-    stats = {
+    return ({
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        **calculate_window_statistics(
-            update_fitness_window(fitness_window, [a["fitness"] for a in evaluated_pop])
-        ),
+        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitness)),
         **extreme_values(evaluated_pop)
-    }
+    }, fitness_window[-WINDOW_SIZE:])
     
     return stats, fitness_window[-WINDOW_SIZE:]
 
@@ -395,14 +385,12 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        # Continuous population trimming per spec.md (no generations)
-        if len(population) > max_population:
-            weights = [a['fitness']**2 + 1e-6 for a in population]
-            population = random.choices(
-                population,
-                weights=weights,
-                k=max_population
-            )
+        # Continuous population trimming with combined operations
+        population = (random.choices(population, 
+                      weights=[a['fitness']**2 + 1e-6 for a in population], 
+                      k=max_population) 
+                      if len(population) > max_population else population)
+        
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
