@@ -1,7 +1,7 @@
-import dspy
 import random
 import string
 from typing import List
+import dspy
 
 # Configure DSPy with OpenRouter
 lm = dspy.LM('openrouter/google/gemini-2.0-flash-001')
@@ -17,7 +17,7 @@ def create_agent(chromosome: str) -> dict:
         'fitness': 0.0
     }
 
-def evaluate_agent(agent: dict, problem_description: str) -> float:
+def evaluate_agent(agent: dict, _problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
     # Ensure chromosome is a string and limit length to 40 characters
     chromosome = str(agent['chromosome'])[:40]
@@ -53,7 +53,6 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome by replacing one random character"""
-    import random
     idx = random.randint(0, len(chromosome)-1)
     new_char = random.choice(string.ascii_letters + ' ')
     return chromosome[:idx] + new_char + chromosome[idx+1:]
