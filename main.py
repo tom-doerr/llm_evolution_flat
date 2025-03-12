@@ -150,7 +150,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     ranks = np.arange(1, len(sorted_pop) + 1)
     
     # Calculate weights using fitness^2 and Pareto distribution
-    weights = (np.array([a['fitness']**2 for a in sorted_pop]) / ranks**2
+    weights = (np.array([a['fitness']**2 for a in sorted_pop]) / ranks**2)
     weights /= weights.sum()
     
     # Validate and select
@@ -162,10 +162,6 @@ def select_parents(population: List[dict]) -> List[dict]:
         p=weights
     )
     return [sorted_pop[i] for i in selected_indices]
-    
-    # Validate selection size
-    assert len(selected_parents) == len(population)//2, "Parent selection size mismatch"
-    return selected_parents
 
 
 
