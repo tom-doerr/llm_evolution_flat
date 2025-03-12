@@ -253,7 +253,8 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     ).selected_mate
 
     # Find best match from LLM response
-    return max(valid, key=lambda x: x["chromosome"].lower().startswith(result.lower()))
+    return max((c for c, _ in weighted_candidates), 
+              key=lambda x: x["chromosome"].lower().startswith(result.lower()))
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
