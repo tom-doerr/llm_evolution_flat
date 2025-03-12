@@ -340,17 +340,21 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
+def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     div_ratio = calculate_diversity(generation)
-    mut_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
+    rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     
-    return [{
+    mutated = [{
         **agent,
         "chromosome": (mutate(agent["chromosome"]) 
-            if random.random() < mut_rate 
+            if random.random() < rate 
             else agent["chromosome"])
     } for agent in generation]
+
+    unique = len({a["chromosome"] for a in mutated})
+    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} U:{unique}/{len(generation)}")
+    return mutated
 
 
 
