@@ -86,24 +86,19 @@ def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
     chromosome = validate_chromosome(chromosome)
     assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds max"
-    assert all(
-        c in string.ascii_letters + " " for c in chromosome
-    ), "Invalid characters in chromosome"
-    if not chromosome:
-        # Fallback to random chromosome if empty
-        length = random.randint(20, 40)
-        chromosome = "".join(random.choices(string.ascii_letters + " ", k=length))
-    # Split into three specialized chromosomes per spec.md
-    task_chrom = chromosome[:23]
-    remaining = chromosome[23:] if len(chromosome) > 23 else ''
-    mate_chrom = remaining[:17] if len(remaining) >= 17 else remaining.ljust(17, ' ')
-    mutation_chrom = remaining[17:] if len(remaining) > 17 else ''
+    assert all(c in string.ascii_letters + " " for c in chromosome), "Invalid characters"
     
+    # Generate random chromosome if empty
+    if not chromosome:
+        chromosome = "".join(random.choices(string.ascii_letters + " ", 
+                                k=random.randint(20, 40)))
+    
+    # Split into three specialized chromosomes per spec.md
     return {
         "chromosome": chromosome,
-        "task_chromosome": task_chrom,
-        "mate_selection_chromosome": mate_chrom[:17],
-        "mutation_chromosome": mutation_chrom[:20],
+        "task_chromosome": chromosome[:23],
+        "mate_selection_chromosome": (chromosome[23:40].ljust(17, ' ')[:17]),
+        "mutation_chromosome": chromosome[40:60][:20],  # Handles overflow safely
         "fitness": 0.0
     }
 
