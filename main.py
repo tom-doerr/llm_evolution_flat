@@ -258,7 +258,7 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
         
         return mutated
     except (TimeoutError, RuntimeError, AssertionError) as ex:
-        print(f"Mutation failed: {str(ex)}")
+        print("Mutation failed: Validation error")  # Fixed undefined 'ex' reference
         # Fallback to random mutation without recursion
         return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
