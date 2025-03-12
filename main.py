@@ -280,14 +280,13 @@ def run_genetic_algorithm(pop_size: int) -> None:
         log_population(stats)
         display_generation_stats(stats)
         
-        # Inlined population extremes validation
-        sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
-        validate_population_state(sorted_pop[0], sorted_pop[-1])
+        # Validate population extremes with inline sorting
+        validate_population_state(
+            sorted(population, key=lambda x: x["fitness"], reverse=True)[0],
+            sorted(population, key=lambda x: x["fitness"])[0]
+        )
         
-        population = generate_children(
-            select_parents(population),
-            population
-        )[:MAX_POPULATION]
+        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
         generation += 1
 
 
