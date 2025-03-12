@@ -136,32 +136,21 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using sliding window of fitness^2 weighted sampling"""
-    # Get sliding window of recent evaluations
-    window_size = min(WINDOW_SIZE, len(population))
-    candidates = population[-window_size:]
+    """Select parents using fitness-weighted sampling without replacement"""
+    weights = np.array([a['fitness']**2 for a in population], dtype=np.float64)
     
-    # Calculate Pareto distribution weights from spec.md
-    fitness_values = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_values))  # Pareto distribution
-    weights = pareto_weights / pareto_weights.sum()
+    if np.sum(weights) <= 0:  # Handle zero fitness case
+        weights = np.ones(len(population)) / len(population)
+    else:
+        weights /= weights.sum()
     
-    # Calculate selection size using square root scaling
-    selection_size = min(
-        int(np.sqrt(len(population))),  # Square root scaling
-        len(candidates)
-    )
-    
-    # Perform weighted sampling without replacement using latest numpy method
-    selected_indices = np.random.default_rng().choice(
-        len(candidates),
-        size=selection_size,
+    selected_idx = np.random.choice(
+        len(population),
+        size=min(len(population)//2, MAX_POPULATION),
         p=weights,
-        replace=False,
-        shuffle=False
+        replace=False
     )
-    
-    return [candidates[i] for i in selected_indices]
+    return [population[i] for i in selected_idx]
 
 
 
