@@ -136,7 +136,7 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
         size=min(len(candidates)//2, MAX_POPULATION),
         p=weights/np.sum(weights),
         replace=False
-    ))]
+    )]  # Fixed extra parenthesis that caused syntax error
 
 
 
