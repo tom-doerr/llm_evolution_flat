@@ -345,12 +345,11 @@ def run_genetic_algorithm(pop_size: int) -> None:
     with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates unused var
         pass  # Just opening in write mode truncates the file
     
-    evolution_loop(population)
+    evolution_loop(population, max_population)
 
-def evolution_loop(population: List[dict]) -> None:
+def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop separated to reduce statement count"""
-    assert MAX_POPULATION == 1_000_000, "Population limit mismatch with spec.md"
-    population = population[:MAX_POPULATION]
+    population = population[:max_population]
     fitness_window = []
     
     for generation in itertools.count(0):
@@ -385,7 +384,10 @@ if __name__ == "__main__":
                        help='Maximum population size (per spec.md)')
     args = parser.parse_args()
     
-    run_genetic_algorithm(pop_size=min(args.pop_size, args.max_population))
+    run_genetic_algorithm(
+        pop_size=min(args.pop_size, args.max_population),
+        max_population=args.max_population
+    )
     assert args.max_population <= MAX_POPULATION, "Max population exceeds spec limit"
 
 def log_population(stats: dict) -> None:
