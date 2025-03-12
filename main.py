@@ -258,16 +258,14 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     selected_mate = llm_select_mate(
         parent,
         [candidates[i] for i in np.random.choice(
-            len([c for c in candidates if validate_mating_candidate(c, parent)]),
+            len(candidates),
             size=min(5, len(candidates)),
             replace=False,
-            # Weight by fitness^2 with Pareto distribution as per spec.md
-            np.array([
-                a['fitness']**2 * np.random.pareto(2) + 1e-6 
-                for a in candidates 
+            p=np.array([
+                (a['fitness']**2 * (np.random.pareto(2) + 1e-6)
+                for a in candidates
                 if validate_mating_candidate(a, parent)
-            ])
-            p = weights_array / weights_array.sum() if weights_array.sum() > 0 else np.ones(len(weights_array)) / len(weights_array)
+            ])/sum(a['fitness']**2 * (np.random.pareto(2) + 1e-6) for a in candidates if validate_mating_candidate(a, parent))
         )
     )
     
@@ -283,6 +281,8 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         hotspots = random.sample(range(len(parent_chrom)), k=1)
     
     # Perform switches at hotspots
+    parent_chrom = parent["chromosome"]
+    mate_chrom = selected_mate["chromosome"]
     child_chrom = []
     last_switch = 0
     for switch_point in sorted(random.sample(hotspots, min(len(hotspots), 1))):
