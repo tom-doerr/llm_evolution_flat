@@ -19,8 +19,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # HIGH:
 # TODO: Implement sliding window mate selection using fitness window
 # TODO: Optimize LLM prompt performance with batch processing
-# MEDIUM:
-# TODO: Fix remaining function argument counts
 # LOW:
 # TODO: Add chromosome compression for storage
 
@@ -323,6 +321,7 @@ def run_genetic_algorithm(
     fitness_window = []
 
     # Clear log file at start per spec
+    log_file = "evolution.log.gz"
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
         f.write("")  # Explicitly empty log file
 
