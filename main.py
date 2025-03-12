@@ -181,9 +181,13 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate_with_llm(chromosome: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with strict validation"""
+    # Validate mutation preserves core optimization rules
     mutate_prompt = dspy.structured.StructuredPrompt(
         "original_chromosome: str -> mutated_chromosome: str",
-        validate_output=lambda x: re.match(r"^[A-Za-z]{23,40}$", x))
+        validate_output=lambda x: (
+            re.match(r"^[A-Za-z]{23,40}$", x) and 
+            x[:23].count('a') >= 1  # Hidden goal enforcement
+        ))
     try:
         # Strict input validation
         problem = dspy.settings.get("problem")
