@@ -134,9 +134,9 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     window = fitness_window[-WINDOW_SIZE:]
     candidates = [a for a in population if a['fitness'] in window]
     
-    # Combined Pareto weighting and sampling in one step
-    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64) ** 2  # Squared per spec
-    ranked_weights = 1.0 / (1.0 + np.argsort(-fitness_scores))
+    # Pareto distribution weighting by fitness^2 per spec.md
+    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    pareto_weights = np.random.pareto(fitness_scores, size=len(fitness_scores))
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
@@ -174,10 +174,10 @@ def mutate_with_llm(agent: dict) -> str:
     )
 
     # Return first valid mutation or fallback
-    return next(valid_mutations, 
+    return next(valid_mutations,
         chromosome[:23] + ''.join(random.choices(
             string.ascii_letters.lower(), 
-            k=max(0, len(chromosome)-23
+            k=max(0, len(chromosome)-23)
         ))
     )
 
@@ -286,8 +286,7 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)
     fitness_window = []
 
-    with gzip.open("evolution.log.gz", "wt", encoding="utf-8") as f:
-        pass  # Clear log file
+    open("evolution.log", "w").close()  # Empty log file per spec.md
 
     for generation in range(generations):
         population = evaluate_population(population)
