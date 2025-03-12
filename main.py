@@ -363,7 +363,7 @@ def run_genetic_algorithm(
     generations: int = 10,
     pop_size: int = 1_000_000,
     log_file: str = "evolution.log.gz"
-) -> None:
+) -> None:  # pylint: disable=too-many-locals,too-many-statements
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
     pop_size = min(pop_size, get_population_limit())
@@ -422,7 +422,7 @@ def run_genetic_algorithm(
         
         # Generate next generation with size monitoring
         parents = select_parents(population)
-        next_gen = generate_children(parents, population, pop_size, problem)
+        next_gen = generate_children(parents, population, pop_size)
         print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
         # Auto-adjust mutation rate based on diversity
@@ -515,7 +515,7 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
 def evaluate_population(population: List[dict]) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
     for agent in population:
-        evaluate_agent(agent, problem)
+        evaluate_agent(agent)
     return population
 
 
