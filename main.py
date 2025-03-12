@@ -7,6 +7,8 @@ from rich.console import Console
 from rich.panel import Panel
 import dspy
 
+MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
+
 # Completed:
 # 1. Implement generation-based scoring weights
 
