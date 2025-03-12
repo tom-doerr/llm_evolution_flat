@@ -232,23 +232,25 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
+    # Combined candidate selection and weighting
+    window = population[-WINDOW_SIZE:]
     candidates = random.choices(
-        population[-WINDOW_SIZE:],
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
+        window,
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in window]),
         k=min(5, len(population))
     )
     
+    # Create child with validation
     mate = llm_select_mate(parent, candidates)
+    child_chromosome = (
+        parent["chromosome"][:(split_point := random.randint(12, 34))] +  # Walrus operator
+        mate["chromosome"][split_point:]
+    )[:40]
     
-    # Combine chromosomes with single crossover point
-    split_point = random.randint(12, 34)  # Favor middle section per spec.md hotspots
-    child = (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
-    
-    try:
-        validate_chromosome(child)
-        return create_agent(child)
-    except AssertionError:
-        return create_agent(mutate(parent["chromosome"]))
+    return create_agent(
+        child_chromosome if validate_chromosome(child_chromosome) 
+        else mutate(parent["chromosome"])
+    )
 
 
 
@@ -316,14 +318,13 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, stats: dict, population: list) -> None:
+def display_generation_stats(stats: dict, diversity: float, pop_count: int) -> None:
     """Rich-formatted display with essential stats"""
-    diversity = calculate_diversity(population)
     Console().print(Panel(
-        f"[bold]Gen {generation}[/]\n"
+        f"[bold]Gen {stats['generation']}[/]\n"  # Get generation from stats
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
-        f"Δ{diversity:.0%} 👥{len(population)}/{MAX_POPULATION}",
+        f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
         title="Evolution Progress",
         style="blue"
     ))
