@@ -289,15 +289,17 @@ def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
-        fitnesses = [a["fitness"] for a in population]
         
         stats = {
             'generation': generation,
             'population_size': len(population),
             'diversity': calculate_diversity(population),
-            **calculate_window_statistics(fitnesses[-WINDOW_SIZE:])
+            **calculate_window_statistics([a["fitness"] for a in population][-WINDOW_SIZE:])
         }
-        stats.update({'best': max(fitnesses), 'worst': min(fitnesses)})
+        stats.update({
+            'best': max(a["fitness"] for a in population),
+            'worst': min(a["fitness"] for a in population)
+        })
         
         # Handle logging/display in one step
         log_and_display(stats)
