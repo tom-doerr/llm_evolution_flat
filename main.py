@@ -36,8 +36,9 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations"""
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
     
-    # Fixed window size per spec.md
-    window = fitness_window[-100:] if len(fitness_window) >= 100 else fitness_window.copy()
+    # Fixed window size per spec.md with proper sliding implementation
+    window_size = min(len(fitness_window), WINDOW_SIZE)
+    window = fitness_window[-window_size:] if fitness_window else []
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
@@ -115,7 +116,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str) -> float:
+def evaluate_agent(agent: dict) -> float:  # Removed unused problem_description
     """Evaluate agent fitness based on hidden optimization target"""
     chromosome = str(agent["chromosome"])
     assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
@@ -232,8 +233,8 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
             raise ValueError(f"Invalid mutation: {mutated}")
         
         return mutated
-    except (TimeoutError, RuntimeError, AssertionError) as ex:
-        print("Mutation failed: Validation error")  # Fixed undefined 'ex' reference
+    except (TimeoutError, RuntimeError, AssertionError):
+        print("Mutation failed: Validation error")
         # Fallback to random mutation without recursion
         return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
