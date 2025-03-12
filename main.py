@@ -319,8 +319,7 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def run_genetic_algorithm(
     generations: int = 10,
-    pop_size: int = 1_000_000,
-    fitness_window: list = None
+    pop_size: int = 1_000_000
 ) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Remove unused window_size per issues.txt
@@ -348,9 +347,10 @@ def run_genetic_algorithm(
         stats = calculate_window_statistics(fitness_window)
         
         # Get population extremes
-        best = get_population_extremes(population)[0]
+        best, worst = get_population_extremes(population)
 
         # Calculate and log population statistics using sliding window
+        validate_population_state(best, worst)
         current_diversity = calculate_diversity(population)
         log_population(population, generation, stats)
 
