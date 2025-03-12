@@ -162,16 +162,8 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    # Pure LLM-based mutation per spec
-    try:
-        return mutate_with_llm(chromosome, PROBLEM)
-    except Exception as e:
-        # Fallback to single random character change
-        idx = random.randint(0, len(chromosome) - 1)
-        new_char = random.choice(string.ascii_letters + " ")
-        return chromosome[:idx] + new_char + chromosome[idx + 1 :]
-
-    return new_chromosome
+    # Pure LLM-based mutation per spec - no fallbacks allowed
+    return mutate_with_llm(chromosome, PROBLEM)
 
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
@@ -361,5 +353,5 @@ def run_genetic_algorithm(
 
 
 if __name__ == "__main__":
-    PROBLEM = "Maximize fitness through genetic evolution"  # Neutral description per spec
+    PROBLEM = "Optimize string patterns through evolutionary processes"  # Obfuscated description
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)  # More meaningful test population
