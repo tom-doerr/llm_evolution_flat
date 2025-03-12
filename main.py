@@ -65,13 +65,18 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Calculate metrics with optimized vectorized operations
-    a_count = sum(1 for c in core if c == 'a')
-    repeats = sum(1 for i in range(22) if core[i] == core[i+1])
+    # Count 'a's and repeating characters in one pass
+    counts = {'a_count': 0, 'repeats': 0, 'prev': None}
+    for i, c in enumerate(core):
+        if c == 'a':
+            counts['a_count'] += 1
+        if i > 0 and c == counts['prev']:
+            counts['repeats'] += 1
+        counts['prev'] = c
     
     return {
-        'a_density': a_count / 23,
-        'repeating_pairs': repeats / 22,
+        'a_density': counts['a_count'] / 23,
+        'repeating_pairs': counts['repeats'] / 22,
         'core_segment': core
     }
 
@@ -168,7 +173,7 @@ def mutate_with_llm(agent: dict) -> str:
     
     try:
         # Batch process and validate mutations in one step
-        responses = dspy.Predict(MutateSignature)(
+        response = dspy.Predict(MutateSignature)(
             chromosome=[chromosome]*3,  # Batch of 3
             instructions=[agent.get("mutation_chromosome", 
                                  "Change 1-2 characters after position 23 while keeping first 23 intact")]*3,
