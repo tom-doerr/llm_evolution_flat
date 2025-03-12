@@ -235,14 +235,17 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         k=min(5, len(population))
     ))
     
-    switch_prob = 1/len(parent["chromosome"])
+    # Simplified chromosome switching with zip_longest and list comprehension
+    parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
-    hotspots = {'.', '!', '?', ' '}
+    switch_prob = 1/len(parent_chrom)
     
-    return create_agent(''.join(
-        mate_chrom[i] if (random.random() < switch_prob or c in hotspots) else c
-        for i, c in enumerate(parent["chromosome"])
-    )[:40])
+    return create_agent(''.join([
+        (m_char if m_char else ' ') 
+        if (random.random() < switch_prob or p_char in {'.', '!', '?', ' '}) 
+        else p_char
+        for p_char, m_char in itertools.zip_longest(parent_chrom, mate_chrom, fillvalue=' ')
+    ])[:40])
 
 
 
