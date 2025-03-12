@@ -22,7 +22,7 @@ class GeneticAgent:
             # Try to extract a numeric score from the response
             try:
                 # Look for a number between 0 and 10 in the response
-                self.fitness = float(next((word for word in response.split() if word.replace('.', '').isdigit()), 1.0)
+                self.fitness = float(next((word for word in response.split() if word.replace('.', '').isdigit()), 1.0))
                 # Ensure fitness is between 0 and 10
                 self.fitness = max(0.0, min(10.0, self.fitness))
                 return self.fitness
