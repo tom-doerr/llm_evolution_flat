@@ -292,9 +292,9 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_genetic_algorithm(initial_pop_size: int) -> None:
+def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    population = initialize_population(min(initial_pop_size, MAX_POPULATION))[:MAX_POPULATION]
+    population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md
@@ -345,7 +345,7 @@ if __name__ == "__main__":
                        help='Maximum population size (per spec.md)')
     args = parser.parse_args()
     
-    run_genetic_algorithm(initial_pop_size=args.pop_size)
+    run_genetic_algorithm(pop_size=min(args.pop_size, args.max_population))
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format"""
