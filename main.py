@@ -127,12 +127,11 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
-def select_parents(population: List[dict]) -> List[dict]:  # fitness_window removed per spec.md
+def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using fitness^2 weighted sampling without replacement"""
     candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
-    sum_weights = np.sum(weights) + 1e-6
-    probs = weights / sum_weights
+    probs = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
+    probs /= np.sum(probs) + 1e-6  # Combine normalization steps
     
     return list(np.random.choice(
         candidates,
@@ -342,14 +341,14 @@ def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     div_ratio = calculate_diversity(generation)
     rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     
-    # Simplified mutation application
-    mutated = []
-    for agent in generation:
-        chrom = mutate(agent["chromosome"]) if random.random() < rate else agent["chromosome"]
-        mutated.append({**agent, "chromosome": chrom})
-
-    unique = len({a["chromosome"] for a in mutated})
-    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} Unique:{unique}")
+    # Use list comprehension to reduce locals
+    mutated = [
+        {**agent, "chromosome": mutate(agent["chromosome"]) 
+        if random.random() < rate else agent["chromosome"]
+        for agent in generation
+    ]
+    
+    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} Unique:{len({a['chromosome'] for a in mutated})")
     return mutated
 
 
