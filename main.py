@@ -38,15 +38,15 @@ def calculate_window_statistics(fitness_window: list) -> dict:
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
 
     arr = np.array(window, dtype=np.float64)
-    return dict(
-        mean=float(np.nanmean(arr)),
-        median=float(np.nanmedian(arr)),
-        std=float(np.nanstd(arr)),
-        best=float(np.nanmax(arr)),
-        worst=float(np.nanmin(arr)),
-        q25=float(np.nanpercentile(arr, 25)),
-        q75=float(np.nanpercentile(arr, 75))
-    )
+    return {
+        "mean": float(np.nanmean(arr)),
+        "median": float(np.nanmedian(arr)),
+        "std": float(np.nanstd(arr)),
+        "best": float(np.nanmax(arr)),
+        "worst": float(np.nanmin(arr)),
+        "q25": float(np.nanpercentile(arr, 25)),
+        "q75": float(np.nanpercentile(arr, 75))
+    }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
@@ -225,17 +225,17 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    window_pop = population[-WINDOW_SIZE:]
+    # Reduced locals by combining steps
     candidates = random.choices(
-        window_pop,
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in window_pop]),
+        population[-WINDOW_SIZE:],
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
         k=min(5, len(population))
     )
     
-    mate = llm_select_mate(parent, candidates)
-    split_point = random.randint(12, 34)
+    selected_mate = llm_select_mate(parent, candidates)
     return create_agent(
-        (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
+        (parent["chromosome"][:(split_point := random.randint(12, 34))] + 
+         selected_mate["chromosome"][split_point:])[:40]
     )
 
 
@@ -260,7 +260,7 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
+def run_genetic_algorithm(pop_size: int) -> None:  # Remove default per spec's continuous evolution
     """Run continuous genetic algorithm per spec.md"""
     pop_size = min(pop_size, MAX_POPULATION)
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
@@ -290,13 +290,11 @@ def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
-    parser.add_argument('--generations', type=int, default=20,
-                       help='Number of generations to run')
     parser.add_argument('--pop-size', type=int, default=1000,
                        help='Initial population size')
     args = parser.parse_args()
     
-    run_genetic_algorithm(generations=args.generations, pop_size=args.pop_size)
+    run_genetic_algorithm(pop_size=args.pop_size)
 
 def log_population(generation: int, stats: dict) -> None:
     """Log population data with rotation"""
