@@ -7,31 +7,19 @@ max-module-lines=10000
 disable=
     missing-docstring,
     too-few-public-methods,
-    too-many-lines,
-    too-many-arguments,
-    too-many-locals,
-    too-many-branches,
-    too-many-statements,
-    too-many-instance-attributes,
-    too-many-public-methods,
-    too-many-return-statements,
-    too-many-boolean-expressions
+    line-too-long,
+    trailing-whitespace,
+
 
 [DESIGN]
 # Set complexity thresholds
-max-args=10
-max-locals=20
-max-returns=8
-max-branches=15
-max-statements=50
+max-args=2
+max-locals=4
+max-returns=3
+max-branches=5
+max-statements=20
 max-parents=7
-max-attributes=15
-max-public-methods=20
-max-line-length=120
+max-attributes=5
+max-public-methods=5
+#max-line-length=120
 
-[BASIC]
-# Allow single-letter variable names
-good-names=i,j,k,ex,run,x,y,z
-
-# Disable trailing whitespace check
-disable=trailing-whitespace
