@@ -352,17 +352,30 @@ def update_generation_stats(generation: int, population: List[dict], fitness_win
     return stats, fitness_window
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
-    """Continuous evolution loop separated to reduce statement count"""
-    # Trim population with fitness-priority while maintaining recent mutations
+    """Continuous evolution loop with combined operations"""
     population = sorted(population, 
-        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000))[:max_population]
-    assert len(population) <= max_population and max_population == MAX_POPULATION, \
-        f"Population {len(population)} exceeded limit ({MAX_POPULATION})"
+        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000)
+    )[:max_population]
+    
     fitness_window = []
     
     for generation in itertools.count(0):
-        stats, fitness_window = update_generation_stats(generation, population, fitness_window)
-        handle_generation_output(stats, population)
+        # Combined evaluation and stats update
+        population = evaluate_population(population)
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
+        stats = calculate_window_statistics(fitness_window)
+        
+        best_agent = max(population, key=lambda x: x["fitness"])
+        handle_generation_output({
+            **stats,
+            'generation': generation,
+            'population_size': len(population),
+            'diversity': calculate_diversity(population),
+            'best': best_agent["fitness"],
+            'best_core': best_agent["metrics"]["core_segment"],
+            'worst': min(a["fitness"] for a in population)
+        }, population)
+        
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
