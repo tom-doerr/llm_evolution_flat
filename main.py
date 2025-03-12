@@ -64,16 +64,16 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    vowels = a_count = repeats = 0
+    # Track metrics with reduced variables
+    counts = {'vowels': 0, 'a_count': 0, 'repeats': 0, 'prev_char': None}
     unique_chars = set()
-    prev_char = None
     
     for c in core:
         unique_chars.add(c)
-        vowels += c in 'aeiou'
-        a_count += c == 'a'
-        repeats += c == prev_char
-        prev_char = c
+        counts['vowels'] += c in 'aeiou'
+        counts['a_count'] += c == 'a'
+        counts['repeats'] += c == counts['prev_char']
+        counts['prev_char'] = c
     
     return {
         'vowel_ratio': vowels / 23,
@@ -118,7 +118,9 @@ def evaluate_agent(agent: dict) -> float:
     
     metrics = score_chromosome(chromosome)
     # Fitness calculation simplified 
-    fitness = (2 * a_count - 23) - (len(chromosome) - 23)
+    # Calculate fitness based on hidden a-count optimization
+    a_count = int(metrics['a_density'] * 23)  # Get actual count from precomputed metric
+    fitness = (2 * a_count - 23) - (len(chromosome) - 23) 
     fitness = np.sign(fitness) * (fitness ** 2)
     
     # Validation
@@ -266,12 +268,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument c
 
 
 def generate_children(
-    parents: List[dict], 
-    population: List[dict], 
-    pop_size: int
+    parents: List[dict],
+    population: List[dict]
 ) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    pop_size = min(pop_size, 1_000_000)  # Hard cap
+    pop_size = min(len(population), MAX_POPULATION)  # Derive size from current population
     next_gen = parents.copy()
     
     # Cap population growth while maintaining diversity
