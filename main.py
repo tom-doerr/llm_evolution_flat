@@ -30,19 +30,13 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
-    # Optimized window slicing using itertools
-    window = list(itertools.islice(fitness_window, max(0, len(fitness_window)-WINDOW_SIZE), None))
-    
-    # Pre-allocate numpy arrays for performance
-    window_arr = np.array(window, dtype=np.float64, copy=False)
-    current_arr = window_arr[-len(window_arr)//10:]  # View of last 10%
-    
+    window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
     return {
         'mean': float(np.nanmean(window_arr)),
         'median': float(np.nanmedian(window_arr)),
         'std': float(np.nanstd(window_arr)),
-        'best_current': float(np.nanmax(current_arr)),
-        'worst_current': float(np.nanmin(current_arr)),
+        'best_current': float(np.nanmax(window_arr)),
+        'worst_current': float(np.nanmin(window_arr)),
         'best_window': float(np.nanmax(window_arr)),
         'worst_window': float(np.nanmin(window_arr))
     }
