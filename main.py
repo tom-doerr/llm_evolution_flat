@@ -66,21 +66,16 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Combined analysis in single pass
-    analysis = {
-        'vowel_count': 0,
-        'a_count': 0,
-        'unique_chars': set(),
-        'repeats': 0,
-        'prev_char': None
-    }
+    vowels = a_count = repeats = 0
+    unique_chars = set()
+    prev_char = None
     
     for c in core:
-        analysis['unique_chars'].add(c)
-        analysis['vowel_count'] += c in 'aeiou'
-        analysis['a_count'] += c == 'a'
-        analysis['repeats'] += c == analysis['prev_char']
-        analysis['prev_char'] = c
+        unique_chars.add(c)
+        vowels += c in 'aeiou'
+        a_count += c == 'a'
+        repeats += c == prev_char
+        prev_char = c
     
     return {
         'vowel_ratio': analysis['vowel_count'] / 23,
@@ -118,7 +113,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict) -> float:  # Removed unused problem_description
+def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromosome = str(agent["chromosome"])
     assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
@@ -126,15 +121,12 @@ def evaluate_agent(agent: dict) -> float:  # Removed unused problem_description
     metrics = score_chromosome(chromosome)
     a_count = int(metrics['a_density'] * 23)
     
-    # Combined fitness calculation
-    fitness = (a_count - (23 - a_count) - (len(chromosome) - 23))
-    fitness = np.sign(fitness) * (abs(fitness) ** 2)
+    # Fitness calculation simplified
+    fitness = (2 * a_count - 23) - (len(chromosome) - 23)
+    fitness = np.sign(fitness) * (fitness ** 2)
     
-    # Validation assertions using metrics
-    core_segment = metrics['core_segment']
-    assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
-    if int(metrics['a_density'] * 23) == 0:
-        print(f"WARNING: No 'a's in first 23 of: {chromosome}")
+    # Validation
+    assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
 
     # Update agent state
     agent["fitness"] = fitness ** 2
@@ -157,13 +149,12 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
-    # Sort population by descending fitness
-    sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
-    # Calculate Pareto distribution weights using fitness^2 and inverse square ranking
-    weights = np.array([a['fitness']**2 for a in sorted_pop])
-    weights /= weights.sum()
-    weights *= 1.0 / (np.arange(1, len(sorted_pop)+1) ** 2)
-    weights /= weights.sum()
+    population.sort(key=lambda x: -x['fitness'])  # In-place sort descending
+    ranks = np.arange(1, len(population) + 1)
+    
+    # Combined weight calculation
+    weights = np.array([a['fitness']**2 for a in population]) * (1.0 / ranks**2)
+    weights /= weights.sum()  # Normalize once
     
     # Validate weights before selection
     assert np.all(weights >= 0), "Negative weights detected in parent selection"
