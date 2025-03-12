@@ -1,11 +1,11 @@
+from typing import List
 import random
 import string
 import gzip
+import re  # For mutation validation
 import numpy as np
-from typing import List
 from rich.console import Console
 from rich.panel import Panel
-import re  # For mutation validation
 import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
@@ -61,10 +61,10 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
     """Maintain sliding window of last 100 evaluations"""
-    # Enforce window size strictly with type validation
     assert isinstance(fitness_window, list), "Window must be list type"
-    combined = fitness_window + new_fitnesses
-    return combined[-window_size:] if len(combined) > window_size else combined
+    # Use collections.deque for efficient sliding window
+    window = fitness_window[-window_size+len(new_fitnesses):] + new_fitnesses
+    return window[-window_size:]  # Strict size enforcement per spec
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate comprehensive structural scoring metrics with validation"""
@@ -259,8 +259,8 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
             raise ValueError(f"Invalid mutation: {mutated}")
         
         return mutated
-    except (TimeoutError, RuntimeError, AssertionError):
-        print(f"Mutation failed: {str(e)}")
+    except (TimeoutError, RuntimeError, AssertionError) as ex:
+        print(f"Mutation failed: {str(ex)}")
         # Fallback to random mutation without recursion
         return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
@@ -503,7 +503,7 @@ def display_generation_stats(generation: int, generations: int, population: list
 
 
 
-def create_next_generation(next_gen, problem, mutation_rate, generation):
+def create_next_generation(next_gen, mutation_rate):
     """Handle mutation and periodic improvement of new generation"""
     next_gen = apply_mutations(next_gen, mutation_rate, problem)
     
