@@ -428,7 +428,11 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
-        # Minimal format: gen pop_size mean median std best worst
+        # Write header if file is empty
+        if f.tell() == 0:
+            f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
+            
+        # Information-dense format with core segment
         f.write(
             f"{stats['generation']}\t" 
             f"{stats['population_size']}\t"
@@ -437,7 +441,8 @@ def log_population(stats: dict) -> None:
             f"{stats['std']:.1f}\t"
             f"{stats['best']:.1f}\t"
             f"{stats['worst']:.1f}\t"
-            f"{stats['diversity']:.2f}\n"  # Added diversity metric
+            f"{stats['diversity']:.2f}\t"
+            f"{stats['best_core']}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
