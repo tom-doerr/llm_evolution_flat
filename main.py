@@ -257,8 +257,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             candidates,
             weights=weights/weights.sum(),
             k=min(5, len(population))
-        )["chromosome"][i] 
-        if (random.random() < 1/len(parent["chromosome"]) or c in {'.', '!', '?', ' '}
+        )["chromosome"][i] if (random.random() < 1/len(parent["chromosome"]) or c in {'.', '!', '?', ' '}) 
         else c
         for i, c in enumerate(parent["chromosome"])
     ])[:40])
