@@ -20,15 +20,11 @@
 - Should add input validation for all public functions
 - Chromosome truncation during creation needs logging
 - Mutation validation could impact performance
-
-## Current Issues/Notes (notes.md draft)
-- Need to harden LM response validation
 - Fitness calculation needs penalty system for oversize chromosomes
-- Should add input validation for all public functions
 - Consider adding crossover rate parameter
 - Need better error handling for LM timeouts
 
 ## Next Steps
-1. Implement fitness function with penalty system
-2. Add input validation guards
-3. Create test cases for boundary conditions
+1. Add boundary condition tests (empty strings, min/max lengths)
+2. Implement property-based tests for genetic operations
+3. Add mutation rate configuration
