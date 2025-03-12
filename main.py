@@ -260,7 +260,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum(a['fitness']**2 + 1e-6 for a in candidates),
             k=min(5, len(population))
         )
-    ))
     
     # Implement spec.md chromosome switching rules
     parent_chrom = parent["chromosome"]
