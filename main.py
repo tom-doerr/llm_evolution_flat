@@ -179,17 +179,20 @@ def select_parents(population: List[dict]) -> List[dict]:
         size=len(population)//2,
         replace=False,
         p=weights
-    )
+    ))
     return [population[i] for i in selected_indices]
 
 
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing"""
-    mutate_prompt = dspy.Predict("original_chromosome, problem_description -> mutated_chromosome")
+    mutate_prompt = dspy.structured.StructuredPrompt(
+        "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
+        validate_output=lambda x: re.match(r"^[a-zA-Z]{23,40}$", x))
     try:
-        # Add validation before even making the LLM call
-        validate_chromosome(chromosome)
+        # Strict input validation
+        assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
+        assert re.match(r"^[a-zA-Z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
             original_chromosome=chromosome,
             problem_description=f"{problem}\nMUTATION RULES:\n- EXACTLY 23-40 LETTERS/SPACES\n- MODIFY 1-3 CHARACTERS\n- PRESERVE FIRST 23 STRUCTURE\n- OUTPUT ONLY 40-CHAR STRING\n- NO MARKDOWN/FORMATTING",
