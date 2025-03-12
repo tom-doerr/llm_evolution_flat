@@ -3,7 +3,6 @@ import random
 import string
 import numpy as np
 import itertools
-import itertools
 from rich.console import Console
 from rich.panel import Panel
 import dspy
