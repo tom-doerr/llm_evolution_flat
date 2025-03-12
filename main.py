@@ -124,7 +124,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem} MUTATION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARACTERS\n2. REMOVE ALL CHARACTERS AFTER FIRST 23\n3. USE ONLY LETTERS\n4. MAX LENGTH 40"
+            problem_description=f"{problem}\nRULES:\n1. ENHANCE INITIAL SEGMENT\n2. TRUNCATE EXCESS\n3. LETTERS ONLY\n4. MAX LENGTH 40",  # Obfuscated
         )
         if response.completions:
             mutated = response.completions[0].strip()[:23]  # Strictly keep first 23 chars
@@ -181,7 +181,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     response = prompt(
         parent_chromosome=parent["chromosome"],
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARS\n2. PRESERVE LENGTH <=40\n3. CHOOSE MOST COMPATIBLE"
+        problem=f"{problem}\nRULES:\n1. OPTIMIZE INITIAL PORTION\n2. MAINTAIN LENGTH LIMIT\n3. SELECT COMPATIBLE PAIR",
     )
     
     # Validate and parse response
@@ -214,7 +214,7 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
 def run_genetic_algorithm(
     problem: str,
     generations: int = 10,
-    pop_size: int = 5,
+    pop_size: int = 1_000_000,  # Default per spec
     mutation_rate: float = 0.5,
     log_file: str = "evolution.log.gz",
 ):
@@ -249,7 +249,16 @@ def run_genetic_algorithm(
         window_fitness = current_window
         mean_fitness = sum(window_fitness) / len(window_fitness) if window_fitness else 0
         sorted_fitness = sorted(window_fitness)
-        median_fitness = sorted_fitness[len(sorted_fitness)//2] if sorted_fitness else 0
+        # Proper median calculation for even/odd window sizes
+        n = len(sorted_fitness)
+        if n == 0:
+            median_fitness = 0.0
+        else:
+            mid = n // 2
+            if n % 2 == 1:
+                median_fitness = sorted_fitness[mid]
+            else:
+                median_fitness = (sorted_fitness[mid-1] + sorted_fitness[mid]) / 2
         std_fitness = (sum((x-mean_fitness)**2 for x in window_fitness)/len(window_fitness))**0.5 if window_fitness else 0
 
         # Get best/worst before logging
@@ -335,8 +344,5 @@ def run_genetic_algorithm(
 
 
 if __name__ == "__main__":
-    PROBLEM = (
-        "Generate a string with MAXIMUM 'a's in first 23 characters, "
-        "then keep it short. STRICTLY prioritize 'a's over all other considerations!"
-    )
+    PROBLEM = "Optimize string composition according to evolving fitness criteria"  # Obfuscated per spec
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
