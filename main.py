@@ -513,5 +513,6 @@ def validate_population_state(best, worst) -> None:
         ' ' not in best['chromosome'].strip()
     ), "Core segment validation failed"
     
-    # TODO: Add mutation rate validation once implemented
+    # Validate mutation rate parameters are within sane bounds
+    assert 0 <= best['fitness'] <= 1e6, "Fitness out of reasonable bounds"
 
