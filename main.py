@@ -144,24 +144,25 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using sliding window of last 100 fitness evaluations"""
-    window_pop = population[-WINDOW_SIZE:]  # Use actual sliding window from spec
-    weights = np.array([a['fitness']**2 for a in window_pop], dtype=np.float64)
+    """Select parents using Pareto distribution weighted by fitness^2 with sliding window"""
+    # Get top candidates from sliding window of recent evaluations
+    candidates = population[-WINDOW_SIZE:]
+    weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
     
-    # Handle case where all weights are zero
+    # Handle zero-sum weights case
     if np.sum(weights) <= 0:
-        weights = np.ones(len(window_pop)) / len(window_pop)
+        weights = np.ones(len(candidates)) / len(candidates)
     else:
         weights /= weights.sum()
     
-    # Weighted sampling without replacement using indexes
-    selected_idx = np.random.choice(
-        len(window_pop), 
-        size=min(len(population)//2, len(window_pop)),
+    # Vectorized weighted sampling without replacement
+    selected_indices = np.random.choice(
+        len(candidates),
+        size=min(len(candidates), len(population)//2),
         p=weights,
         replace=False
     )
-    return [window_pop[i] for i in selected_idx]
+    return [candidates[i] for i in selected_indices]
 
 
 
