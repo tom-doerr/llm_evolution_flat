@@ -352,7 +352,7 @@ def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
         for agent in generation
     ]
     
-    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} Unique:{len({a['chromosome'] for a in mutated})}")
+    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} U:{len({a['chromosome'] for a in mutated})}/{len(generation)}")
     return mutated
 
 
