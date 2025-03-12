@@ -278,14 +278,18 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
 
     # Main evolution loop
     for generation in range(1, generations+1):
+        # Combined population evaluation and stats calculation
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         stats = calculate_window_statistics(fitness_window)
+        stats['diversity'] = calculate_diversity(population)
         
         log_population(generation, stats)
-        display_generation_stats(generation, stats, population)
+        display_generation_stats(generation, stats)
         
-        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
+        # Streamlined child generation
+        parents = select_parents(population)
+        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
