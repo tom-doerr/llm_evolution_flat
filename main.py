@@ -238,18 +238,14 @@ def run_genetic_algorithm(
 
         # Track sliding window of last 100 evaluations as per spec
         all_fitness = [agent["fitness"] for agent in population]
-        current_best = max(agent["fitness"] for agent in population)
-        current_worst = min(agent["fitness"] for agent in population)
         
-        # Maintain sliding window of last 100 evaluations
-        window_size = 100  # As per spec requirement
+        # Initialize or update sliding window - only keep last 100 unique evaluations
         if not hasattr(run_genetic_algorithm, "fitness_window"):
             run_genetic_algorithm.fitness_window = []
             
-        # Add current population stats to window (without duplicates)
-        run_genetic_algorithm.fitness_window = (
-            run_genetic_algorithm.fitness_window + all_fitness
-        )[-window_size:]
+        # Add current population fitnesses and enforce window size
+        run_genetic_algorithm.fitness_window.extend(all_fitness)
+        run_genetic_algorithm.fitness_window = run_genetic_algorithm.fitness_window[-100:]
         
         # Calculate sliding window statistics
         window_data = run_genetic_algorithm.fitness_window
