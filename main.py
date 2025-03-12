@@ -468,10 +468,9 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
 def display_generation_stats(generation: int, generations: int, population: list, 
-                           best: dict, fitness_window: list):
+                           best: dict, stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    stats = calculate_window_statistics(fitness_window)
     diversity = calculate_diversity(population)
     current_pop_size = len(population)
     
