@@ -398,7 +398,17 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        population = trim_population(population, max_population)
+        # Trim population using fitness² weighted sampling (spec.md)
+        if len(population) > max_population:
+            weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
+            weights /= weights.sum()
+            selected_indices = np.random.choice(
+                len(population),
+                size=max_population,
+                replace=False,
+                p=weights
+            )
+            population = [population[i] for i in selected_indices]
         population, fitness_window = evaluate_generation(population, fitness_window, generation)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
