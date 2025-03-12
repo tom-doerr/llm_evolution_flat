@@ -160,7 +160,7 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using adaptive weights based on diversity"""
+    """Select parents using Pareto distribution weighting by fitness^2"""
     # Calculate population diversity using evolution module
     diversity = evolution.calculate_diversity(population)
     
@@ -370,8 +370,9 @@ def run_genetic_algorithm(
         # Get population extremes
         best, worst = get_population_extremes(population)
 
-        # Log population with generation stats
-        log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file)
+        # Log population with generation stats and diversity
+        current_diversity = calculate_diversity(population)
+        log_population(population, generation, mean_fitness, median_fitness, std_fitness, current_diversity, log_file)
 
         # Calculate and display statistics
         fitness_values = [a['fitness'] for a in population]
@@ -406,13 +407,13 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return 1_000_000
 
-def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
+def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
     """Log gzipped population data with rotation"""
     # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
-        f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()}\n")
+        f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()} | Diversity: {diversity:.2f}\n")
         f.write(f"Mean: {mean_fitness}, Median: {median_fitness}, Std: {std_fitness}\n")
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
