@@ -66,16 +66,9 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    a_count = 0
-    repeats = 0
-    prev_char = None
-    
-    for c in core:
-        if c == 'a':
-            a_count += 1
-        if c == prev_char:
-            repeats += 1
-        prev_char = c
+    # Calculate metrics with vectorized operations
+    a_count = core.count('a')
+    repeats = sum(1 for c1, c2 in zip(core, core[1:]) if c1 == c2)
     
     return {
         'a_density': a_count / 23,
@@ -433,7 +426,6 @@ def display_generation_stats(generation: int, generations: int, population: list
 
 def create_next_generation(next_gen: List[dict], mutation_rate: float) -> List[dict]:
     """Create next generation with mutations"""
-    """Handle mutation and periodic improvement of new generation"""
     next_gen = apply_mutations(next_gen, mutation_rate)
     return next_gen
 
