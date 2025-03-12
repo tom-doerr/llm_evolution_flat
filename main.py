@@ -131,9 +131,8 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
     candidates = population[-WINDOW_SIZE:]
     weights = [a['fitness']**2 + 1e-6 for a in candidates]
-    total_weight = sum(weights)
     
-    # Use weighted sampling without replacement
+    # Weighted sampling without replacement (Pareto distribution)
     selected = []
     for _ in range(min(len(candidates)//2, MAX_POPULATION)):
         idx = random.choices(range(len(candidates)), cum_weights=weights)[0]
@@ -264,15 +263,16 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def run_genetic_algorithm(pop_size: int) -> None:  # No generations param per spec.md
+def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
     pop_size = min(pop_size, MAX_POPULATION)
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
 
     population = initialize_population(pop_size)[:MAX_POPULATION]
-    fitness_window, iteration = [], 0
+    fitness_window = []
 
     while True:  # Continuous evolution per spec.md
+        iteration = len(fitness_window) // WINDOW_SIZE
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
@@ -351,7 +351,7 @@ def evaluate_population(population: List[dict]) -> List[dict]:
         evaluate_agent(agent)
     return population
 
-def validate_population_state(best, worst):  # Trailing newline fixed
+def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
     # Validate population invariants
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
