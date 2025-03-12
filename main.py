@@ -1,8 +1,8 @@
 from typing import List
+import itertools
 import random
 import string
 import numpy as np
-import itertools
 from rich.console import Console
 from rich.panel import Panel
 import dspy
@@ -278,12 +278,10 @@ def run_genetic_algorithm(pop_size: int) -> None:
     open("evolution.log", "w", encoding='utf-8').close()
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
-        # Evaluate and update population in one step
+        # Evaluate population and update stats
         population = evaluate_population(population)[:MAX_POPULATION]
-        
-        # Get stats and log with reset window each iteration
         stats = update_population_stats(
-            update_fitness_window([], [a["fitness"] for a in population]),  # Fresh window
+            update_fitness_window([], [a["fitness"] for a in population]),
             population
         )
         stats.update({'generation': generation})
