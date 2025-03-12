@@ -119,8 +119,7 @@ def evaluate_agent(agent: dict) -> float:
     metrics = score_chromosome(chromosome)
     # Fitness calculation simplified 
     # Calculate fitness based on hidden a-count optimization
-    a_count = int(metrics['a_density'] * 23)  # Get actual count from precomputed metric
-    fitness = (2 * a_count - 23) - (len(chromosome) - 23) 
+    fitness = (2 * metrics['a_density'] * 23 - 23) - (len(chromosome) - 23) 
     fitness = np.sign(fitness) * (fitness ** 2)
     
     # Validation
