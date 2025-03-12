@@ -99,35 +99,18 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness²"""
-    assert len(population) > 0, "Cannot select from empty population"
+    # Pareto distribution weighted by fitness^2 with weighted sampling without replacement
+    weights = np.array([agent['fitness']**2 for agent in population])
+    weights = weights / weights.sum()  # Normalize
     
-    # Calculate squared fitness values for Pareto weighting
-    fitness_squares = [a['fitness']**2 for a in population]
-    total = sum(fitness_squares)
-    if total <= 0:
-        raise ValueError("Total fitness squared must be positive")
-    
-    sample_size = min(2, len(population))  # Select 2 parents
-    selected_parents = []
-    current_weights = fitness_squares.copy()
-    indices = list(range(len(population)))
-    
-    for _ in range(sample_size):
-        total = sum(current_weights)
-        if total <= 0:
-            break
-        
-        # Select parent using weighted choice without replacement
-        chosen_idx = random.choices(indices, weights=current_weights, k=1)[0]
-        selected_parents.append(population[chosen_idx])
-        
-        # Prevent reselection by zeroing weight and removing index
-        current_weights[chosen_idx] = 0
-        indices.remove(chosen_idx)
-    
-    # Validate final selection
-    assert len(selected_parents) == sample_size, f"Parent selection failed: got {len(selected_parents)} parents"
-    return selected_parents
+    # Use system roulette wheel selection with pareto distribution weights
+    selected_indices = np.random.choice(
+        len(population),
+        size=min(len(population), 2),  # Select pairs
+        p=weights,
+        replace=False
+    )
+    return [population[i] for i in selected_indices]
 
 
 
@@ -343,25 +326,28 @@ def display_generation_stats(generation, generations, population, best, mean_fit
 
 def update_fitness_window(fitness_window, new_fitnesses, window_size):
     """Update sliding window of fitness values"""
-    if not fitness_window:
-        fitness_window = []
+    # Maintain sliding window of last 100 evaluations
     fitness_window.extend(new_fitnesses)
-    return fitness_window[-window_size:]
+    if len(fitness_window) > window_size:
+        fitness_window = fitness_window[-window_size:]
+    return fitness_window
 
 def calculate_window_statistics(fitness_window, window_size):
     """Calculate statistics for current fitness window"""
-    window_data = fitness_window[-window_size:]
-    mean = sum(window_data)/len(window_data) if window_data else 0
-    sorted_data = sorted(window_data)
-    n = len(sorted_data)
+    # Use last 100 evaluations for statistics
+    window = fitness_window[-window_size:]
+    if not window:
+        return 0.0, 0.0, 0.0, 0.0, 0.0
     
-    median = 0.0
-    if n:
-        mid = n // 2
-        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
+    mean = np.mean(window)
+    median = np.median(window)
+    std = np.std(window)
     
-    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
-    return mean, median, std
+    # Track best/worst in current population
+    best = max(window) if len(window) >= 100 else 0.0
+    worst = min(window) if len(window) >= 100 else 0.0
+    
+    return mean, median, std, best, worst
 
 def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
@@ -408,9 +394,14 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
-    assert best["fitness"] >= worst["fitness"], "Fitness ordering invalid"
-    assert len(best["chromosome"]) <= 40, "Chromosome exceeded max length"
-    assert len(worst["chromosome"]) <= 40, "Chromosome exceeded max length"
+    # Validate population invariants
+    assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
+    assert 0 <= best['fitness'] <= 1e6, "Fitness out of reasonable bounds"
+    assert 0 <= worst['fitness'] <= 1e6, "Fitness out of reasonable bounds"
+    assert isinstance(best['chromosome'], str), "Chromosome should be string"
+    assert isinstance(worst['chromosome'], str), "Chromosome should be string"
+    assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
+    assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
 
 def validate_improvement(response):
     """Validate LLM improvement response meets criteria"""
