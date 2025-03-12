@@ -116,6 +116,7 @@ def initialize_population(pop_size: int) -> List[dict]:
         "".join(random.choices(string.ascii_letters + " ", k=length))
         for length in lengths
     ]
+    # Parallel create agents
     return [create_agent(c) for c in chromosomes]
 
 
@@ -146,8 +147,7 @@ MUTATION_RATE = 0.1  # Base mutation probability
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
 HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
-HOTSPOT_ANYWHERE_PROB = 0.023  # ~1 hotspot per 40 char chromosome on average (spec.md requirement)
-# Probability tuned to achieve average 1 switch per chrom combined with punctuation
+HOTSPOT_ANYWHERE_PROB = 0.023  # Tuned to achieve average 1 switch per chrom combined with punctuation
 
 
 
