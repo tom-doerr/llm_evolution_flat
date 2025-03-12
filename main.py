@@ -123,20 +123,21 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2"""
-    # Combined selection logic with numpy for vectorization
-    # Pareto distribution weighted by fitness^2
+    """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
     if not population:
         return []
     
     candidates = population[-WINDOW_SIZE:]
-    weights = [a['fitness']**2 + 1e-6 for a in candidates]
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
     
-    return random.choices(
-        population=candidates,
-        weights=weights,
-        k=min(len(population), MAX_POPULATION//2)
+    # Weighted sampling without replacement using numpy
+    selected_indices = np.random.choice(
+        len(candidates),
+        size=min(len(population), MAX_POPULATION//2),
+        p=weights/weights.sum(),
+        replace=False
     )
+    return [candidates[i] for i in selected_indices]
 
 
 
