@@ -141,9 +141,7 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     
     # Numeric stability with vectorized operations
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)  # pylint: disable=no-member
-    total = weights.sum()
-    assert not np.isclose(total, 0), "Weight total cannot be zero"
-    return weights / total
+    return weights / weights.sum() if weights.sum() > 0 else np.ones_like(weights)/len(weights)
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
@@ -366,9 +364,7 @@ def update_generation_stats(population: List[dict], fitness_window: list, genera
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
-    population = sorted(population, 
-        key=lambda a: (-a["fitness"], -hash(a["chromosome"]))
-    )[:max_population]
+    population = population[:max_population]  # Simple truncation instead of sorted
     
     fitness_window = []
     
