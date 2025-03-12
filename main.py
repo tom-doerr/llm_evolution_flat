@@ -103,7 +103,6 @@ def crossover(parent1: dict, parent2: dict) -> dict:
 def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5, 
                          log_file: str = 'evolution.log.gz'):
     """Run genetic algorithm with optimized logging and scaling"""
-    """Run genetic algorithm with LLM-assisted evolution"""
     assert pop_size > 1, "Population size must be greater than 1"
     assert generations > 0, "Number of generations must be positive"
     
