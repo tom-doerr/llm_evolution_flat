@@ -102,11 +102,8 @@ def evaluate_agent(agent: dict) -> float:
     assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
     
     metrics = score_chromosome(chromosome)
-    # Fitness calculation simplified 
-    # Calculate fitness based on hidden a-count optimization
-    a_count = metrics['a_density'] * 23
-    len_chromosome = len(chromosome)
-    fitness = (a_count * 2 - 23) - (len_chromosome - 23)  # Direct calculation per spec.md
+    # Combined calculations to reduce variables
+    fitness = (metrics['a_density'] * 23 * 2 - 23) - (len(chromosome) - 23)
     
     # Validation
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
