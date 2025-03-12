@@ -287,7 +287,7 @@ def run_genetic_algorithm(pop_size: int) -> None:  # No generations param per sp
         })
         
         log_population(iteration, stats)
-        display_generation_stats(stats)
+        display_generation_stats(iteration, stats)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
         iteration += 1
 
