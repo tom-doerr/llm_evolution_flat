@@ -249,7 +249,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         
     selected_mate = llm_select_mate(
         parent,
-        [candidates[i] for i in np.random.choice(
+        [c for c in [candidates[i] for i in np.random.choice(
             len(candidates),
             size=min(5, len(candidates)),
             replace=False,
