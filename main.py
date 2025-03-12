@@ -366,7 +366,6 @@ if __name__ == "__main__":
     dspy.configure(problem=PROBLEM)
     run_genetic_algorithm(generations=20)
 
-
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
