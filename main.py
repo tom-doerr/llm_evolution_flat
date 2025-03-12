@@ -273,8 +273,11 @@ def get_hotspots(chromosome: str) -> list:
     random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.15]
     return list(set(forced_hotspots + random_hotspots)) or [0]
 
-def build_child_chromosome(p_chrom: str, m_chrom: str, hotspots: list) -> str:
-    """Construct child chromosome with single character switch"""
+def build_child_chromosome(parent: dict, mate: dict) -> str:
+    """Construct child chromosome with single character switch using parent/mate DNA"""
+    p_chrom = parent["chromosome"]
+    m_chrom = mate["chromosome"]
+    hotspots = get_hotspots(p_chrom) or [random.randint(0, len(p_chrom)-1)]
     switch_point = random.choice(hotspots) if hotspots else 0
     return f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:40]
 
@@ -355,24 +358,26 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     
     evolution_loop(population, max_population)
 
-def update_generation_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+def update_generation_stats(population: List[dict], fitness_data: tuple) -> tuple:
     """Calculate and return updated statistics for current generation"""
+    fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
-    new_fitnesses = [a["fitness"] for a in evaluated_pop]
-    updated_window = update_fitness_window(fitness_window, new_fitnesses)
     
-    stats = calculate_window_statistics(updated_window)
+    # Calculate stats in consolidated way
+    stats = calculate_window_statistics(
+        update_fitness_window(fitness_window, [a["fitness"] for a in evaluated_pop])
+    )
     best_agent = max(evaluated_pop, key=lambda x: x["fitness"])
     
-    stats.update({
+    return {
+        **stats,
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
         'best': best_agent["fitness"],
         'best_core': best_agent["metrics"]["core_segment"],
         'worst': min(a["fitness"] for a in evaluated_pop)
-    })
-    return stats, updated_window
+    }, fitness_window[-WINDOW_SIZE:]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
