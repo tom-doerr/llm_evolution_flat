@@ -79,7 +79,7 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's 
         new_char = random.choice(
-            ['a'] * 5 + [c for c in string.ascii_letters + ' ' if c != original_char and c != 'a']
+            ['a'] * 5 + [c for c in string.ascii_letters + ' ' if c not in (original_char, 'a')]
         )
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
         
@@ -160,5 +160,6 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         population = next_gen
 
 if __name__ == "__main__":
-    PROBLEM = "Generate a string with MAXIMUM lowercase 'a's in first 23 characters, then keep it short. Prioritize 'a's above all else!"
+    PROBLEM = ("Generate a string with MAXIMUM lowercase 'a's in first 23 characters, "
+               "then keep it short. Prioritize 'a's above all else!")
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
