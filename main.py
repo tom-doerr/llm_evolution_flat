@@ -59,18 +59,16 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Count 'a's and repeating characters in one pass
-    counts = {'a_count': 0, 'repeats': 0, 'prev': None}
+    a_count = repeats = 0
+    prev_char = None
     for i, c in enumerate(core):
-        if c == 'a':
-            counts['a_count'] += 1
-        if i > 0 and c == counts['prev']:
-            counts['repeats'] += 1
-        counts['prev'] = c
+        a_count += c == 'a'
+        repeats += i > 0 and c == prev_char
+        prev_char = c
     
     return {
-        'a_density': counts['a_count'] / 23,
-        'repeating_pairs': counts['repeats'] / 22,
+        'a_density': a_count / 23,
+        'repeating_pairs': repeats / 22,
         'core_segment': core
     }
 
@@ -136,22 +134,13 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    # Get sliding window of recent evaluations
-    recent_fitness = fitness_window[-WINDOW_SIZE:]
-    candidates = [a for a in population if a['fitness'] in recent_fitness]
+    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
     weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    
-    # Apply Pareto distribution and normalize
-    weights = 1.0 / (1.0 + np.argsort(-weights))  # Combined Pareto calculation
+    weights = 1.0 / (1.0 + np.argsort(-weights))  # Pareto distribution
     weights /= weights.sum()
     
-    # Weighted sampling without replacement
-    return [candidates[i] for i in np.random.choice(
-        len(candidates),
-        size=min(len(candidates)//2, MAX_POPULATION),
-        p=weights,
-        replace=False
-    )]
+    sample_size = min(len(candidates)//2, MAX_POPULATION)
+    return [candidates[i] for i in np.random.choice(len(candidates), sample_size, p=weights, replace=False)]
 
 
 
@@ -225,29 +214,24 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
-    
-    if not valid_candidates:
+    valid = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid:
         raise ValueError("No valid mates")
-    
-    # Use parent's mate-selection chromosome as the prompt/instruction
+
     response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
+        candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
     )
-    
-    # Validate and return first valid match from LLM response
-    selected_chromosome = str(response.selected_mate).strip()[:40]
-    for candidate in valid_candidates:
-        if candidate["chromosome"] == selected_chromosome:
+
+    selected = str(response.selected_mate).strip()[:40]
+    for candidate in valid:
+        if candidate["chromosome"] == selected:
             return candidate
-    
-    # Fallback to fitness-weighted sampling if no LLM match
-    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
-    weights /= weights.sum() + 1e-6
-    return valid_candidates[np.random.choice(len(valid_candidates), p=weights)]
+
+    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
+    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
