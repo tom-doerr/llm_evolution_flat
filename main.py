@@ -13,9 +13,8 @@ import dspy
 # 1. Implement generation-based scoring weights
 
 # TODO List (sorted by priority):
-# 1. Add diversity tracking to population statistics
-# 2. Optimize LLM prompt validation
-# 3. Implement Pareto distribution for parent selection
+# 1. Optimize LLM prompt validation
+# 2. Implement Pareto distribution for parent selection
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -31,7 +30,7 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
     """Calculate statistics for current fitness window using vectorized operations"""
     window = fitness_window[-window_size:]
     if not window:
-        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0}
+        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0, "diversity": 0.0}
     
     arr = np.array(window)
     return {
@@ -39,7 +38,8 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
         "median": float(np.median(arr)),
         "std": float(np.std(arr)),
         "best": float(np.max(arr)),
-        "worst": float(np.min(arr))
+        "worst": float(np.min(arr)),
+        "diversity": float(np.std(arr) / (np.mean(arr) + 1e-8))  # Simple diversity metric
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
@@ -437,6 +437,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
         f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
+        f"🌐 Diversity: {stats['diversity']:.2%} | " 
         f"🧬 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
         f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
         title="Evolution Progress",
