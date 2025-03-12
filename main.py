@@ -22,7 +22,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
-DEBUG = False  # Control debug output
+DEBUG = False  # Control DEBUG output
 WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
@@ -38,7 +38,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
     
     # Use fixed 100-item window per spec
-    window = fitness_window[-100:] if len(fitness_window) >= 100 else fitness_window.copy()
+    window_size = 100
+    window = fitness_window[-window_size:] if len(fitness_window) >= window_size else fitness_window.copy()
     assert 0 <= len(window) <= window_size, f"Window size violation: {len(window)}"
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
@@ -61,6 +62,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
     window_size = 100  # Fixed per spec.md requirement
+    assert len(new_fitnesses) <= window_size, "Cannot add more items than window size"
     assert isinstance(fitness_window, list), "Window must be list type"
     # Use collections.deque for efficient sliding window
     window = fitness_window[-(window_size - len(new_fitnesses)):] + new_fitnesses
