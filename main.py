@@ -42,6 +42,20 @@ def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size
     combined = (fitness_window[-window_size:] if fitness_window else []) + new_fitnesses
     return combined[-window_size:]
 
+def score_chromosome(chromosome: str) -> dict:
+    """Calculate structural scoring metrics"""
+    core = chromosome[:23].lower()
+    vowels = sum(1 for c in core if c in 'aeiou')
+    consonants = len(core) - vowels
+    unique_chars = len(set(core))
+    
+    return {
+        'vowel_ratio': vowels / 23,
+        'consonant_ratio': consonants / 23,
+        'uniqueness': unique_chars / 23,
+        'core_segment': core
+    }
+
 def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     if isinstance(chromosome, list):
@@ -73,6 +87,7 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
     # Ensure chromosome is a string
     chromosome = str(agent["chromosome"])
+    metrics = score_chromosome(chromosome)
 
     # Fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
     fitness = 0.0
@@ -98,8 +113,13 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
         len(chromosome) <= 40
     ), f"Chromosome length {len(chromosome)} exceeds maximum allowed"
 
+    # Incorporate structural metrics into fitness
+    fitness *= metrics['vowel_ratio'] * (1 + metrics['uniqueness'])
+    fitness += metrics['consonant_ratio'] * 0.5  # Bonus for consonant diversity
+    
     # Allow negative fitness as per spec
     agent["fitness"] = fitness
+    agent["metrics"] = metrics  # Store metrics for analysis
     return agent["fitness"]
 
 
