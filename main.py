@@ -172,31 +172,32 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 def mutate_with_llm(agent: dict) -> str:
-    """Mutate chromosome using LLM-based rephrasing with optimized prompt"""
+    """Optimized LLM mutation with prompt caching and validation"""
     chromosome = agent["chromosome"]
-    # Core validation checks
-    assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-    assert chromosome.isalpha(), "Invalid characters in chromosome"
     
-    mutate_prompt = dspy.Predict(
-        "chromosome -> mutated_chromosome",
-        instructions=agent.get("mutation_chromosome", 
-                             "Keep first 23 chars with many 'a's, change 2-3 later chars. Length 23-40. Letters only.")
-    )
+    # Use cached Predict template for performance
+    if "mutate_prompt" not in globals():
+        global mutate_prompt
+        mutate_prompt = dspy.Predict("chromosome -> mutated_chromosome")
+    
     try:
-        response = mutate_prompt(chromosome=chromosome)
+        # Get mutation instruction from agent's own mutation chromosome
+        instruction = agent.get("mutation_chromosome", 
+                              "Change 1-2 characters after position 23 while keeping first 23 intact")
+        response = mutate_prompt(chromosome=chromosome, instructions=instruction)
         mutated = str(response.mutated_chromosome).strip()[:40].lower()
         
-        # Validate and return or retry once
-        if (23 <= len(mutated) <= 40 and 
-            mutated.isalpha() and 
+        # Fast validation checks
+        if (len(mutated) >= 23 and mutated.isalpha() and
+            mutated[:23] == chromosome[:23] and  # Preserve core segment
             mutated[:23].count('a') >= chromosome[:23].count('a')):
             return mutated
-    except (ValueError, AttributeError) as e:
+            
+    except (ValueError, AttributeError, KeyError) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
-            
-    # Fallback to minimal mutation preserving 'a' count        
+
+    # Fallback mutation only modifies after core segment
     chars = list(chromosome)
     for _ in range(2):
         idx = random.randint(23, len(chars)-1)
