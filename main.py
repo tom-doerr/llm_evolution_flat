@@ -271,25 +271,20 @@ def run_genetic_algorithm(pop_size: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
-        # Evaluate and trim population first
         population = evaluate_population(population)[:MAX_POPULATION]
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        # Update stats and logging in single step
-        stats = update_population_stats(
-            update_fitness_window(fitness_window, [a["fitness"] for a in population]),
-            population
-        )
-        stats.update({'generation': generation})
+        stats = update_population_stats(fitness_window, population)
+        stats['generation'] = generation  # Set generation directly
         log_population(stats)
         display_generation_stats(stats)
         
-        # Validate with direct max/min instead of sorting
+        # Validate population extremes
         validate_population_state(
             max(population, key=lambda x: x["fitness"]),
             min(population, key=lambda x: x["fitness"])
         )
         
-        # Generate next generation with combined operations
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
