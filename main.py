@@ -191,22 +191,23 @@ def select_parents(population: List[dict]) -> List[dict]:
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context"""
     import re
-    validation_pattern = r"^[A-Za-z ]{23,40}$"
+    validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
     
     def validate_mutation(response):
         """Structured validation with error tracking"""
         result = str(response).strip()
-        if not re.match(validation_pattern, result):
+        if not re.fullmatch(validation_pattern, result):
             raise ValueError(f"Invalid mutation format: {result}")
         if result[:23].count('a') < chromosome[:23].count('a'):
             raise ValueError(f"Core 'a's decreased from {chromosome[:23].count('a')} to {result[:23].count('a')}")
-        if len(result) < 23:
-            raise ValueError(f"Length below minimum (23): {len(result)}")
+        if len(result) < 23 or len(result) > 40:
+            raise ValueError(f"Length out of bounds (23-40): {len(result)}")
         return result
 
     mutate_prompt = dspy.structured.StructuredPrompt(
         "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
-        validate_output=validate_mutation
+        validate_output=validate_mutation,
+        instructions="MUTATION RULES:\n1. Preserve/exceed 'a' count in first 23 chars\n2. Change 2-3 characters\n3. Maintain 23-40 length\n4. Letters only\n5. Maximize structural score"
     )
     try:
         # Strict input validation
