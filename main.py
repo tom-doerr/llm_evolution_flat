@@ -253,16 +253,15 @@ if __name__ == "__main__":
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
     """Log population data with generation statistics"""
     with gzip.open(log_file, "at", encoding="utf-8") as f:
-        for agent in population:
-            log_entry = {
-                "gen": generation,
-                "fitness": round(agent['fitness'], 1),
-                "chromosome": agent['chromosome'],
-                "mean": round(mean_fitness, 1),
-                "median": round(median_fitness, 1),
-                "std": round(std_fitness, 1)
-            }
-            f.write(json.dumps(log_entry) + "\n")
+        # Batch write all entries with minimal data
+        log_entries = [
+            json.dumps({
+                "g": generation,
+                "f": round(agent['fitness'], 1),
+                "c": agent['chromosome'][:23]  # Only core segment matters
+            }) for agent in population
+        ]
+        f.write("\n".join(log_entries) + "\n")
 
 def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness):
     """Display generation statistics using rich table"""
