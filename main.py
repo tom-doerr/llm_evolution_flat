@@ -1,6 +1,7 @@
 import random
 import string
 import gzip
+import json
 from rich.console import Console
 from rich.table import Table
 from typing import List
@@ -101,44 +102,8 @@ def select_parents(population: List[dict]) -> List[dict]:
         k=len(population)//2
     )
     
-    # Deduplicate while preserving order
-    seen = set()
-    return [agent for i in selected_indices 
-            if not (agent := population[i])["chromosome"] in seen 
-            and not seen.add(agent["chromosome"])]
-    
-    # Create candidate pool with deduplication
-    candidates = [agent for agent in population if agent["chromosome"] not in unique_chromosomes]
-    weights = [squared_fitness[i] for i, agent in enumerate(population) if agent["chromosome"] not in unique_chromosomes]
-    
-    # Roulette wheel selection without replacement
-    while len(selected) < len(population)//2 and candidates:
-        total_weight = sum(weights)
-        if total_weight <= 0:  # Handle zero/negative weights
-            chosen = random.choice(candidates)
-        else:
-            r = random.uniform(0, total_weight)
-            current = 0
-            for i, w in enumerate(weights):
-                current += w
-                if r <= current:
-                    chosen = candidates[i]
-                    break
-        
-        selected.append(chosen)
-        unique_chromosomes.add(chosen["chromosome"])
-        
-        # Remove selected candidate and weight
-        del candidates[i]
-        del weights[i]
-    
-    # Fallback to random selection if needed
-    remaining = len(population)//2 - len(selected)
-    if remaining > 0:
-        fallback_pool = [a for a in population if a["chromosome"] not in unique_chromosomes]
-        selected += random.sample(fallback_pool, min(remaining, len(fallback_pool)))
-    
-    return selected
+    # Deduplicate while preserving order using dictionary (insertion ordered in Python 3.7+)
+    return list({agent["chromosome"]: population[i] for i in selected_indices}.values())
 
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
