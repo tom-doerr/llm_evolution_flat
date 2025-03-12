@@ -191,7 +191,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nCreate a mutated version following standard genetic optimization principles",  # Obfuscated prompt
+            problem_description=f"{problem}\nMUTATION RULES:\n1. EXACTLY 23-40 LETTERS\n2. NO SPECIAL CHARS\n3. MAINTAIN CORE STRUCTURE\n4. CHANGE <= 3 CHARACTERS",  # Validation rules in prompt
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         # More rigorous validation and normalization
@@ -421,6 +421,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     """Rich-formatted display with essential stats"""
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
+    diversity = calculate_diversity(population)  # Get diversity metric
     
     # Format population size with SI suffixes
     pop_size = len(population)
@@ -434,8 +435,9 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
-        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n"
+        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
         f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
+        f"🧬 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
         f"👥 Population: {len(population)}/{get_population_limit()}",
         title="Evolution Progress",
         style="blue"
