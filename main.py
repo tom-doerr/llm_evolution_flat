@@ -233,30 +233,28 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    # Combined validation, weighting and sum check in one comprehension
-    weighted_candidates = [
-        (c, c['fitness']**2 + 1e-6) 
-        for c in candidates 
-        if validate_mating_candidate(c, parent)
-        and (c['fitness']**2 + 1e-6) > 0
-    ]
-    if not weighted_candidates:
+    # Validate candidates in one pass
+    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid_candidates:
         raise ValueError("No valid mates")
-    
-    sum_weights = sum(w for _, w in weighted_candidates)
-    weights = [w/sum_weights for _, w in weighted_candidates]
 
-    # Get LLM selection with validated candidates
+    # Calculate weights using numpy
+    weights = np.array([c['fitness']**2 + 1e-6 for c in valid_candidates], dtype=np.float64)
+    weights /= weights.sum()
+
+    # Get LLM selection from valid candidates
     result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c, _ in weighted_candidates],
+        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
-    ).selected_mate
+    ).selected_mate.lower()
 
-    # Find best match from LLM response
-    return max((c for c, _ in weighted_candidates), 
-              key=lambda x: x["chromosome"].lower().startswith(result.lower()))
+    # Find best match with fallback to weighted random
+    for candidate in valid_candidates:
+        if candidate["chromosome"].lower().startswith(result):
+            return candidate
+    return valid_candidates[np.argmax(weights)]
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
