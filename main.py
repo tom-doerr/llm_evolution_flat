@@ -192,7 +192,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
         validate_chromosome(chromosome)
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nMUTATION RULES:\n1. EXACTLY 23-40 LETTERS\n2. CHANGE 1-3 CHARACTERS\n3. KEEP FIRST 23 STRUCTURE\n4. OUTPUT ONLY 40-LETTER STRING",
+            problem_description=f"{problem}\nMUTATION RULES:\n- EXACTLY 23-40 LETTERS/SPACES\n- MODIFY 1-3 CHARACTERS\n- PRESERVE FIRST 23 STRUCTURE\n- OUTPUT ONLY 40-CHAR STRING\n- NO MARKDOWN/FORMATTING",
         )
         mutated = str(response.get('mutated_chromosome', chromosome)).strip()[:40]  # Fallback to original
         # More rigorous validation and normalization
