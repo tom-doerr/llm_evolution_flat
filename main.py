@@ -283,23 +283,20 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
-    candidates = (population[-WINDOW_SIZE:] or population)[:100]  # Hard limit
-    valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
+    # Get validated candidates in one operation
+    valid_candidates = [
+        a for a in (population[-WINDOW_SIZE:] or population)[:100]
+        if validate_mating_candidate(a, parent)
+    ]
     
-    # Fix syntax errors in random.choices call
-    selected = random.choices(
+    # Select mate and build child in streamlined way
+    mate = llm_select_mate(parent, random.choices(
         valid_candidates,
         weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
         k=min(5, len(valid_candidates))
-    )
-    
-    mate = llm_select_mate(parent, selected)
-    
-    return create_agent(build_child_chromosome(
-        parent["chromosome"],
-        mate["chromosome"],
-        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]))
     ))
+    
+    return create_agent(build_child_chromosome(parent, mate))
     ))
 
 
