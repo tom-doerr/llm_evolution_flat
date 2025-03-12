@@ -160,26 +160,19 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     # Combined extraction and validation of mutation params
     mc = agent["mutation_chromosome"]
-    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))  # First 3 chars for temp
-    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))       # Next 4 chars for top_p
-    assert 0 <= temperature <= 2.0, "Temperature out of range"
-    assert 0 <= top_p <= 1.0, "Top_p out of range"
-    assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
-    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
+    # Extract and validate mutation params
+    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7'))
+    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9'))
+    
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
-        temperature=temp_top_p[0],
-        top_p=temp_top_p[1],
+        temperature=temperature,
+        top_p=top_p,
     )
 
     # Validate mutations preserve core 'a' count and structure
     core_a_count = agent["chromosome"][:23].count('a')
-    valid_mutations = (
-        str(r).strip()[:40].lower()
-        for r in response.completions
-        if (len(str(r).strip()) >= 23 
-            and str(r).strip().startswith(agent["chromosome"][:23].lower())
             and str(r).strip()[:23].count('a') >= core_a_count
         )
     )
