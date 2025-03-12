@@ -290,7 +290,7 @@ def generate_children(
         parent = random.choice(parents) if parents else create_agent("")
         try:
             child = crossover(parent, population)
-        except ValueError as e:
+        except ValueError as e:  # Catch specific exception type
             print(f"Crossover failed: {e}, using mutation instead")
             child = create_agent(mutate(parent["chromosome"]))
         
