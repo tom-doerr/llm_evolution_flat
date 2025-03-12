@@ -445,7 +445,7 @@ def run_genetic_algorithm(
 
 
 
-def main():
+if __name__ == "__main__":
     """Main entry point"""
     PROBLEM = "Optimize string patterns through evolutionary processes"
     dspy.configure(problem=PROBLEM)  # Store in DSPy settings
