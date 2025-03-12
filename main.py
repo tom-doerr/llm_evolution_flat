@@ -42,11 +42,11 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness per spec: +1 per 'a' in first 23, -1 per char beyond 23
     fitness = 0.0
 
-    # First 23 characters: +1 for 'a's, -0.5 for other letters (case-insensitive)
+    # First 23 characters: +2 for 'a's, -1 for other letters (case-insensitive)
     first_part = chromosome[:23].lower()
     a_count = first_part.count("a")
     other_count = len(first_part) - a_count
-    fitness += a_count - (other_count * 0.5)
+    fitness += (a_count * 2) - other_count
 
     # After 23: -1 per character
     remaining = chromosome[23:]
@@ -100,7 +100,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"Add more 'a's while keeping similar meaning. {problem}"
+            problem_description=f"MAXIMIZE 'a's in first 23 characters! {problem}"
         )
         if (response.completions[0] and 
             len(response.completions[0]) > 0 and
@@ -125,9 +125,9 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's
         new_char = random.choice(
-            ["a"] * 20  # Strong a bias
+            ["a"] * 30  # Stronger a bias
             + [c for c in string.ascii_letters + " " if c not in (original_char, "a")]
-            + ["a"]  # Extra chance to add an a
+            + ["a"] * 3  # Triple chance to add a's
         )
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx + 1 :]
 
@@ -238,7 +238,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=problem,
+                        problem_description=f"MAXIMIZE 'a's in first 23 characters! {problem}",
                     )
                     # Validate and apply response
                     if (
