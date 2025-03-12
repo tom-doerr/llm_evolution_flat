@@ -45,8 +45,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'mean': float(np.nanmean(arr)),
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
-        'best_current': float(arr[-1]) if len(arr) > 0 else 0.0,
-        'worst_current': float(np.nanmin(arr)) if len(arr) > 0 else 0.0,
+        'best_current': float(np.nanmax(arr[-1:])),  # Last element only
+        'worst_current': float(np.nanmin(arr)),
         'best_window': float(np.nanmax(arr)),
         'worst_window': float(np.nanmin(arr))
     }
@@ -335,9 +335,8 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_genetic_algorithm(pop_size: int) -> None:
+def run_genetic_algorithm(pop_size: int, max_population: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    max_population = MAX_POPULATION  # Use constant from spec.md
     population = initialize_population(min(pop_size, max_population))[:max_population]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
