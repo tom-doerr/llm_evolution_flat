@@ -468,9 +468,9 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
 
 def display_generation_stats(generation: int, generations: int, population: list, 
                            best: dict, fitness_window: list):
-    """Rich-formatted display with essential stats"""
+    """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    stats = calculate_window_statistics(fitness_window, 100)
+    stats = calculate_window_statistics(fitness_window)
     diversity = calculate_diversity(population)
     current_pop_size = len(population)
     
