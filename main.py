@@ -104,17 +104,33 @@ def select_parents(population: List[dict]) -> List[dict]:
     candidates = [agent for agent in population if agent["chromosome"] not in unique_chromosomes]
     weights = [squared_fitness[i] for i, agent in enumerate(population) if agent["chromosome"] not in unique_chromosomes]
     
-    while len(selected) < len(population)//2 and len(candidates) > 0:
-        # Weighted sample without replacement
-        chosen = random.choices(candidates, weights=weights, k=1)[0]
+    # Roulette wheel selection without replacement
+    while len(selected) < len(population)//2 and candidates:
+        total_weight = sum(weights)
+        if total_weight <= 0:  # Handle zero/negative weights
+            chosen = random.choice(candidates)
+        else:
+            r = random.uniform(0, total_weight)
+            current = 0
+            for i, w in enumerate(weights):
+                current += w
+                if r <= current:
+                    chosen = candidates[i]
+                    break
+        
         selected.append(chosen)
         unique_chromosomes.add(chosen["chromosome"])
         
-        # Remove chosen from candidates
-        index = candidates.index(chosen)
-        del candidates[index]
-        del weights[index]
-        
+        # Remove selected candidate and weight
+        del candidates[i]
+        del weights[i]
+    
+    # Fallback to random selection if needed
+    remaining = len(population)//2 - len(selected)
+    if remaining > 0:
+        fallback_pool = [a for a in population if a["chromosome"] not in unique_chromosomes]
+        selected += random.sample(fallback_pool, min(remaining, len(fallback_pool)))
+    
     return selected
 
 
@@ -125,12 +141,12 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nRULES:\n1. IMPROVE INITIAL SEGMENT QUALITY\n2. REMOVE UNNECESSARY ELEMENTS\n3. ALPHABETIC CHARACTERS ONLY\n4. STRICT LENGTH LIMITS",  # More obfuscated
+            problem_description=f"{problem}\nRULES:\n1. ENHANCE STRUCTURAL QUALITY\n2. ELIMINATE REDUNDANCIES\n3. LETTERS ONLY\n4. MAINTAIN LENGTH CONSTRAINTS",  # Obfuscated
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
         mutated = mutated[:23] + ''  # Enforce truncation after 23
-        mutated = mutated.ljust(23, 'x')[:40]  # Fill with neutral chars
+        mutated = mutated.ljust(23, random.choice('abcdefghijklmnopqrstuvwxyz'))[:40]  # Random fill
         
         # Validation asserts
         assert len(mutated) >= 23, f"Mutation too short: {len(mutated)}"
@@ -331,7 +347,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nOPTIMIZATION RULES:\n1. ENHANCE INITIAL PORTION\n2. STRICT LENGTH LIMITS\n3. ALPHABETIC CHARACTERS ONLY\n4. NO METACOMMENTARY",
+                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. IMPROVE COMPOSITION\n2. MAINTAIN LENGTH RULES\n3. USE ALPHABETIC CHARACTERS\n4. AVOID EXPLANATIONS",
                     )
                     # Validate and apply response
                     if (
