@@ -13,10 +13,22 @@ class GeneticAgent:
     def evaluate(self, problem_description: str) -> float:
         """Evaluate the agent by making an LLM request"""
         try:
-            response = lm(self.chromosome)
-            # For now, just use response length as fitness
-            self.fitness = len(response)
-            return self.fitness
+            # Create a proper prompt
+            prompt = f"Problem: {problem_description}\nSolution: {self.chromosome}\n\nEvaluate this solution's quality on a scale from 0 to 10, where 10 is perfect:"
+            
+            # Get LLM response
+            response = lm(prompt)
+            
+            # Try to extract a numeric score from the response
+            try:
+                # Look for a number between 0 and 10 in the response
+                self.fitness = float(next((word for word in response.split() if word.replace('.', '').isdigit()), 1.0)
+                # Ensure fitness is between 0 and 10
+                self.fitness = max(0.0, min(10.0, self.fitness))
+                return self.fitness
+            except (ValueError, StopIteration):
+                # If we can't parse a number, use default fitness
+                return 1.0
         except RuntimeError as e:
             print(f"Error in LLM request: {e}")
             return 0.0
