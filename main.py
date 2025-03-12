@@ -87,7 +87,7 @@ def create_agent(chromosome: str) -> dict:
     return {
         "chromosome": chromosome,
         "task_chromosome": chromosome[:23],
-        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10],  # 10 chars for mate selection per spec.md
+        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),  # 10 chars enforced per spec.md
         "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # 7 chars for mutation instructions
         "fitness": 0.0
     }
@@ -130,6 +130,8 @@ def select_parents(population: List[dict]) -> List[dict]:
     ).clip(1e-6)
     
     weights /= weights.sum()  # Normalize
+    assert np.isclose(weights.sum(), 1.0), "Weights must sum to 1"
+    assert len(weights) == len(population), "Weight/population size mismatch"
     
     selected_indices = np.random.choice(
         len(population),
@@ -400,6 +402,9 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
     if len(population) <= max_size:
         return population
+    
+    assert max_size <= MAX_POPULATION, "Population size exceeds maximum allowed"
+    assert all(a['fitness'] >= 0 for a in population), "Negative fitness values found"
         
     pop_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
     pop_weights /= pop_weights.sum()
