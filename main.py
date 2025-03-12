@@ -470,8 +470,7 @@ def extreme_values(population: List[dict]) -> dict:
 
 def calculate_diversity(population: List[dict]) -> float:
     """Calculate population diversity ratio [0-1]"""
-    unique_chromosomes = len({agent["chromosome"] for agent in population})
-    return unique_chromosomes / len(population) if population else 0.0
+    return sum(1 for a in population if a["chromosome"] != population[0]["chromosome"])/len(population) if population else 0.0
 
 
 
@@ -535,7 +534,8 @@ def validate_population_state(best, worst) -> None:
     # Validate core segment metrics
     assert (
         len(best['metrics']['core_segment']) == 23 and
-        ' ' not in best['chromosome'].strip()
+        best['chromosome'][:23].islower() and
+        ' ' not in best['chromosome']
     ), "Core segment validation failed"
     
     # Validate mutation rate parameters are within sane bounds
