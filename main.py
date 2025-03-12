@@ -240,18 +240,16 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         k=min(5, len(population))
     )
     
+    mate = llm_select_mate(parent, candidates)
+    split_point = random.randint(1, len(parent["chromosome"])-1)
+    
     try:
-        mate = llm_select_mate(parent, candidates)
-        max_split = min(len(parent["chromosome"]), len(mate["chromosome"])) 
-        split = random.randint(23 - min(23, max_split), max_split - 1)
-        new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
-        
+        new_chromosome = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
         validate_chromosome(new_chromosome)
         if new_chromosome[:23].count('a') < parent["chromosome"][:23].count('a'):
             raise ValueError("Core 'a' count decreased")
-            
         return create_agent(new_chromosome)
-    except (AssertionError, ValueError) as e:
+    except (AssertionError, ValueError):
         return create_agent(mutate(parent["chromosome"]))
 
 
