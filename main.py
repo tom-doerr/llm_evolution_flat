@@ -355,6 +355,7 @@ def evaluate_population(population: List[dict]) -> List[dict]:
 def update_population_stats(fitness_window: list, population: list) -> dict:
     """Helper to calculate population statistics"""
     stats = calculate_window_statistics(fitness_window)
+    # Combined stats updates
     stats.update({
         'diversity': calculate_diversity(population),
         'population_size': len(population),
