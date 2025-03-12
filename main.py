@@ -76,9 +76,6 @@ def validate_chromosome(chromosome: str) -> str:
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
     chromosome = validate_chromosome(chromosome)
-    # Chromosome validity already enforced by validate_chromosome()
-    assert len(agent["task_chromosome"]) == 23, "Task chromosome must be 23 chars"
-    
     # Generate random chromosome if empty
     if not chromosome:
         chromosome = "".join(random.choices(string.ascii_letters + " ", 
@@ -168,8 +165,6 @@ def mutate_with_llm(agent: dict) -> str:
     # Validate parameters before LLM call
     assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
     assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
-    agent_chrom = agent["chromosome"]  # Define missing variable
-
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
@@ -250,7 +245,6 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     weights = [c['fitness']**2 + 1e-6 for c in valid]
     sum_weights = sum(weights)
     assert sum_weights > 0, "All candidate weights are zero"
-    normalized_weights = [w/sum_weights for w in weights]
 
     # Get LLM selection
     result = dspy.Predict(MateSelectionSignature)(
