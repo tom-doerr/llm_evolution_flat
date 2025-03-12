@@ -168,8 +168,7 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    mc = agent["mutation_chromosome"]
-    agent_chrom = agent["chromosome"]
+    mc, agent_chrom = agent["mutation_chromosome"], agent["chromosome"]
     
     # Extract and validate parameters
     temp_str = mc[0:3] or '0.7'
