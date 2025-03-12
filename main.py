@@ -69,34 +69,38 @@ def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     return window  # Already size-limited by slicing
 
 def score_chromosome(chromosome: str) -> dict:
-    """Calculate comprehensive structural scoring metrics with validation"""
-    # Core segment analysis
+    """Calculate structural scoring metrics"""
     core = chromosome[:23].lower()
-    assert len(core) == 23, "Core segment must be exactly 23 characters"
+    assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Combined analysis for reduced variables
-    vowel_count = sum(1 for c in core if c in 'aeiou')
-    a_count = core.count('a')
-    
-    metrics = {
-        'vowel_ratio': vowel_count / 23,
-        'consonant_ratio': (23 - vowel_count) / 23,
-        'uniqueness': len(set(core)) / 23,
-        'a_density': a_count / 23,
-        'core_segment': core
+    # Combined analysis in single pass
+    analysis = {
+        'vowels': 0,
+        'consonants': 0,
+        'unique': set(),
+        'a_count': 0,
+        'repeats': 0
     }
     
-    # Structural validation
-    assert 0 <= vowels <= 23, "Invalid vowel count"
-    assert 0 <= consonants <= 23, "Invalid consonant count"
-    assert 1 <= unique_chars <= 23, "Invalid uniqueness calculation"
+    prev_char = None
+    for c in core:
+        analysis['unique'].add(c)
+        if c in 'aeiou':
+            analysis['vowels'] += 1
+        else:
+            analysis['consonants'] += 1
+        if c == 'a':
+            analysis['a_count'] += 1
+        if c == prev_char:
+            analysis['repeats'] += 1
+        prev_char = c
     
     return {
-        'vowel_ratio': vowels / 23,
-        'consonant_ratio': consonants / 23,
-        'uniqueness': unique_chars / 23,
-        'a_density': a_density,
-        'repeating_pairs': repeating_chars / 22,  # Possible pairs in 23 chars
+        'vowel_ratio': analysis['vowels'] / 23,
+        'consonant_ratio': analysis['consonants'] / 23,
+        'uniqueness': len(analysis['unique']) / 23,
+        'a_density': analysis['a_count'] / 23,
+        'repeating_pairs': analysis['repeats'] / 22,
         'core_segment': core
     }
 
