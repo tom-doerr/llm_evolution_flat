@@ -34,19 +34,19 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     
     if not window:
-        return {"mean": 0.0, "median": 0.0, "std": 0.0, 
-                "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
+        return dict(mean=0.0, median=0.0, std=0.0, 
+                best=0.0, worst=0.0, q25=0.0, q75=0.0)
 
     arr = np.array(window, dtype=np.float64)
-    return {  # Using dict literal per pylint
-        "mean": float(np.nanmean(arr)),
-        "median": float(np.nanmedian(arr)),
-        "std": float(np.nanstd(arr)),
-        "best": float(np.nanmax(arr)),
-        "worst": float(np.nanmin(arr)),
-        "q25": float(np.nanpercentile(arr, 25)),
-        "q75": float(np.nanpercentile(arr, 75))
-    }
+    return dict(
+        mean=float(np.nanmean(arr)),
+        median=float(np.nanmedian(arr)),
+        std=float(np.nanstd(arr)),
+        best=float(np.nanmax(arr)),
+        worst=float(np.nanmin(arr)),
+        q25=float(np.nanpercentile(arr, 25)),
+        q75=float(np.nanpercentile(arr, 75))
+    )
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
@@ -272,24 +272,20 @@ def run_genetic_algorithm(pop_size: int) -> None:
     fitness_window = []
 
     while True:  # Continuous evolution per spec.md
-        iteration = len(fitness_window) // WINDOW_SIZE
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        # Consolidated stats with window metrics
-        stats = {
-            **calculate_window_statistics(fitness_window),
+        stats = calculate_window_statistics(fitness_window)
+        stats.update({
             'diversity': calculate_diversity(population),
-            'generation': iteration,
             'population_size': len(population),
             'best': max(a['fitness'] for a in population),
             'worst': min(a['fitness'] for a in population)
-        }
+        })
         
-        log_population(iteration, stats)
-        display_generation_stats(iteration, stats)
+        log_population(stats.get('generation', 0), stats)
+        display_generation_stats(stats, population)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
-        iteration += 1
 
 
 
