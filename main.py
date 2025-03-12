@@ -325,7 +325,7 @@ def evolution_loop(population: List[dict]) -> None:
             worst=min(a["fitness"] for a in population)
         )
         
-        log_and_display(stats, population)
+        handle_generation_output(stats, population))
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
