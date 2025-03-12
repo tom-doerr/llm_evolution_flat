@@ -389,8 +389,14 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        # Trim population before each iteration (spec.md population limit)
-        population = sorted(population, key=lambda x: x["fitness"], reverse=True)[:max_population]
+        # Continuous population trimming per spec.md (no generations)
+        if len(population) > max_population:
+            weights = [a['fitness']**2 + 1e-6 for a in population]
+            population = random.choices(
+                population,
+                weights=weights,
+                k=max_population
+            )
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
