@@ -315,7 +315,7 @@ if __name__ == "__main__":
     run_genetic_algorithm(generations=20)
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
-    """Log gzipped population data with rotation"""
+    """Log population data with rotation"""
     with open("evolution.log", "a" if generation else "w", encoding='utf-8') as f:
         best = max(population, key=lambda x: x['fitness'])
         worst = min(population, key=lambda x: x['fitness'])
