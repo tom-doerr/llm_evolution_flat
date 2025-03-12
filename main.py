@@ -360,7 +360,7 @@ def run_genetic_algorithm(
 
     # Clear log file at start per spec
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        pass  # Empty file by opening in write mode (truncates existing)
+        f.write("")  # Explicitly empty log file
 
     fitness_window = []  # Initialize window
     for generation in range(generations):
@@ -423,14 +423,14 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, stats, diversity, log_file):
+def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
     """Log gzipped population data with rotation"""
     # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
         f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()} | Diversity: {diversity:.2f}\n")
-        f.write(f"Mean: {mean_fitness}, Median: {median_fitness}, Std: {std_fitness}\n")
+        f.write(f"Mean: {mean_fitness:.2f}, Median: {median_fitness:.2f}, Std: {std_fitness:.2f}\n")
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
