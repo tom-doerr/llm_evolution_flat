@@ -265,6 +265,11 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
+def log_and_display(stats: dict) -> None:
+    """Combined logging and display operations"""
+    log_population(stats)
+    display_generation_stats(stats)
+
 def validate_population_extremes(population: List[dict]) -> None:
     """Validate best/worst agents in population"""
     best, worst = get_population_extremes(population)
