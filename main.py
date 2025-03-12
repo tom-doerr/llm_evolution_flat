@@ -115,14 +115,14 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         for agent in population:
             evaluate_agent(agent, problem)
         
-        # Compressed logging
-        with gzip.open(log_file, 'at', encoding='utf-8') as f:
-            f.write(f"{generation},{best['fitness']},{best['chromosome']}\n")
-        
-        # Print progress
+        # Get best/worst before logging
         sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
         best = sorted_pop[0]
         worst = sorted_pop[-1]
+
+        # Compressed logging
+        with gzip.open(log_file, 'at', encoding='utf-8') as f:
+            f.write(f"{generation},{best['fitness']},{best['chromosome']}\n")
         
         # Information-dense output
         print(f"\nGen {generation+1}/{generations} | Pop: {pop_size}")
