@@ -363,6 +363,8 @@ def improve_top_candidates(next_gen, problem):
             next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
     return next_gen
 
+MAX_POPULATION = 1_000_000  # Hard cap from spec
+
 def run_genetic_algorithm(
     problem: str,
     generations: int = 10,
@@ -410,6 +412,7 @@ def run_genetic_algorithm(
         # Validate population state and size
         validate_population_state(best, worst)
         assert len(population) <= MAX_POPULATION, f"Population overflow {len(population)} > {MAX_POPULATION}"
+        pop_size = len(population)  # Track current population size
         
         # Generate next generation with size monitoring
         parents = select_parents(population)
@@ -453,6 +456,7 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
 def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window):
+    from rich.panel import Panel  # Fix missing import
     """Rich-formatted display with essential stats"""
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
@@ -461,12 +465,13 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     # Track diversity in window stats
     stats['diversity'] = diversity
     suffix = ''
-    if pop_size >= 1_000_000:
-        pop_size /= 1_000_000
-        suffix = 'M'
-    elif pop_size >= 1_000:
-        pop_size /= 1_000
-        suffix = 'K'
+    current_pop_size = len(population)
+    if current_pop_size >= 1_000_000:
+        display_size = f"{current_pop_size/1_000_000:.1f}M"
+    elif current_pop_size >= 1_000:
+        display_size = f"{current_pop_size/1_000:.1f}K"
+    else:
+        display_size = str(current_pop_size)
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
@@ -481,7 +486,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     console.print(panel)
 
 
-def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
+# Removed duplicate function definition
     """Improve top candidates using LLM optimization"""
     for i in range(min(2, len(next_gen))):
         improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
@@ -513,7 +518,7 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation, base_mutation_rate, problem):
+def apply_mutations(generation, base_mutation_rate):
     """Auto-adjust mutation rate based on population diversity"""
     # Calculate diversity and adapt mutation rate using Pareto distribution
     diversity_ratio = calculate_diversity(generation)
