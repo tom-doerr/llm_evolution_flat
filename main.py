@@ -194,9 +194,10 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
+import re  # Moved toplevel import
+
 def mutate_with_llm(chromosome: str, problem: str) -> str:
-    """Mutate chromosome using LLM-based rephrasing with problem context"""
-    import re  # Fix missing import
+    """Mutate chromosome using LLM-based rephrasing with problem context""" 
     validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
     
     def validate_mutation(response):
@@ -266,12 +267,17 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
-    # Validate parent first with debugging
     parent_chrom = validate_chromosome(parent["chromosome"])
-    debug = False
     
-    # Pre-validate all candidates before LLM call
-    candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
+    # Pre-validate candidates with helper
+    def is_valid_candidate(c):
+        try:
+            agent_chrom = validate_chromosome(c["chromosome"])
+            return agent_chrom != parent_chrom and 23 <= len(agent_chrom) <= 40
+        except AssertionError:
+            return False
+            
+    valid_candidates = [c for c in candidates if is_valid_candidate(c)]
     assert parent["fitness"] > 0, "Parent must have positive fitness"
     
     # Strict candidate validation with error handling
@@ -493,7 +499,7 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation, base_mutation_rate):
+def apply_mutations(generation, base_mutation_rate, problem):  # Add missing problem param
     """Auto-adjust mutation rate based on population diversity"""
     # Calculate diversity and adapt mutation rate using Pareto distribution
     diversity_ratio = calculate_diversity(generation)
