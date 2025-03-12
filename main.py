@@ -357,11 +357,21 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
     
+    # Format population size with SI suffixes
+    pop_size = len(population)
+    suffix = ''
+    if pop_size >= 1_000_000:
+        pop_size /= 1_000_000
+        suffix = 'M'
+    elif pop_size >= 1_000:
+        pop_size /= 1_000
+        suffix = 'K'
+    
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n"
         f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
-        f"👥 Population: {len(population)}",
+        f"👥 Population: {pop_size:.1f}{suffix}",
         title="Evolution Progress",
         style="blue"
     )
