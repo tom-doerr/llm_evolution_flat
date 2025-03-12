@@ -2,10 +2,22 @@ import random
 import string
 from typing import List
 import dspy
+import logging
+
+# Configure logging
+logging.basicConfig(
+    filename='evolution.log',
+    filemode='w',  # Empty file on start
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s'
+)
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40, timeout=10)
 dspy.configure(lm=lm)
+
+# Validate configuration
+assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
@@ -70,18 +82,31 @@ def crossover(parent1: dict, parent2: dict) -> dict:
 
 def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5):
     """Run genetic algorithm with LLM-assisted evolution"""
+    assert pop_size > 1, "Population size must be greater than 1"
+    assert generations > 0, "Number of generations must be positive"
+    
     population = initialize_population(pop_size)
+    logging.info(f"Starting evolution with population size {pop_size}")
     
     for generation in range(generations):
         # Evaluate all agents
         for agent in population:
             evaluate_agent(agent, problem)
         
-        # Print current generation
-        print(f"\nGeneration {generation + 1}")
+        # Print and log current generation
         sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
-        for agent in sorted_pop:
-            print(f"Chromosome: {agent['chromosome'][:50]}... | Fitness: {agent['fitness']}")
+        best = sorted_pop[0]
+        worst = sorted_pop[-1]
+        
+        # Information-dense output
+        print(f"\nGen {generation+1}/{generations} | Pop: {pop_size}")
+        print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']})")
+        print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']})")
+        
+        # Log detailed info
+        logging.info(f"Generation {generation+1}")
+        logging.info(f"Best: {best['chromosome']} (fitness: {best['fitness']})")
+        logging.info(f"Worst: {worst['chromosome']} (fitness: {worst['fitness']})")
         
         # Select parents and create next generation
         parents = select_parents(population)
