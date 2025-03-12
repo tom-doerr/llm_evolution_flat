@@ -285,21 +285,22 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
-    # Streamlined candidate processing with numpy
-    candidates = (population[-WINDOW_SIZE:] or population)[:100]
-    valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
+    valid_candidates = [
+        a for a in (population[-WINDOW_SIZE:] or population)[:100] 
+        if validate_mating_candidate(a, parent)
+    ]
     
-    # Handle mate selection in one numpy operation
-    mates = []
+    # Weighted selection using numpy
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
-        weights /= weights.sum()
-        mates = [valid_candidates[i] for i in np.random.choice(
-            len(valid_candidates), 
-            size=min(5, len(valid_candidates)),
-            replace=False,
-            p=weights
-        )]
+        mates = [
+            valid_candidates[i] for i in np.random.choice(
+                len(valid_candidates),
+                size=min(5, len(valid_candidates)),
+                replace=False,
+                p=weights/weights.sum()
+            )
+        ]
     
     mate = llm_select_mate(parent, mates) if mates else parent  # Fallback to parent if no mates
     
