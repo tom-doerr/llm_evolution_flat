@@ -136,9 +136,11 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     # Calculate fitness^2 weights with Pareto distribution (spec.md requirement)
-    weights = np.array([(a['fitness']**2 * np.random.pareto(2)) + 1e-6 for a in population])
-    weights = np.nan_to_num(weights, nan=1e-6)  # Handle potential NaNs
-    weights /= weights.sum() + 1e-9  # Prevent division by zero
+    # Calculate weights with Pareto distribution and fitness^2 as per spec.md
+    weights = np.array([(a['fitness']**2 * (np.random.pareto(2) + 1e-6)) for a in population])
+    weights = np.nan_to_num(weights, nan=1e-6)
+    weights = np.where(weights <= 0, 1e-6, weights)  # Ensure all weights are positive
+    weights /= weights.sum()  # Normalize
     
     # Enforce population limit - critical for spec.md requirement
     population = population[:MAX_POPULATION]
@@ -256,16 +258,12 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             size=min(5, len(candidates)),
             replace=False,
             # Weight by fitness^2 with Pareto distribution as per spec.md
-            weights_array = np.array([
-                        a['fitness']**2 * np.random.pareto(2) + 1e-6 
-                        for a in candidates 
-                        if validate_mating_candidate(a, parent)
-                    ])
-            if weights_array.sum() > 0:
-                p = weights_array / weights_array.sum()
-            else:
-                p = np.ones(len(weights_array)) / len(weights_array)
-            )
+            np.array([
+                a['fitness']**2 * np.random.pareto(2) + 1e-6 
+                for a in candidates 
+                if validate_mating_candidate(a, parent)
+            ])
+            p = weights_array / weights_array.sum() if weights_array.sum() > 0 else np.ones(len(weights_array)) / len(weights_array)
         )]
     )
     
