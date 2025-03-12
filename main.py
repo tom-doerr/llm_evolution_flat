@@ -140,7 +140,7 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     # Calculate fitness^2 weights with Pareto distribution (spec.md requirement)
-    weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
+    weights = np.array([(a['fitness']**2 * np.random.pareto(2)) + 1e-6 for a in population])
     weights = np.nan_to_num(weights, nan=1e-6)  # Handle potential NaNs
     weights /= weights.sum() + 1e-9  # Prevent division by zero
     
@@ -262,7 +262,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             replace=False,
             # Weight by fitness^2 with Pareto distribution as per spec.md
             p=(lambda weights: (weights/weights.sum()) if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
-                np.array([a['fitness']**2 * np.random.pareto(2) + 1e-6 
+                np.array([(a['fitness']**2 * np.random.pareto(2)) + 1e-6 
                 for a in candidates if validate_mating_candidate(a, parent)])
             )
         )]
