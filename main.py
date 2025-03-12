@@ -3,8 +3,8 @@ import string
 from typing import List
 import dspy
 
-# Configure DSPy with OpenRouter
-lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40)
+# Configure DSPy with OpenRouter and timeout
+lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40, timeout=10)
 dspy.configure(lm=lm)
 
 def create_agent(chromosome: str) -> dict:
@@ -97,20 +97,22 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         for i in range(len(next_gen)//2):
             next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
         
-        # Use LLM to improve top candidates
-        for i in range(min(2, len(next_gen))):
-            prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
-            try:
-                response = lm(prompt)
-                # Ensure response is valid
-                if response and isinstance(response, str) and len(response) > 0:
-                    next_gen[i]['chromosome'] = response
-                else:
-                    # If invalid response, keep original chromosome
+        # Use LLM to improve top candidates (only every 5 generations)
+        if generation % 5 == 0:
+            for i in range(min(2, len(next_gen))):
+                prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
+                try:
+                    response = lm(prompt)
+                    # Ensure response is valid
+                    if response and isinstance(response, str) and len(response) > 0:
+                        next_gen[i]['chromosome'] = response
+                    else:
+                        # If invalid response, mutate instead
+                        next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
+                except Exception as e:
+                    print(f"LLM improvement failed: {str(e)}")
+                    # If LLM fails, mutate instead
                     next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
-            except Exception:
-                # If LLM fails, mutate instead
-                next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
         
         population = next_gen
 
