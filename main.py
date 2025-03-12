@@ -121,19 +121,27 @@ def select_parents(population: List[dict]) -> List[dict]:
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing"""
     mutate_prompt = dspy.Predict("original_chromosome, problem_description -> mutated_chromosome")
+    # Strict mutation with validation
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nRULES:\n1. ENHANCE INITIAL SEGMENT\n2. TRUNCATE EXCESS\n3. LETTERS ONLY\n4. MAX LENGTH 40",  # Obfuscated
+            problem_description=f"{problem}\nRULES:\n1. IMPROVE INITIAL SEGMENT QUALITY\n2. REMOVE UNNECESSARY ELEMENTS\n3. ALPHABETIC CHARACTERS ONLY\n4. STRICT LENGTH LIMITS",  # More obfuscated
         )
-        if response.mutated_chromosome:
-            mutated = str(response.mutated_chromosome).strip()[:23]  # Access named output field
-            mutated = mutated.ljust(23, 'a')[:40]  # Ensure min length 23, max 40
-            mutated = ''.join([c if c.isalpha() else 'a' for c in mutated])  # Enforce letters only
-            return mutated
-    except (TimeoutError, RuntimeError):
-        pass
-    return mutate(chromosome)  # Fallback to traditional mutation
+        mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
+        mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
+        mutated = mutated[:23] + ''  # Enforce truncation after 23
+        mutated = mutated.ljust(23, 'x')[:40]  # Fill with neutral chars
+        
+        # Validation asserts
+        assert len(mutated) >= 23, f"Mutation too short: {len(mutated)}"
+        assert len(mutated) <= 40, f"Mutation too long: {len(mutated)}"
+        assert all(c.isalpha() for c in mutated), f"Invalid chars: {mutated}"
+        
+        return mutated
+    except (TimeoutError, RuntimeError, AssertionError) as e:
+        print(f"Mutation failed: {str(e)}")
+        # Fallback to random mutation without recursion
+        return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome with 30% chance of LLM-based mutation"""
@@ -326,7 +334,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nMUTATION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARACTERS\n2. TRUNCATE TO 23 CHARACTERS\n3. LETTERS ONLY\n4. NO EXPLANATIONS",
+                        problem_description=f"{problem}\n\nOPTIMIZATION RULES:\n1. ENHANCE INITIAL PORTION\n2. STRICT LENGTH LIMITS\n3. ALPHABETIC CHARACTERS ONLY\n4. NO METACOMMENTARY",
                     )
                     # Validate and apply response
                     if (
