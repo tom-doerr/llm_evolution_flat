@@ -285,6 +285,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
         
         log_population(stats.get('generation', 0), stats)
         display_generation_stats(stats, population)
+        validate_population_state(*get_population_extremes(population))
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
