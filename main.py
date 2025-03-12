@@ -379,12 +379,9 @@ def run_genetic_algorithm(
         # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
         window_size = 100
-        fitness_window = helpers.update_fitness_window(fitness_window, all_fitness, window_size)
-        stats = helpers.calculate_window_statistics(fitness_window, window_size)
-        mean_fitness = stats['mean']
-        median_fitness = stats['median'] 
-        std_fitness = stats['std']
-
+        fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
+        stats = calculate_window_statistics(fitness_window, window_size)
+        
         # Get population extremes
         best, worst = get_population_extremes(population)
 
@@ -392,12 +389,8 @@ def run_genetic_algorithm(
         current_diversity = calculate_diversity(population)
         log_population(population, generation, mean_fitness, median_fitness, std_fitness, current_diversity, log_file)
 
-        # Calculate and display statistics
-        fitness_values = [a['fitness'] for a in population]
-        mean_fitness = np.mean(fitness_values)
-        median_fitness = np.median(fitness_values)
-        std_fitness = np.std(fitness_values)
-        display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window)
+        # Display statistics from sliding window
+        display_generation_stats(generation, generations, population, best, stats['mean'], stats['std'], fitness_window)
 
         # Validate population state and size
         validate_population_state(best, worst)
@@ -540,7 +533,7 @@ def validate_population_state(best, worst):
 def validate_improvement(response):
     """Validate LLM improvement response meets criteria"""
     return (
-        response.completions[0]
+        response["improved_chromosome"]
         and len(response.completions[0]) > 0
         and len(response.completions[0]) <= 40
         and all(c in string.ascii_letters + " " for c in response.completions[0])
