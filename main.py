@@ -207,17 +207,14 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
 
 def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     """Create child through LLM-assisted mate selection"""
-    # Get weighted candidates without replacement
-    candidates = random.choices(
-        population,
-        weights=[a["fitness"]**2 for a in population],
-        k=min(5, len(population)))
+    # Get candidates using weighted sampling without replacement with deduplication
+    candidates = random.sample(
+        [a for a in population if a["chromosome"] != parent["chromosome"]],
+        k=min(5, len(population)//2)
+    )
     
-    # Deduplicate candidates
-    unique_candidates = {a["chromosome"]: a for a in candidates}.values()
-    
-    # Select mate using LLM prompt
-    mate = llm_select_mate(parent, list(unique_candidates), problem)
+    # Select mate using LLM prompt from qualified candidates
+    mate = llm_select_mate(parent, candidates, problem)
     
     # Combine chromosomes
     split = random.randint(1, len(parent["chromosome"]) - 1)
