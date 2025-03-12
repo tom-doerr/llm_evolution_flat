@@ -136,21 +136,20 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    # Get sliding window of recent evaluations from fitness window
+    # Get candidates and calculate weights in one step
     candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
     
-    # Calculate Pareto distribution weights from spec.md
-    fitness_values = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = 1.0 / (1.0 + np.argsort(-fitness_values))  # Pareto distribution
-    weights = pareto_weights / pareto_weights.sum()
+    # Apply Pareto distribution and normalize
+    weights = 1.0 / (1.0 + np.argsort(-weights))  # Combined Pareto calculation
+    weights /= weights.sum()
     
-    selected_idx = np.random.choice(
+    return [candidates[i] for i in np.random.choice(
         len(candidates),
         size=min(len(candidates)//2, MAX_POPULATION),
         p=weights,
         replace=False
-    )
-    return [candidates[i] for i in selected_idx]
+    )]
 
 
 
@@ -311,7 +310,8 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def run_genetic_algorithm(
     generations: int = 10,
-    pop_size: int = 1_000_000
+    pop_size: int = 1_000_000,
+    fitness_window: list = None
 ) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Remove unused window_size per issues.txt
@@ -359,7 +359,7 @@ def run_genetic_algorithm(
         validate_population_state(best, worst)
         assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
         # Generate next generation with size monitoring
-        parents = select_parents(population)
+        parents = select_parents(population, fitness_window)
         next_gen = generate_children(parents, population)
         print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
