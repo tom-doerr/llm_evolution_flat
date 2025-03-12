@@ -51,8 +51,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
             "std": float(np.nanstd(window)),
             "best": float(np.nanmax(window)),
             "worst": float(np.nanmin(window)),
-            "q25": float(np.nanpercentile(window, 25)),
-            "q75": float(np.nanpercentile(window, 75))
+            "q25": float(np.nanpercentile(window, 25)),  # Not currently used
+            "q75": float(np.nanpercentile(window, 75))  # Not currently used
         }
     except Exception as e:
         raise RuntimeError(f"Window statistics calculation failed: {str(e)}") from e
@@ -280,7 +280,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
                 
         except AssertionError as e:
             if DEBUG_MODE:
-                pass  # Debug placeholder for invalid candidate rejection
+                print(f"Invalid candidate rejected: {e}")
             pass  # Required indented block even if debug is False
     
     if not valid_candidates:
@@ -417,7 +417,6 @@ def run_genetic_algorithm(
         # Validate population state and size
         validate_population_state(best, worst)
         assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
-        pop_size = len(population)  # Get current population size
         pop_size = len(population)  # Track current population size
         
         # Generate next generation with size monitoring
@@ -488,7 +487,7 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:  # Removed unused problem param
+def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     # Calculate diversity and adapt mutation rate using logarithmic scaling
     # Calculate diversity and adapt mutation rate using Pareto distribution
