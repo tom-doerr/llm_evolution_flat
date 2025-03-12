@@ -397,7 +397,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
                 size=max_population,
                 replace=False,
                 p=pop_weights
-            )
+            ))
             population = [population[i] for i in selected_indices]
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
