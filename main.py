@@ -13,7 +13,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Completed:
 # 1. Implement generation-based scoring weights
 
-# TODO List (sorted by priority):
+# TODO priority order:
 # 1. Fix invalid-name warning for 'debug' variable
 # 2. Implement complete sliding window statistics (mean/median/std)
 # 3. Reduce arguments in update_fitness_window, generate_children, run_genetic_algorithm
@@ -22,7 +22,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
-DEBUG = False  # Control DEBUG output
+DEBUG = False  # Control debug output
 WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
@@ -37,8 +37,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations"""
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
     
-    # Use fixed window size from spec.md
-    window = fitness_window[-WINDOW_SIZE:] if len(fitness_window) >= WINDOW_SIZE else fitness_window.copy()
+    # Fixed window size per spec.md
+    window = fitness_window[-100:] if len(fitness_window) >= 100 else fitness_window.copy()
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
@@ -140,9 +140,10 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     fitness = (a_count - (23 - a_count) - (len(chromosome) - 23))
     fitness = np.sign(fitness) * (abs(fitness) ** 2)
     
-    # Validation assertions
+    # Validation assertions using metrics
+    core_segment = metrics['core_segment']
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
-    if core_segment.count("a") == 0:
+    if metrics['a_count'] == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
     # Update agent state
