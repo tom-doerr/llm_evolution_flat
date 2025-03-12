@@ -384,7 +384,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "a", encoding="utf-8") as f:
+    with open("evolution.log", "a", encoding="utf-8") as f:  # Using 'with' per pylint
         # Spec.md requires dense, minimal logging
         f.write(
             f"{stats['generation']}\t" 
