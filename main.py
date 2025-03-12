@@ -14,11 +14,11 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # 1. Implement generation-based scoring weights
 
 # TODO List (sorted by priority):
-# 1. Implement sliding window statistics (partial)
-# 2. Optimize LLM prompt validation
-# 3. Add mutation rate logging
-# 4. Validate chromosome structure in crossover
-# 5. Improve diversity tracking metrics
+# 1. Fix invalid-name warning for 'debug' variable
+# 2. Implement complete sliding window statistics (mean/median/std)
+# 3. Reduce arguments in update_fitness_window, generate_children, run_genetic_algorithm
+# 4. Fix too-many-locals in score_chromosome, evaluate_agent
+# 5. Validate chromosome structure during crossover
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -184,9 +184,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
     ranks = np.arange(1, len(sorted_pop) + 1)
     
-    # Calculate Pareto weights (1/rank^2)
-    weights = 1.0 / (ranks ** 2)
-    weights /= weights.sum()  # Normalize
+    # Calculate Pareto distribution weights using fitness^2 as specified
+    fitness_squared = np.array([a['fitness']**2 for a in sorted_pop])
+    weights = fitness_squared / fitness_squared.sum()  # Weight by fitness^2
+    weights *= 1.0 / (ranks ** 2)  # Apply Pareto distribution
+    weights /= weights.sum()  # Normalize again after combined weighting
     
     # Validate weights before selection
     assert np.all(weights >= 0), "Negative weights detected in parent selection"
