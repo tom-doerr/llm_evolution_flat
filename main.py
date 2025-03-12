@@ -456,23 +456,17 @@ if __name__ == "__main__":
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
-    # Validate constants
-    assert (MAX_CORE, MAX_CHARS, MAX_POPULATION) == (23, 40, 1_000_000), "Core constants modified"
-    
-    # Validate fitness hierarchy and bounds
-    assert best['fitness'] >= worst['fitness'], "Fitness hierarchy broken"
-    assert 0 <= best['fitness'] <= 1e6 and 0 <= worst['fitness'] <= 1e6, "Fitness out of bounds"
-    
-    # Validate chromosome structure
-    for agent in [best, worst]:
-        chrom = agent['chromosome']
-        assert isinstance(chrom, str), "Chromosome must be string"
-        assert 1 <= len(chrom) <= 40, "Invalid chromosome length"
-        assert chrom == chrom.strip(), "No trailing whitespace allowed"
-        assert all(c.isalpha() or c == ' ' for c in chrom), "Invalid characters"
-        assert chrom[:23].islower(), "Core segment must be lowercase"
-    
-    # Validate core segment requirements
-    assert ' ' not in best['chromosome'].strip(), "Core contains whitespace"
-    assert len(best['metrics']['core_segment']) == 23, "Core segment length mismatch"
+    # Combined validation checks using logical AND
+    assert all((
+        (MAX_CORE, MAX_CHARS, MAX_POPULATION) == (23, 40, 1_000_000),
+        best['fitness'] >= worst['fitness'],
+        all(0 <= a['fitness'] <= 1e6 for a in (best, worst)),
+        all(isinstance(a['chromosome'], str) for a in (best, worst)),
+        all(1 <= len(a['chromosome']) <= 40 for a in (best, worst)),
+        all(a['chromosome'] == a['chromosome'].strip() for a in (best, worst)),
+        all(c.isalpha() or c == ' ' for c in best['chromosome'] + worst['chromosome']),
+        all(a['chromosome'][:23].islower() for a in (best, worst)),
+        ' ' not in best['chromosome'].strip(),
+        len(best['metrics']['core_segment']) == 23
+    )), "Population validation failed"
 
