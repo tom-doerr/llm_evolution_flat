@@ -495,9 +495,6 @@ def create_next_generation(next_gen, problem, mutation_rate, generation):
     """Handle mutation and periodic improvement of new generation"""
     next_gen = apply_mutations(next_gen, mutation_rate, problem)
     
-    if generation % 5 == 0:
-        next_gen = improve_top_candidates(next_gen, problem)
-        
     return next_gen
 
 def calculate_diversity(population: List[dict]) -> float:
