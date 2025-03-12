@@ -60,7 +60,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
     assert isinstance(fitness_window, list), "Window must be list type"
-    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Simple slicing for fixed size
+    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Use constant from spec
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
@@ -389,7 +389,7 @@ def run_genetic_algorithm(
         # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
         window_size = 100
-        fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
+        fitness_window = update_fitness_window(fitness_window, all_fitness)
         stats = calculate_window_statistics(fitness_window)
         
         # Get population extremes
@@ -431,7 +431,7 @@ def run_genetic_algorithm(
         assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
         
         # Create and evolve next generation
-        population = create_next_generation(next_gen, problem, mutation_rate, generation)
+        population = create_next_generation(next_gen, mutation_rate)
 
 
 
