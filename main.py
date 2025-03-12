@@ -178,13 +178,15 @@ def mutate_with_llm(agent: dict) -> str:
             and str(r).strip()[:23].count('a') >= core_a_count)
     )
     return next(
-        valid_mutations,
+        (str(r).strip()[:40].lower()
+         for r in response.completions
+         if (len(str(r).strip()) >= 23 
+            and str(r).strip().startswith(agent["chromosome"][:23].lower())
+            and str(r).strip()[:23].count('a') >= core_a_count),
         agent["chromosome"][:23] + ''.join(
-            random.choices(
-                string.ascii_letters.lower(),
-                k=random.randint(0, max(0, len(agent["chromosome"])-23))
-            )
-        )  # 40-23=17 max extra chars
+            random.choices(string.ascii_letters.lower(),
+                           k=random.randint(0, max(0, len(agent["chromosome"])-23)))
+        )
     )
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
