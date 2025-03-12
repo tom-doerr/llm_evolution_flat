@@ -166,8 +166,8 @@ def mutate_with_llm(agent: dict) -> str:
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
-        temperature=temperature,
-        top_p=top_p,
+        temperature=temp_top_p[0],
+        top_p=temp_top_p[1],
     )
 
     # Validate mutations preserve core 'a' count and structure
@@ -177,18 +177,20 @@ def mutate_with_llm(agent: dict) -> str:
         for r in response.completions
         if (len(str(r).strip()) >= 23 
             and str(r).strip().startswith(agent["chromosome"][:23].lower())
-            and str(r).strip()[:23].count('a') >= core_a_count)
+            and str(r).strip()[:23].count('a') >= core_a_count
+        )
     )
     return next(
         (str(r).strip()[:40].lower()
          for r in response.completions
          if (len(str(r).strip()) >= 23 
             and str(r).strip().startswith(agent["chromosome"][:23].lower())
-            and str(r).strip()[:23].count('a') >= core_a_count),
+            and str(r).strip()[:23].count('a') >= core_a_count
+        ),
         # Fallback mutation if no valid responses
         agent["chromosome"][:23] + ''.join(
             random.choices(string.ascii_letters.lower(),
-                           k=random.randint(0, max(0, len(agent["chromosome"])-23))
+                           k=random.randint(0, max(0, len(agent["chromosome"])-23)))
     )
     )
 
