@@ -2,7 +2,6 @@ from typing import List
 import random
 import string
 import gzip
-import re  # For mutation validation
 import numpy as np
 from rich.console import Console
 from rich.panel import Panel
@@ -76,11 +75,11 @@ def score_chromosome(chromosome: str) -> dict:
         prev_char = c
     
     return {
-        'vowel_ratio': vowels / 23,
-        'consonant_ratio': (23 - vowels) / 23,
+        'vowel_ratio': counts['vowels'] / 23,
+        'consonant_ratio': (23 - counts['vowels']) / 23,
         'uniqueness': len(unique_chars) / 23,
-        'a_density': a_count / 23,
-        'repeating_pairs': repeats / 22,
+        'a_density': counts['a_count'] / 23,
+        'repeating_pairs': counts['repeats'] / 22,
         'core_segment': core
     }
 
