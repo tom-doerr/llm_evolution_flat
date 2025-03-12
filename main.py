@@ -311,7 +311,7 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, stats: dict):
+def display_generation_stats(generation: int, stats: dict) -> None:
     """Rich-formatted display with essential stats"""
     diversity = calculate_diversity(population)
     Console().print(Panel(
