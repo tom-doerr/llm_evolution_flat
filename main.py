@@ -440,18 +440,24 @@ if __name__ == "__main__":
         print("\nEvolution stopped by user. Exiting gracefully.")
 
 def validate_population_state(best, worst) -> None:
-    """Validate fundamental population invariants"""
+    """Validate fundamental population invariants per spec.md"""
     # Validate constants
     assert (MAX_CORE, MAX_CHARS, MAX_POPULATION) == (23, 40, 1_000_000), "Core constants modified"
     
-    # Validate fitness relationships
-    assert best['fitness'] >= worst['fitness'] >= 0, "Invalid fitness relationship"
+    # Validate fitness hierarchy and bounds
+    assert best['fitness'] >= worst['fitness'], "Fitness hierarchy broken"
+    assert 0 <= best['fitness'] <= 1e6 and 0 <= worst['fitness'] <= 1e6, "Fitness out of bounds"
     
     # Validate chromosome structure
     for agent in [best, worst]:
         chrom = agent['chromosome']
-        assert (isinstance(chrom, str) and 
-                len(chrom) <= 40 and 
-                chrom[:23].islower() and 
-                ' ' not in chrom.strip()), f"Invalid chromosome: {chrom}"
+        assert isinstance(chrom, str), "Chromosome must be string"
+        assert 1 <= len(chrom) <= 40, "Invalid chromosome length"
+        assert chrom == chrom.strip(), "No trailing whitespace allowed"
+        assert all(c.isalpha() or c == ' ' for c in chrom), "Invalid characters"
+        assert chrom[:23].islower(), "Core segment must be lowercase"
+    
+    # Validate core segment requirements
+    assert ' ' not in best['chromosome'].strip(), "Core contains whitespace"
+    assert len(best['metrics']['core_segment']) == 23, "Core segment length mismatch"
 
