@@ -197,7 +197,7 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     candidates = random.choices(
         population,
         weights=[a["fitness"]**2 for a in population],
-        k=min(5, len(population))
+        k=min(5, len(population)))
     
     # Deduplicate candidates
     unique_candidates = {a["chromosome"]: a for a in candidates}.values()
