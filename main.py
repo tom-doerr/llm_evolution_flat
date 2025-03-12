@@ -81,7 +81,6 @@ def create_agent(chromosome: str) -> dict:
         chromosome = "".join(random.choices(string.ascii_letters + " ", 
                                 k=random.randint(20, 40)))
     
-    # Split into three specialized chromosomes per spec.md
     return {
         "chromosome": chromosome,
         "task_chromosome": chromosome[:23],
