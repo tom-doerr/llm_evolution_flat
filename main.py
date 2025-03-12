@@ -339,9 +339,9 @@ def validate_population_extremes(population: List[dict]) -> None:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    local_max_population = args.max_population  # Use local var with snake_case
-    population = initialize_population(min(pop_size, local_max_population))[:local_max_population]
-    assert 1 < len(population) <= local_max_population, f"Population size must be 2-{local_max_population}"
+    max_pop_limit = args.max_population  # Use local var with snake_case
+    population = initialize_population(min(pop_size, max_pop_limit))[:max_pop_limit]
+    assert 1 < len(population) <= max_pop_limit, f"Population size must be 2-{max_pop_limit}"
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8"):
