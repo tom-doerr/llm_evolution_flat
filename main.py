@@ -3,6 +3,7 @@ import string
 import gzip
 import json
 import numpy as np
+import numpy as np
 from typing import List
 from rich.console import Console
 from rich.table import Table
@@ -160,16 +161,21 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness²"""
-    # Pareto distribution weighted by fitness^2 with weighted sampling without replacement
+    # Square fitness values for Pareto distribution weighting
     weights = np.array([agent['fitness']**2 for agent in population])
-    weights = weights / weights.sum()  # Normalize
+    weights += 1e-8  # Add epsilon to avoid zero weights
+    weights /= weights.sum()  # Normalize
     
-    # Use system roulette wheel selection with pareto distribution weights
+    # Validate weights before selection
+    assert np.all(weights >= 0), "Negative weights detected in parent selection"
+    assert len(weights) == len(population), "Weight/population size mismatch"
+    
+    # Select half population using weighted sampling without replacement
     selected_indices = np.random.choice(
         len(population),
-        size=min(len(population), 2),  # Select pairs
-        p=weights,
-        replace=False
+        size=len(population)//2,
+        replace=False,
+        p=weights
     )
     return [population[i] for i in selected_indices]
 
