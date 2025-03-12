@@ -156,10 +156,10 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Extract and validate parameters from mutation chromosome
+    # Combined extraction and validation of mutation params
     mc = agent["mutation_chromosome"]
-    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))  # First 3 chars control temperature
-    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))  # Next 4 chars control top_p
+    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))  # First 3 chars for temp
+    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))  # Next 4 chars for top_p
     assert 0.0 <= temperature <= 2.0 and 0.0 <= top_p <= 1.0, "Invalid mutation params"
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
@@ -260,21 +260,17 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
-    hotspots = set()
-    for i, c in enumerate(chromosome):
-        # Check punctuation first, then space probability, then random chance
-        if c in HOTSPOT_CHARS:
-            hotspots.add(i)
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
-            hotspots.add(i)
-        elif random.random() < 1/len(chromosome):
-            hotspots.add(i)
+    hotspots = [
+        i for i, c in enumerate(chromosome)
+        if c in HOTSPOT_CHARS
+        or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)
+        or random.random() < HOTSPOT_ANYWHERE_PROB
+    ]
     
-    # Ensure minimum hotspots per spec
-    if len(hotspots) < MIN_HOTSPOTS and len(chromosome) > 0:
-        hotspots.update(random.sample(range(len(chromosome)), k=MIN_HOTSPOTS-len(hotspots)))
-    
-    return sorted(hotspots)
+    # Ensure minimum hotspots and average 1 per chromosome
+    if not hotspots:
+        hotspots = [random.randint(0, len(chromosome)-1)] if chromosome else []
+    return sorted(set(hotspots))  # Remove duplicates and sort
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
