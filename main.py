@@ -1,5 +1,6 @@
 import random
 import string
+import itertools
 from typing import List
 
 import numpy as np
@@ -138,7 +139,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     base_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
     weighted_weights = base_weights * np.random.pareto(2.0, len(base_weights))
     
-    total_weight = weights.sum()
+    total_weight = base_weights.sum()
     assert total_weight > 0, "All weights cannot be zero"
     
     return [candidates[i] for i in np.random.choice(
@@ -313,7 +314,7 @@ def evolution_loop(population: List[dict]) -> None:
     for generation in itertools.count(0):
         # Population evaluation and stats
         # Evaluate, update and process in combined steps
-        population = evaluate_population(population)[:MAX_POPULATION]
+        population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         stats = calculate_window_statistics(fitness_window)
         
