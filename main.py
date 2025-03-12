@@ -135,16 +135,17 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate fitness^2 weights with Pareto distribution (spec.md requirement)
     # Calculate weights with Pareto distribution and fitness^2 as per spec.md
-    weights = np.array([(a['fitness']**2 * (np.random.pareto(2) + 1e-6)) for a in population])
+    weights = np.array([(a['fitness']**2 * (np.random.pareto(2.0) + 1e-6)) for a in population])
     weights = np.nan_to_num(weights, nan=1e-6)
     weights = np.where(weights <= 0, 1e-6, weights)  # Ensure all weights are positive
     weights /= weights.sum()  # Normalize
     
-    # Enforce population limit - critical for spec.md requirement
+    # Enforce population limit before selection (spec.md requirement)
     population = population[:MAX_POPULATION]
-    assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
+    if len(population) > MAX_POPULATION:
+        population = population[:MAX_POPULATION]
+        print(f"WARNING: Population trimmed to {MAX_POPULATION}")
     
     # Weighted sampling without replacement using reservoir sampling
     sample_size = min(len(population), MAX_POPULATION//2)
