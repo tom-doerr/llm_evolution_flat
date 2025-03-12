@@ -238,22 +238,20 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
     candidates = random.choices(
         population[-WINDOW_SIZE:],
-        weights=[a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]],
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
         k=min(5, len(population))
     )
     
     mate = llm_select_mate(parent, candidates)
     
+    # Combine chromosomes with single crossover point
+    split_point = random.randint(12, 34)  # Favor middle section per spec.md hotspots
+    child = (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
+    
     try:
-        split_point = random.randint(1, len(parent["chromosome"])-1)
-        child = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
         validate_chromosome(child)
-        
-        if child[:23].count('a') < parent["chromosome"][:23].count('a'):
-            raise ValueError("Core 'a' count decreased")
-            
         return create_agent(child)
-    except (AssertionError, ValueError):
+    except AssertionError:
         return create_agent(mutate(parent["chromosome"]))
 
 
@@ -293,8 +291,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        log_population(generation, calculate_window_statistics(fitness_window))
-        display_generation_stats(generation, calculate_window_statistics(fitness_window), population)
+        stats = calculate_window_statistics(fitness_window)
+        log_population(generation, stats)
+        display_generation_stats(generation, stats, population)
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
