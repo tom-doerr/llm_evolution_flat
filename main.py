@@ -140,26 +140,19 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Combined weight calculation with type stability
-    candidates = population[-WINDOW_SIZE:]
-    base_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    # Calculate fitness^2 weights with Pareto distribution
+    weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
+    weights /= weights.sum()  # Normalize
     
-    # Apply Pareto distribution ranking
-    ranks = np.argsort(base_weights)[::-1]  # Descending order
-    pareto_weights = 1.0 / (ranks + 1) ** 2.0  # Shape parameter 2.0 from spec
-    
-    # Combine fitness^2 weights with Pareto ranking
-    combined_weights = base_weights * pareto_weights
-    
-    total_weight = combined_weights.sum()
-    assert total_weight > 0, "All weights cannot be zero"
-    
-    return [candidates[i] for i in np.random.choice(
-        len(candidates),
+    # Weighted sampling without replacement
+    selected_indices = np.random.choice(
+        len(population),
         size=min(len(population), MAX_POPULATION//2),
-        p=combined_weights/total_weight,
+        p=weights,
         replace=False
-    )]
+    )
+    
+    return [population[i] for i in selected_indices]
 
 
 
