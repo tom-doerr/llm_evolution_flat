@@ -175,10 +175,11 @@ def mutate_with_llm(agent: dict) -> str:
     )
 
     # Return first valid mutation or fallback
-    return next(valid_mutations, chromosome[:23] + ''.join(random.choices(
-        string.ascii_letters.lower(), 
-        k=max(0, len(chromosome)-23)
-    ))
+    return next(valid_mutations, 
+        chromosome[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(), 
+            k=max(0, len(chromosome)-23)
+        ))
     )
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
@@ -281,7 +282,8 @@ def run_genetic_algorithm(pop_size: int) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md
-    open("evolution.log", "w", encoding="utf-8").close()
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        pass  # Just create/empty the file
     
     evolution_loop(population)
 
