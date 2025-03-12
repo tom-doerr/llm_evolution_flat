@@ -61,12 +61,12 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
-    window_size = 100  # Fixed per spec.md requirement
+    window_size = 100
     assert len(new_fitnesses) <= window_size, "Cannot add more items than window size"
     assert isinstance(fitness_window, list), "Window must be list type"
-    # Use collections.deque for efficient sliding window
-    window = fitness_window[-(window_size - len(new_fitnesses)):] + new_fitnesses
-    return window[-window_size:]  # Strict size enforcement per spec
+    # Use efficient window slicing
+    window = (fitness_window + new_fitnesses)[-window_size:]
+    return window  # Already size-limited by slicing
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate comprehensive structural scoring metrics with validation"""
@@ -298,7 +298,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified
                 
                 
         except AssertionError as e:
-            if DEBUG:  # Fixed invalid-name warning
+            if DEBUG:
                 pass  # Debug placeholder for invalid candidate rejection
             pass  # Required indented block even if debug is False
     
