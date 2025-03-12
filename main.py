@@ -30,9 +30,20 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness based on the target rules
     fitness = 0.0
     
-    # First 23 characters: +1 for each 'a'
+    # First 23 characters: +2 for each 'a' and +1 for each consecutive 'a'
     first_part = chromosome[:23]
-    fitness += first_part.lower().count('a')
+    a_count = first_part.lower().count('a')
+    fitness += a_count * 2  # Base score for each 'a'
+    
+    # Bonus for consecutive 'a's
+    consecutive = 0
+    for char in first_part.lower():
+        if char == 'a':
+            consecutive += 1
+            if consecutive > 1:
+                fitness += 1  # +1 for each consecutive 'a'
+        else:
+            consecutive = 0
     
     # Remaining characters: -1 for each character
     remaining = chromosome[23:]
