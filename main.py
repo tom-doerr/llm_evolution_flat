@@ -247,9 +247,10 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     candidates = random.choices(
         population=window_pop,
         weights=weights if sum(weights) > 0 else None,
-        k=min(5, len(window_pop))
+        k=min(5, len(window_pop)))
     
     # Select mate using LLM prompt from qualified candidates
+    mate = llm_select_mate(parent, candidates)
     mate = llm_select_mate(parent, candidates)
     
     # Combine chromosomes with core validation
