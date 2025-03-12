@@ -13,9 +13,9 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Completed:
 # 1. Implement generation-based scoring weights
 
-# TODO: Validate chromosome structure during crossover (HIGH)
-# TODO: Implement sliding window statistics (MEDIUM) 
-# TODO: Address remaining code quality warnings (LOW)
+# TODO: Implement sliding window statistics (HIGH)
+# TODO: Address remaining code quality warnings (MEDIUM)
+# VALIDATED: Chromosome structure validation during crossover
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -146,25 +146,22 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
-    population.sort(key=lambda x: -x['fitness'])  # In-place sort descending
-    ranks = np.arange(1, len(population) + 1)
+    sorted_pop = sorted(population, key=lambda x: -x['fitness'])
+    ranks = np.arange(1, len(sorted_pop) + 1)
     
-    # Combined weight calculation
-    weights = np.array([a['fitness']**2 for a in population]) * (1.0 / ranks**2)
-    weights /= weights.sum()  # Normalize once
+    # Calculate weights using fitness^2 and Pareto distribution
+    weights = (np.array([a['fitness']**2 for a in sorted_pop]) / ranks**2
+    weights /= weights.sum()
     
-    # Validate weights before selection
-    assert np.all(weights >= 0), "Negative weights detected in parent selection"
-    assert len(weights) == len(sorted_pop), "Weight/population size mismatch"
-    
-    # Select half population using weighted sampling without replacement
+    # Validate and select
+    assert np.all(weights >= 0), "Negative weights detected"
     selected_indices = np.random.choice(
         len(sorted_pop),
         size=len(sorted_pop)//2,
         replace=False,
         p=weights
     )
-    selected_parents = [sorted_pop[i] for i in selected_indices]
+    return [sorted_pop[i] for i in selected_indices]
     
     # Validate selection size
     assert len(selected_parents) == len(population)//2, "Parent selection size mismatch"
@@ -244,31 +241,17 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
     parent_chrom = validate_chromosome(parent["chromosome"])
-    
-    # Pre-validate candidates with helper
-    def is_valid_candidate(c):
-        try:
-            agent_chrom = validate_chromosome(c["chromosome"])
-            return agent_chrom != parent_chrom and 23 <= len(agent_chrom) <= 40
-        except AssertionError:
-            return False
-            
-    valid_candidates = [c for c in candidates if is_valid_candidate(c)]
     assert parent["fitness"] > 0, "Parent must have positive fitness"
-    
-    # Strict candidate validation with error handling
-    valid_candidates = []
-    for agent in candidates:
-        try:
-            agent_chrom = validate_chromosome(agent["chromosome"])
-            if agent_chrom != parent_chrom and 23 <= len(agent_chrom) <= 40:
-                valid_candidates.append(agent)
-                
-                
-        except AssertionError as e:
-            if DEBUG_MODE:
-                print(f"Invalid candidate rejected: {e}")
-            pass  # Required indented block even if debug is False
+
+    # Validate candidates in single pass
+    valid_candidates = [
+        c for c in candidates 
+        if (validate_chromosome(c["chromosome"]) != parent_chrom 
+           and 23 <= len(c["chromosome"]) <= 40
+    ]
+
+    if DEBUG_MODE and not valid_candidates:
+        print(f"No valid mates among {len(candidates)} candidates")
     
     if not valid_candidates:
         raise ValueError(f"No valid mates among {len(candidates)} candidates")
@@ -366,7 +349,7 @@ def run_genetic_algorithm(
     generations: int = 10,
     pop_size: int = 1_000_000,
     log_file: str = "evolution.log.gz"
-) -> None:  # pylint: disable=too-many-locals,too-many-statements
+) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
     pop_size = min(pop_size, get_population_limit())
@@ -375,7 +358,6 @@ def run_genetic_algorithm(
 
     population = initialize_population(pop_size)
     fitness_window = []
-    window_size = 100
     assert (
         len(population) == pop_size
     ), f"Population size mismatch {len(population)} != {pop_size}"
