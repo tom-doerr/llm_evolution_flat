@@ -75,13 +75,45 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select top 50% of population as parents"""
-    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
-    return sorted_pop[: len(population) // 2]
+    """Select parents using Pareto distribution weighted by fitness"""
+    # Calculate weights using exponential scaling of fitness values
+    fitness_values = [max(0, agent["fitness"])**2 for agent in population]
+    total_weight = sum(fitness_values)
+    
+    # Handle case where all weights are zero
+    if total_weight <= 0:
+        return random.sample(population, k=len(population)//2)
+        
+    # Select weighted sample without replacement
+    selected = random.choices(
+        population,
+        weights=fitness_values,
+        k=len(population)//2
+    )
+    return list({agent["chromosome"]: agent for agent in selected}.values())  # Deduplicate
 
+
+def mutate_with_llm(chromosome: str, problem: str) -> str:
+    """Mutate chromosome using LLM-based rephrasing"""
+    mutate_prompt = dspy.Predict("original_chromosome, problem_description -> mutated_chromosome")
+    try:
+        response = mutate_prompt(
+            original_chromosome=chromosome,
+            problem_description=f"Rephrase this while maintaining its core meaning. {problem}"
+        )
+        if (response.completion and 
+            len(response.completion) > 0 and
+            len(response.completion) <= 40 and
+            all(c in string.ascii_letters + ' ' for c in response.completion)):
+            return response.completion.strip()[:40]
+    except (TimeoutError, RuntimeError):
+        pass
+    return mutate(chromosome)  # Fallback to traditional mutation
 
 def mutate(chromosome: str) -> str:
-    """Mutate a chromosome by replacing one random character"""
+    """Mutate a chromosome with 30% chance of LLM-based mutation"""
+    if random.random() < 0.3:  # 30% chance for LLM mutation
+        return mutate_with_llm(chromosome, PROBLEM)
     if not chromosome:
         raise ValueError("Cannot mutate empty chromosome")
 

@@ -10,15 +10,10 @@
 [x] Harden LM response validation  
 [x] Implement mutation rate configuration  
 [x] Add boundary condition assertions  
-
-## Recently Completed
-[x] Add population statistics (mean/median/std)  
-[x] Harden LM response validation  
-[x] Implement mutation rate configuration  
-[x] Add boundary condition assertions  
 [x] Improve LM timeout handling with retries  
 [x] Implement vectorized population initialization  
 [x] Add compressed binary logging  
+[x] Implement LLM-based mutation framework  
 
 ## Current Issues/Notes
 - LLM-based mutation not yet implemented per spec
