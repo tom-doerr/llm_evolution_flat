@@ -295,7 +295,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     return create_agent(build_child_chromosome(
         parent["chromosome"],
         mate["chromosome"],
-        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
+        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]))
     ))
     ))
 
