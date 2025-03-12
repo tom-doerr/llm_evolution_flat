@@ -276,7 +276,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     
     # Empty log file at program start per spec.md
     with open("evolution.log", "w", encoding='utf-8') as f:
-        pass  # Just truncate the file
+        pass  # Just truncate the file (encoding added per spec)
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         # Evaluate population and update stats
@@ -289,8 +289,12 @@ def run_genetic_algorithm(pop_size: int) -> None:
         
         log_population(stats)
         display_generation_stats(stats)
-        validate_population_extremes(population)
-        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
+        best = max(population, key=lambda x: x["fitness"])
+        worst = min(population, key=lambda x: x["fitness"])
+        validate_population_state(best, worst)
+        
+        parents = select_parents(population)
+        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
