@@ -9,8 +9,8 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Add population size monitoring/limiting
-# 2. Implement chromosome structure scoring metrics
+# 1. Implement chromosome structure scoring metrics
+# 2. Add mutation rate adaptation based on diversity
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -287,7 +287,10 @@ def run_genetic_algorithm(
     log_file: str = "evolution.log.gz",
 ):
     """Run genetic algorithm with optimized logging and scaling"""
-    assert pop_size > 1, "Population size must be greater than 1"
+    # Enforce population limits with validation
+    MAX_POPULATION = 1_000_000
+    pop_size = min(pop_size, MAX_POPULATION)
+    assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     assert generations > 0, "Number of generations must be positive"
 
     population = initialize_population(pop_size)
@@ -328,12 +331,14 @@ def run_genetic_algorithm(
         std_fitness = np.std(fitness_values)
         display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window)
 
-        # Validate population state
+        # Validate population state and size
         validate_population_state(best, worst)
-
-        # Generate next generation
+        assert len(population) <= MAX_POPULATION, f"Population overflow {len(population)} > {MAX_POPULATION}"
+        
+        # Generate next generation with size monitoring
         parents = select_parents(population)
         next_gen = generate_children(parents, population, pop_size, problem)
+        print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
         # Create and evolve next generation
         population = create_next_generation(next_gen, problem, mutation_rate, generation)
