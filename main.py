@@ -2,9 +2,9 @@ import random
 import string
 import gzip
 import json
+from typing import List
 from rich.console import Console
 from rich.table import Table
-from typing import List
 import dspy
 
 # Configure DSPy with OpenRouter and timeout
@@ -104,6 +104,18 @@ def select_parents(population: List[dict]) -> List[dict]:
     
     # Deduplicate while preserving order using dictionary (insertion ordered in Python 3.7+)
     return list({agent["chromosome"]: population[i] for i in selected_indices}.values())
+
+    # Find candidate using list comprehension to avoid undefined i
+    cumulative = 0
+    selected_index = next(i for i, w in enumerate(weights) if (cumulative := cumulative + w) >= r)
+    chosen = candidates[selected_index]
+    
+    selected.append(chosen)
+    unique_chromosomes.add(chosen["chromosome"])
+    
+    # Remove selected candidate and weight using index
+    del candidates[selected_index]
+    del weights[selected_index]
 
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
