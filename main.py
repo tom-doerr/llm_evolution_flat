@@ -141,7 +141,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nRULES:\n1. ENHANCE STRUCTURAL QUALITY\n2. ELIMINATE REDUNDANCIES\n3. LETTERS ONLY\n4. MAINTAIN LENGTH CONSTRAINTS",  # Obfuscated
+            problem_description=f"{problem}\nRULES:\n1. IMPROVE COMPACTNESS\n2. REMOVE EXCESS ELEMENTS\n3. ALPHABETIC ONLY\n4. STRICT SIZE LIMITS",  # More obfuscated
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
@@ -267,10 +267,12 @@ def run_genetic_algorithm(
         window_size = 100
         all_fitness = [agent["fitness"] for agent in population]
         
-        # Maintain window in memory with thread-safe approach
-        current_window = getattr(run_genetic_algorithm, "fitness_window", [])
-        current_window = (current_window + all_fitness)[-window_size:]
-        run_genetic_algorithm.fitness_window = current_window
+        # Maintain sliding window of last 100 evaluations
+        if not hasattr(run_genetic_algorithm, "fitness_window"):
+            run_genetic_algorithm.fitness_window = []
+        run_genetic_algorithm.fitness_window = (
+            run_genetic_algorithm.fitness_window + all_fitness
+        )[-window_size:]
         
         # Calculate robust statistics
         window_fitness = current_window
@@ -295,8 +297,11 @@ def run_genetic_algorithm(
 
         # Detailed compressed logging per spec
         with gzip.open(log_file, "at", encoding="utf-8") as f:
-            for agent in population:
-                f.write(f"{generation},{agent['fitness']},{agent['chromosome']}\n")
+            # Compressed columnar format: gen|fitness|chromosome
+            f.write("\n".join(
+                f"{generation}|{agent['fitness']:.1f}|{agent['chromosome']}" 
+                for agent in population
+            ) + "\n")
 
         # Rich formatted output
         console = Console()
@@ -304,11 +309,11 @@ def run_genetic_algorithm(
         table.add_column(style="cyan")
         table.add_column(style="yellow")
         
-        table.add_row("Generation", f"{generation+1}/{generations}")
-        table.add_row("Population", f"{pop_size} agents")
-        table.add_row("Best", f"{best['chromosome'][:23]}... [green]({best['fitness']:.1f})")
-        table.add_row("Worst", f"{worst['chromosome'][:23]}... [red]({worst['fitness']:.1f})")
-        table.add_row("Stats", f"μ={mean_fitness:.1f} ±{std_fitness:.1f} | Med={median_fitness:.1f}")
+        table.add_row("Gen", f"{generation+1}/{generations}")
+        table.add_row("Pop", f"{pop_size}")
+        table.add_row("Best", f"{best['chromosome'][:20]}...[green]({best['fitness']:.0f})")
+        table.add_row("Worst", f"{worst['chromosome'][:20]}...[red]({worst['fitness']:.0f})")
+        table.add_row("Stats", f"μ={mean_fitness:.0f} ±{std_fitness:.0f} med={median_fitness:.0f}")
         
         console.print(table)
 
