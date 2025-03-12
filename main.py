@@ -67,24 +67,28 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    # Combined analysis with reduced variables
-    counts = {'vowels': 0, 'a': 0, 'repeats': 0}
-    unique_chars = set()
-    prev_char = None
+    # Combined analysis in single pass
+    analysis = {
+        'vowel_count': 0,
+        'a_count': 0,
+        'unique_chars': set(),
+        'repeats': 0,
+        'prev_char': None
+    }
     
     for c in core:
-        unique_chars.add(c)
-        counts['vowels'] += c in 'aeiou'
-        counts['a'] += c == 'a'
-        counts['repeats'] += c == prev_char
-        prev_char = c
+        analysis['unique_chars'].add(c)
+        analysis['vowel_count'] += c in 'aeiou'
+        analysis['a_count'] += c == 'a'
+        analysis['repeats'] += c == analysis['prev_char']
+        analysis['prev_char'] = c
     
     return {
-        'vowel_ratio': counts['vowels'] / 23,
-        'consonant_ratio': (23 - counts['vowels']) / 23,
-        'uniqueness': len(unique_chars) / 23,
-        'a_density': counts['a'] / 23,
-        'repeating_pairs': counts['repeats'] / 22,
+        'vowel_ratio': analysis['vowel_count'] / 23,
+        'consonant_ratio': (23 - analysis['vowel_count']) / 23,
+        'uniqueness': len(analysis['unique_chars']) / 23,
+        'a_density': analysis['a_count'] / 23,
+        'repeating_pairs': analysis['repeats'] / 22,
         'core_segment': core
     }
 
