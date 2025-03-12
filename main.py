@@ -498,17 +498,16 @@ def evaluate_generation(population: List[dict], fitness_window: list, generation
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
-    updated_window = update_fitness_window(fitness_window, new_fitness)
-    
-    handle_generation_output({
-        **calculate_window_statistics(updated_window),
+    stats = {
+        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitness)),
         'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best': max(new_fitness),
         'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
         'worst': min(new_fitness)
-    }, population)
+    }
+    handle_generation_output(stats, population)
     
     return population, updated_window
 
