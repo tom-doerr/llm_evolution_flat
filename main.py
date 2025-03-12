@@ -283,7 +283,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
         })
         
         log_population(stats.get('generation', 0), stats)
-        display_generation_stats(stats, population)
+        display_generation_stats(stats)  # Fixed parameter mismatch
         validate_population_state(*get_population_extremes(population))
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
@@ -305,7 +305,7 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(stats: dict, population: List[dict]) -> None:
+def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
