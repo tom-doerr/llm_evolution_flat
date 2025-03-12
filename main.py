@@ -16,7 +16,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Basic population trimming
 
 # Configure DSPy with OpenRouter and timeout
-MAX_POPULATION = 1_000_000  # From spec.md
 DEBUG_MODE = False  # Control debug output
 WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
