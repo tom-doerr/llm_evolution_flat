@@ -34,25 +34,23 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations"""
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
     
-    # Fixed window size per spec.md with proper sliding implementation
-    window_size = min(len(fitness_window), WINDOW_SIZE)
-    # Reduced locals by combining calculations
-    window = fitness_window[-window_size:] if fitness_window else []
+    window = fitness_window[-WINDOW_SIZE:] if fitness_window else []
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
+    
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
-    
-    try:
-        return {
-            "mean": float(np.nanmean(window)),
-            "median": float(np.nanmedian(window)),
-            "std": float(np.nanstd(window)),
-            "best": float(np.nanmax(window)),
-            "worst": float(np.nanmin(window)),
-            "q25": float(np.nanpercentile(window, 25)),  # Not currently used
-            "q75": float(np.nanpercentile(window, 75))  # Not currently used
-        }
+
+    arr = np.array(window, dtype=np.float64)
+    return {
+        "mean": float(np.nanmean(arr)),
+        "median": float(np.nanmedian(arr)),
+        "std": float(np.nanstd(arr)),
+        "best": float(np.nanmax(arr)),
+        "worst": float(np.nanmin(arr)),
+        "q25": float(np.nanpercentile(arr, 25)),
+        "q75": float(np.nanpercentile(arr, 75))
+    }
     except Exception as e:
         raise RuntimeError(f"Window statistics calculation failed: {str(e)}") from e
 
