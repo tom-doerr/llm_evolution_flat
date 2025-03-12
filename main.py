@@ -186,9 +186,15 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     
     # Validate and parse response
     try:
-        chosen_id = int(response.completions[0].strip())
-        return candidates[chosen_id]
-    except (ValueError, IndexError):
+        # Get first completion and clean it
+        raw_response = str(response.best_candidate_id).strip()
+        chosen_id = int(raw_response.split(":")[0])  # Handle "1: explanation" format
+        
+        # Validate ID is within candidate range
+        if 0 <= chosen_id < len(candidates):
+            return candidates[chosen_id]
+        return random.choice(candidates)
+    except (ValueError, IndexError, AttributeError):
         return random.choice(candidates)
 
 def crossover(parent: dict, population: List[dict], problem: str) -> dict:
