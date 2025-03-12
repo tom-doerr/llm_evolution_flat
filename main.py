@@ -274,20 +274,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
-    hotspots = []
-    for i, c in enumerate(chromosome):
-        # Always include punctuation hotspots
-        if c in HOTSPOT_CHARS:
-            hotspots.append(i)
-        # Include spaces with 10% probability
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
-            hotspots.append(i)
-        # Small chance to create hotspot anywhere
-        elif random.random() < 0.02:  # ~1 hotspot per 50 chars on average
-            hotspots.append(i)
-    
-    # Ensure minimum hotspots and return
-    return hotspots or [random.randint(0, len(chromosome)-1)]
+    return [
+        i for i, c in enumerate(chromosome)
+        if (c in HOTSPOT_CHARS or  # Always include punctuation
+            (c == ' ' and random.random() < HOTSPOT_SPACE_PROB) or  # Space with 10% chance
+            random.random() < HOTSPOT_ANYWHERE_PROB)  # ~1 hotspot per chromosome
+    ] or [random.randint(0, len(chromosome)-1)]  # Fallback if empty
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with multiple switches using hotspots (spec.md average 1 per chrom)"""
@@ -380,8 +372,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file using with statement
-    with open("evolution.log", "w", encoding="utf-8") as _:  # File is intentionally empty
-        pass  # Truncate file without keeping reference (using _ for unused var)
+    with open("evolution.log", "w", encoding="utf-8"):
+        pass  # Just truncate the file
     
     evolution_loop(population, max_population)
 
