@@ -114,11 +114,12 @@ def create_agent(chromosome: str) -> dict:
 
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
-    chromosome = str(agent["chromosome"])
-    assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
-    
-    metrics = score_chromosome(chromosome)
-    a_count = int(metrics['a_density'] * 23)
+    try:
+        chromosome = str(agent["chromosome"])
+        assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
+        
+        metrics = score_chromosome(chromosome)
+        a_count = int(metrics['a_density'] * 23)
     
     # Fitness calculation simplified
     fitness = (2 * a_count - 23) - (len(chromosome) - 23)
