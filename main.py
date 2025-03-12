@@ -277,7 +277,7 @@ def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
         stats = calculate_window_statistics(fitness_window)
         stats.update({
             'diversity': calculate_diversity(population),
-            'iteration': iteration,
+            'generation': iteration,
             'population_size': len(population)
         })
         
@@ -311,7 +311,7 @@ def display_generation_stats(stats: dict) -> None:
     pop_count = stats.get('population_size', 0)
     diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
-        f"[bold]Iter {stats['iteration']}[/]\n"
+        f"[bold]Gen {stats.get('generation', 0)}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
         f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
