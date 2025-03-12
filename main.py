@@ -381,23 +381,28 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
         **extreme_values(evaluated_pop)
     }, window[-WINDOW_SIZE:])
 
+def trim_population(population: List[dict], max_size: int) -> List[dict]:
+    """Trim population using fitness-weighted sampling without replacement"""
+    if len(population) <= max_size:
+        return population
+        
+    pop_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
+    pop_weights /= pop_weights.sum()
+    selected_indices = np.random.choice(
+        len(population),
+        size=max_size,
+        replace=False,
+        p=pop_weights
+    )
+    return [population[i] for i in selected_indices]
+
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
     fitness_window = []
     
     for generation in itertools.count(0):
         # Continuous population trimming with combined operations
-        # Weighted sampling without replacement with fitness² weighting (spec.md)
-        if len(population) > max_population:
-            pop_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
-            pop_weights /= pop_weights.sum()
-            selected_indices = np.random.choice(
-                len(population),
-                size=max_population,
-                replace=False,
-                p=pop_weights
-            )
-            population = [population[i] for i in selected_indices]
+        population = trim_population(population, max_population)
         population, fitness_window = evaluate_generation(population, fitness_window, generation)
         
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
