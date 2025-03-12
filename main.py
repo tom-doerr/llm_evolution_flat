@@ -105,14 +105,13 @@ def create_agent(chromosome: str) -> dict:
 
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
-    chromosome = validate_chromosome(agent["chromosome"])
-    metrics = score_chromosome(chromosome)
+    chromo = validate_chromosome(agent["chromosome"])
+    metrics = score_chromosome(chromo)
     
-    # Calculate fitness directly without intermediate variables
-    agent["fitness"] = (
-        (metrics['a_density'] * 23 * 2 - 23)  # 46 expanded to 23*2 for clarity
-        - (len(chromosome) - 23)
-    )
+    # Simplified fitness calculation
+    base_score = metrics['a_density'] * 46 - 23
+    length_penalty = len(chromo) - 23
+    agent["fitness"] = base_score - length_penalty
     
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
     agent["metrics"] = metrics
