@@ -104,23 +104,30 @@ def select_parents(population: List[dict]) -> List[dict]:
     # Calculate squared fitness values for Pareto weighting
     fitness_squares = [a['fitness']**2 for a in population]
     total = sum(fitness_squares)
-    assert total > 0, "Total fitness squared must be positive"
+    if total <= 0:
+        raise ValueError("Total fitness squared must be positive")
     
-    # Weighted sampling without replacement using numpy
-    weights = [f/total for f in fitness_squares]
-    selected_indices = np.random.choice(
-        len(population), 
-        size=min(2, len(population)),  # Select 2 parents
-        p=weights,
-        replace=False
-    )
-    return [population[i] for i in selected_indices]
+    sample_size = min(2, len(population))  # Select 2 parents
+    selected_parents = []
+    current_weights = fitness_squares.copy()
+    indices = list(range(len(population)))
     
-    # Validate unique selections
-    assert len(set(selected_indices)) == sample_size, "Duplicate selections detected"
-    assert all(0 <= i < len(sorted_pop) for i in selected_indices), "Invalid indices selected"
+    for _ in range(sample_size):
+        total = sum(current_weights)
+        if total <= 0:
+            break
+        
+        # Select parent using weighted choice without replacement
+        chosen_idx = random.choices(indices, weights=current_weights, k=1)[0]
+        selected_parents.append(population[chosen_idx])
+        
+        # Prevent reselection by zeroing weight and removing index
+        current_weights[chosen_idx] = 0
+        indices.remove(chosen_idx)
     
-    return [sorted_pop[i] for i in selected_indices]
+    # Validate final selection
+    assert len(selected_parents) == sample_size, f"Parent selection failed: got {len(selected_parents)} parents"
+    return selected_parents
 
 
 
