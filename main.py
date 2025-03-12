@@ -3,7 +3,7 @@ import string
 import gzip
 import numpy as np
 from typing import List
-from rich.console import Console
+from rich.console import Console, Panel
 import dspy
 
 # Completed:
@@ -350,7 +350,6 @@ def generate_children(parents: List[dict], population: List[dict], pop_size: int
     assert len(next_gen) == pop_size, f"Population size mismatch {len(next_gen)} != {pop_size}"
     return next_gen
 
-def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
     assert len(next_gen) >= 2, "Need at least 2 candidates for improvement"
     assert isinstance(problem, str), "Problem description must be a string"
@@ -445,9 +444,10 @@ def main():
     dspy.configure(problem=PROBLEM)  # Store in DSPy settings
     run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
 
+MAX_POPULATION = 1_000_000  # Hard limit per spec
+
 if __name__ == "__main__":
     main()
-MAX_POPULATION = 1_000_000  # Hard limit per spec
 
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
