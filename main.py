@@ -163,38 +163,42 @@ def mutate(chromosome: str) -> str:
     return mutate_with_llm(chromosome, dspy.settings.get("problem"))
 
 
+def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
+    """Validate candidate meets mating requirements"""
+    if candidate == parent:
+        return False
+    try:
+        validate_chromosome(candidate["chromosome"])
+        return True
+    except AssertionError:
+        return False
+
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
-    """Select mate using LLM prompt with candidate chromosomes"""
-    # Pre-filter candidates with validation
-    valid_candidates = [
-        agent for agent in candidates 
-        if validate_chromosome(agent["chromosome"]) and agent != parent
-    ]
+    """Select mate using LLM prompt with validated candidate chromosomes"""
+    # Filter and validate candidates
+    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mating candidates available")
     
-    # Format candidates with indexes
-    candidate_list = [f"{idx}: {agent['chromosome'][:23]}" 
-                    for idx, agent in enumerate(valid_candidates)]
+    # Create indexed list of first 23 chars (core segment)
+    candidate_list = [f"{idx}: {c['chromosome'][:23]}" 
+                    for idx, c in enumerate(valid_candidates)]
     
-    # Create mating prompt with hidden selection criteria
+    # LLM selection with validation constraints
     prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
     response = prompt(
-        parent_chromosome=parent["chromosome"],
+        parent_chromosome=validate_chromosome(parent["chromosome"]),
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY\n4. PRIORITIZE COMPACTNESS",
+        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY",
     )
     
-    # Validate and parse response
-    try:
-        # Get first completion and clean it
-        raw_response = str(response.best_candidate_id).strip()
-        chosen_id = int(raw_response.split(":")[0])  # Handle "1: explanation" format
+    # Parse and validate selection
+    raw_response = str(response.best_candidate_id).strip()
+    chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Use maxsplit
         
-        # Validate ID is within candidate range
-        if 0 <= chosen_id < len(candidates):
-            return candidates[chosen_id]
-        return random.choice(candidates)
+    # Validate selection is within range
+    if 0 <= chosen_id < len(valid_candidates):
+        return valid_candidates[chosen_id]
     except (ValueError, IndexError, AttributeError):
         return random.choice(candidates)
 
@@ -217,18 +221,21 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
 
 
 
-def generate_children(parents, population, pop_size, problem):
-    """Generate new population through crossover/mutation"""
+def generate_children(parents: List[dict], population: List[dict], pop_size: int, problem: str) -> List[dict]:
+    """Generate new population through validated crossover/mutation"""
     next_gen = parents.copy()
     
     while len(next_gen) < pop_size:
-        if parents:
-            parent = random.choice(parents)
+        parent = random.choice(parents) if parents else create_agent("")
+        try:
             child = crossover(parent, population, problem)
-        else:
-            parent = random.choice(parents) if parents else create_agent("")
+        except ValueError as e:
+            print(f"Crossover failed: {e}, using mutation instead")
             child = create_agent(mutate(parent["chromosome"]))
+        
         next_gen.append(child)
+    
+    assert len(next_gen) == pop_size, f"Population size mismatch {len(next_gen)} != {pop_size}"
     return next_gen
 
 def improve_top_candidates(next_gen, problem):
@@ -356,21 +363,7 @@ def calculate_window_statistics(fitness_window, window_size):
     std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
     return mean, median, std
 
-def generate_children(parents, population, pop_size, problem):
-    """Generate new population through crossover/mutation"""
-    next_gen = parents.copy()
-    
-    while len(next_gen) < pop_size:
-        if parents:
-            parent = random.choice(parents)
-            child = crossover(parent, population, problem)
-        else:
-            parent = random.choice(parents) if parents else create_agent("")
-            child = create_agent(mutate(parent["chromosome"]))
-        next_gen.append(child)
-    return next_gen
-
-def improve_top_candidates(next_gen, problem):
+def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
     for i in range(min(2, len(next_gen))):
         improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
