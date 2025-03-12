@@ -131,16 +131,13 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
     # Combined candidates and weights into single list comprehension
     # Combined parent pool and selection into single loop
-    selected = []
     pool = [(a, a['fitness']**2 + 1e-6) for a in population[-WINDOW_SIZE:]]
-    
-    while len(selected) < min(len(pool)//2, MAX_POPULATION) and pool:
-        candidates, weights = zip(*pool)
-        selected.append(pool.pop(random.choices(
-            range(len(candidates)), 
-            weights=weights, 
-            k=1
-        )[0])[0])
+    max_select = min(len(pool)//2, MAX_POPULATION)
+    selected = [
+        pool.pop(random.choices(range(len(pool)), weights=[w for _,w in pool])[0])[0]
+        for _ in range(max_select)
+        if pool
+    ]
         
     return selected
 
