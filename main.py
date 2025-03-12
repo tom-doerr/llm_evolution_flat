@@ -68,7 +68,7 @@ def validate_chromosome(chromosome: str) -> str:
     
     # Structural validation
     assert 1 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-    assert all(c.isalpha() or c == ' ' for c in chromosome), "Invalid characters"
+    assert all(c.isalpha() or c == ' ' for c in chromosome), "Invalid characters in chromosome"
     assert chromosome == chromosome.strip(), "Whitespace not allowed at ends"
     
     return chromosome
