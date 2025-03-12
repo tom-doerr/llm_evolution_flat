@@ -268,15 +268,16 @@ def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
     hotspots = [
         i for i, c in enumerate(chromosome)
-        if (c in HOTSPOT_CHARS or
-            (c == ' ' and random.random() < HOTSPOT_SPACE_PROB) or
-            random.random() < HOTSPOT_ANYWHERE_PROB)
+        if c in HOTSPOT_CHARS  # Punctuation always included
+        or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)  # Space check
+        or random.random() < 1/len(chromosome)  # Base chance
     ]
     
-    # Ensure minimum hotspots and average 1 per chromosome
-    if not hotspots:
-        hotspots = [random.randint(0, len(chromosome)-1)] if chromosome else []
-    return sorted(set(hotspots))  # Remove duplicates and sort
+    # Ensure minimum hotspots per spec
+    if len(hotspots) < MIN_HOTSPOTS and chromosome:
+        hotspots.extend(random.sample(range(len(chromosome)), k=MIN_HOTSPOTS-len(hotspots)))
+    
+    return sorted(list(set(hotspots)))  # Remove duplicates and sort
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
@@ -292,21 +293,17 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         if validate_mating_candidate(a, parent)
     ]
     
-    mates = []  # Initialize mates list to prevent possible-used-before-assign
     # Combined weighted selection with numpy and fallback
-    mates = []  # Initialize with empty list
+    mates = []
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
-        sum_weights = weights.sum()
-        if sum_weights > 0:
-            mates = [
-                valid_candidates[i] for i in np.random.choice(
-                    len(valid_candidates),
-                    size=min(5, len(valid_candidates)),
-                    replace=False,
-                    p=weights/sum_weights
-                )
-            ]
+        weights /= weights.sum()
+        mates = [valid_candidates[i] for i in np.random.choice(
+            len(valid_candidates), 
+            size=min(5, len(valid_candidates)),
+            replace=False,
+            p=weights
+        )]
     
     mate = llm_select_mate(parent, mates) if mates else parent
     
