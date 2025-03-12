@@ -168,10 +168,44 @@ def mutate(chromosome: str) -> str:
     return new_chromosome
 
 
-def crossover(parent1: dict, parent2: dict) -> dict:
-    """Create child by combining parts of parent chromosomes"""
-    split = random.randint(1, len(parent1["chromosome"]) - 1)
-    new_chromosome = parent1["chromosome"][:split] + parent2["chromosome"][split:]
+def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
+    """Select mate using LLM prompt with candidate chromosomes"""
+    # Format candidates with indexes
+    candidate_list = [f"{idx}: {agent['chromosome'][:23]}" 
+                    for idx, agent in enumerate(candidates)]
+    
+    # Create prompt with mating rules
+    prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
+    response = prompt(
+        parent_chromosome=parent["chromosome"],
+        candidates="\n".join(candidate_list),
+        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARS\n2. PRESERVE LENGTH <=40\n3. CHOOSE MOST COMPATIBLE"
+    )
+    
+    # Validate and parse response
+    try:
+        chosen_id = int(response.completions[0].strip())
+        return candidates[chosen_id]
+    except (ValueError, IndexError):
+        return random.choice(candidates)
+
+def crossover(parent: dict, population: List[dict], problem: str) -> dict:
+    """Create child through LLM-assisted mate selection"""
+    # Get weighted candidates without replacement
+    candidates = random.choices(
+        population,
+        weights=[a["fitness"]**2 for a in population],
+        k=min(5, len(population))
+    
+    # Deduplicate candidates
+    unique_candidates = {a["chromosome"]: a for a in candidates}.values()
+    
+    # Select mate using LLM prompt
+    mate = llm_select_mate(parent, list(unique_candidates), problem)
+    
+    # Combine chromosomes
+    split = random.randint(1, len(parent["chromosome"]) - 1)
+    new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
     return create_agent(new_chromosome)
 
 
@@ -245,9 +279,9 @@ def run_genetic_algorithm(
 
         # Create children through crossover with parent validation
         while len(next_gen) < pop_size:
-            if len(parents) >= 2:
-                parent1, parent2 = random.sample(parents, 2)
-                child = crossover(parent1, parent2)
+            if parents:
+                parent = random.choice(parents)
+                child = crossover(parent, population, problem)
             else:
                 # Handle insufficient parents by mutating existing members
                 parent = random.choice(parents) if parents else create_agent("")
