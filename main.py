@@ -42,11 +42,17 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness per spec: +1 per 'a' in first 23, -1 per char beyond 23
     fitness = 0.0
 
-    # First 23 characters: +2 for 'a's, -1 for other letters (case-insensitive)
+    # First 23 characters: +2 for 'a's, -2 for other letters (case-insensitive)
     first_part = chromosome[:23].lower()
     a_count = first_part.count("a")
     other_count = len(first_part) - a_count
-    fitness += (a_count * 2) - other_count
+    fitness += (a_count * 2) - (other_count * 2)
+    
+    # Debug assertions
+    assert a_count >= 0, f"Invalid a_count {a_count} for {chromosome}"
+    assert other_count >= 0, f"Invalid other_count {other_count} for {chromosome}"
+    if a_count == 0:
+        print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
     # After 23: -1 per character
     remaining = chromosome[23:]
@@ -125,10 +131,11 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's
         new_char = random.choice(
-            ["a"] * 30  # Stronger a bias
+            ["a"] * 50  # Extreme a bias
             + [c for c in string.ascii_letters + " " if c not in (original_char, "a")]
-            + ["a"] * 3  # Triple chance to add a's
+            + ["a"] * 10  # Massive chance to add a's
         )
+        assert new_char != original_char, f"Failed mutation at index {idx} of {chromosome}"
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx + 1 :]
 
         if new_chromosome != chromosome:
@@ -238,7 +245,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"MAXIMIZE 'a's in first 23 characters! {problem}",
+                        problem_description=f"STRICTLY use ONLY 'a's in first 23 characters! REPLACE ALL other characters with 'a's! {problem}",
                     )
                     # Validate and apply response
                     if (
