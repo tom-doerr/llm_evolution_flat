@@ -231,13 +231,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
     # Reduced locals by combining steps
-    candidates = random.choices(
+    # Directly pass sampled candidates to reduce locals
+    selected_mate = llm_select_mate(parent, random.choices(
         population[-WINDOW_SIZE:],
         weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
         k=min(5, len(population))
-    )
-    
-    selected_mate = llm_select_mate(parent, candidates)
+    ))
     return create_agent(
         (parent["chromosome"][:(split_point := random.randint(12, 34))] + 
          selected_mate["chromosome"][split_point:])[:40]
