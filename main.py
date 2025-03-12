@@ -232,7 +232,7 @@ def mutate_with_llm(chromosome: str) -> str:  # Removed unused problem parameter
         assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
             original_chromosome=f"Original: {chromosome[:40]}\n"
-                              "Mutation Rules:\n"  # Removed undefined problem reference
+                              "Mutation Rules:\n"
                               "1. Modify exactly 2-3 characters\n"
                               "2. Preserve first 23 characters\n"
                               "3. Use only letters/spaces\n"
