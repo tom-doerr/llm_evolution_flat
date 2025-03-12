@@ -6,7 +6,6 @@ import numpy as np
 import dspy
 from rich.console import Console
 from rich.panel import Panel
-import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
@@ -16,8 +15,9 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Reduced code complexity
 # - Basic population trimming
 
-# TODO: Optimize LLM prompt performance (HIGH)
-# TODO: Implement sliding window mate selection (MEDIUM)
+# TODO: Implement sliding window mate selection using fitness window (HIGH)
+# TODO: Optimize LLM prompt performance with batch processing (HIGH)
+# TODO: Fix function argument counts to meet pylint limits (MEDIUM)
 # TODO: Add chromosome compression for storage (LOW)
 
 # Configure DSPy with OpenRouter and timeout
@@ -187,7 +187,7 @@ def mutate_with_llm(agent: dict) -> str:
             mutated.isalpha() and 
             mutated[:23].count('a') >= chromosome[:23].count('a')):
             return mutated
-    except (dspy.DSPyException, ValueError) as e:
+    except (ValueError, AttributeError) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
             
@@ -389,7 +389,9 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, stats, diversity, log_file):
+def log_population(population, generation, stats, log_file):
+    """Log gzipped population data with rotation"""
+    diversity = calculate_diversity(population)
     """Log gzipped population data with rotation"""
     # Trim population to MAX_POPULATION by fitness before logging
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
@@ -403,8 +405,8 @@ def log_population(population, generation, stats, diversity, log_file):
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, population: list, 
-                           best: dict, stats: dict):
+def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
+    best, worst = get_population_extremes(population)
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
     diversity = calculate_diversity(population)
