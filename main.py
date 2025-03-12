@@ -129,17 +129,20 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
-    # Combined candidates and weights into single list comprehension
-    # Combined parent pool and selection into single loop
-    pool = [(a, a['fitness']**2 + 1e-6) for a in population[-WINDOW_SIZE:]]
-    max_select = min(len(pool)//2, MAX_POPULATION)
-    selected = [
-        pool.pop(random.choices(range(len(pool)), weights=[w for _,w in pool])[0])[0]
-        for _ in range(max_select)
-        if pool
-    ]
-        
-    return selected
+    # Combined selection logic with numpy for vectorization
+    candidates = population[-WINDOW_SIZE:]
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
+    
+    if not candidates:
+        return []
+    
+    # Calculate max selections using numpy
+    max_select = np.clip(len(candidates)//2, 1, MAX_POPULATION)
+    return random.choices(
+        candidates,
+        weights=weights,
+        k=max_select
+    )
 
 
 
@@ -263,22 +266,29 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    # Initialize population and validate size
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     fitness_window = []
+    generation = 0
 
     while True:  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
         stats = update_population_stats(fitness_window, population)
-        log_population(stats['generation'], stats)
+        stats['generation'] = generation  # Update generation counter
+        log_population(stats)
         display_generation_stats(stats)
+        
         # Inlined population extremes validation
         sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
         validate_population_state(sorted_pop[0], sorted_pop[-1])
-        population = generate_children(select_parents(population), population)[:MAX_POPULATION]
+        
+        population = generate_children(
+            select_parents(population),
+            population
+        )[:MAX_POPULATION]
+        generation += 1
 
 
 
