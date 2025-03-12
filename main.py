@@ -236,23 +236,23 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    window_pop = population[-WINDOW_SIZE:]
-    weights = np.array([a["fitness"]**2 + 1e-6 for a in window_pop])
-    candidates = random.choices(window_pop, weights=weights, k=min(5, len(window_pop)))
+    candidates = random.choices(
+        population[-WINDOW_SIZE:],
+        weights=[a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]],
+        k=min(5, len(population))
+    )
     
     mate = llm_select_mate(parent, candidates)
     
     try:
-        # Combine chromosomes with one average crossover point
-        split = random.randint(1, len(parent["chromosome"])-1)
-        child_chrom = parent["chromosome"][:split] + mate["chromosome"][split:]
-        validate_chromosome(child_chrom)
+        split_point = random.randint(1, len(parent["chromosome"])-1)
+        child = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
+        validate_chromosome(child)
         
-        # Validate core 'a' count
-        if child_chrom[:23].count('a') < parent["chromosome"][:23].count('a'):
+        if child[:23].count('a') < parent["chromosome"][:23].count('a'):
             raise ValueError("Core 'a' count decreased")
             
-        return create_agent(child_chrom)
+        return create_agent(child)
     except (AssertionError, ValueError):
         return create_agent(mutate(parent["chromosome"]))
 
@@ -287,15 +287,14 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)[:MAX_POPULATION]
     fitness_window = []
 
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Truncate log
+    open("evolution.log", "w", encoding="utf-8").close()  # Truncate log
 
     for generation in range(1, generations+1):
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
         log_population(generation, calculate_window_statistics(fitness_window))
-        display_generation_stats(generation, calculate_window_statistics(fitness_window))
+        display_generation_stats(generation, calculate_window_statistics(fitness_window), population)
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
@@ -320,7 +319,7 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(generation: int, stats: dict) -> None:
+def display_generation_stats(generation: int, stats: dict, population: list) -> None:
     """Rich-formatted display with essential stats"""
     diversity = calculate_diversity(population)
     Console().print(Panel(
