@@ -262,29 +262,29 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> None:
-    """Run genetic algorithm with optimized logging and scaling"""
+def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
+    """Run continuous genetic algorithm per spec.md"""
     pop_size = min(pop_size, MAX_POPULATION)
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
-    assert generations > 0, "Generations must be positive"
 
     population = initialize_population(pop_size)[:MAX_POPULATION]
-    fitness_window = []
+    fitness_window, iteration = [], 0
 
-    for generation in range(1, generations+1):
+    while True:  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
         stats = calculate_window_statistics(fitness_window)
         stats.update({
             'diversity': calculate_diversity(population),
-            'generation': generation,
+            'iteration': iteration,
             'population_size': len(population)
         })
         
-        log_population(generation, stats)
+        log_population(iteration, stats)
         display_generation_stats(stats)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
+        iteration += 1
 
 
 
@@ -308,8 +308,10 @@ def log_population(generation: int, stats: dict) -> None:
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
+    pop_count = stats.get('population_size', 0)
+    diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
-        f"[bold]Gen {stats['generation']}[/]\n"
+        f"[bold]Iter {stats['iteration']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
         f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
