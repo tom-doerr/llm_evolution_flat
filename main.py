@@ -137,7 +137,7 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     # Pareto distribution weighting by fitness^2 per spec.md
     # Pareto distribution weighted by fitness^2 per spec.md
     fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = np.power(fitness_scores, 2)  # alpha=2 for Pareto distribution
+    pareto_weights = fitness_scores  # Already squared per spec.md
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
@@ -268,7 +268,6 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     
     return next_gen[:MAX_POPULATION]
 
-MAX_POPULATION = 1_000_000  # Hard cap from spec
 
 def get_population_extremes(population: List[dict]) -> tuple:
     """Get best and worst agents from population"""
