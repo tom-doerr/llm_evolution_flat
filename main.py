@@ -141,7 +141,7 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     weights = fitness_scores * (np.random.pareto(2.0, len(population)) + 1)
     
     # Numeric stability with vectorized operations
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)  # pylint: disable=no-member
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max, axis=0)
     total = weights.sum()
     assert total > 0 or len(population) == 0, "Weight total should be positive for non-empty population"
     return weights / total if total > 0 else np.ones_like(weights)/len(weights)
@@ -159,11 +159,14 @@ def select_parents(population: List[dict]) -> List[dict]:
     total_weight = sum(weights)
     probs = [w / total_weight for w in weights]
     
-    # Weighted sampling without replacement using probability-ordered selection
+    # Weighted sampling without replacement with numpy
     sample_size = min(len(population), MAX_POPULATION//2)
-    sorted_indices = sorted(range(len(population)), key=lambda i: -probs[i])
-    selected_indices = sorted_indices[:sample_size]
-    
+    selected_indices = np.random.choice(
+        len(population),
+        size=sample_size,
+        replace=False,
+        p=probs
+    )
     return [population[i] for i in selected_indices]
 
 
