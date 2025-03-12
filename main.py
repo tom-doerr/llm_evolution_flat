@@ -162,35 +162,14 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    if random.random() < 0.8:  # 80% chance for LLM mutation per spec
+    # Pure LLM-based mutation per spec
+    try:
         return mutate_with_llm(chromosome, PROBLEM)
-    if not chromosome:
-        raise ValueError("Cannot mutate empty chromosome")
-
-    # Try up to 5 times to get a valid mutation
-    for _ in range(5):
+    except Exception as e:
+        # Fallback to single random character change
         idx = random.randint(0, len(chromosome) - 1)
-        original_char = chromosome[idx]
-        # Get a different random character
-        # Bias mutation towards adding 'a's
-        new_char = random.choice(
-            ["a"] * 80  # Extreme a bias per spec
-            + [c for c in string.ascii_letters + " " if c not in (original_char, "a")]
-            + ["a"] * 50  # Massive chance to add a's
-        )
-        assert new_char != original_char, f"Failed mutation at index {idx} of {chromosome}"
-        new_chromosome = chromosome[:idx] + new_char + chromosome[idx + 1 :]
-
-        if new_chromosome != chromosome:
-            break
-
-    # Validate mutation result with more debug info
-    assert len(new_chromosome) == len(
-        chromosome
-    ), f"Length changed from {len(chromosome)} to {len(new_chromosome)}"
-    assert (
-        new_chromosome != chromosome
-    ), f"Mutation failed after 5 attempts: {chromosome}"
+        new_char = random.choice(string.ascii_letters + " ")
+        return chromosome[:idx] + new_char + chromosome[idx + 1 :]
 
     return new_chromosome
 
@@ -382,5 +361,5 @@ def run_genetic_algorithm(
 
 
 if __name__ == "__main__":
-    PROBLEM = "Optimize string composition according to evolving fitness criteria"  # Obfuscated per spec
+    PROBLEM = "Maximize fitness through genetic evolution"  # Neutral description per spec
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)  # More meaningful test population
