@@ -136,7 +136,7 @@ def select_parents(population: List[dict]) -> List[dict]:
         size=min(len(candidates)//2, MAX_POPULATION),
         p=weights/np.sum(weights),
         replace=False
-    )]  # Weighted sampling without replacement per spec.md
+    )]  # Corrected parenthesis balance
 
 
 
