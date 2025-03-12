@@ -243,8 +243,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         
     selected_mate = llm_select_mate(parent, random.choices(
         candidates,
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in candidates])/sum(a["fitness"]**2 + 1e-6 for a in candidates),
+        weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum(a['fitness']**2 + 1e-6 for a in candidates),
         k=min(5, len(population))
+    )
     )
     
     return create_agent(''.join(
