@@ -275,12 +275,15 @@ def run_genetic_algorithm(pop_size: int) -> None:
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
-    # Empty log file at program start per spec.md
-    with open("evolution.log", "w", encoding='utf-8') as f:
-        pass  # Just truncate the file (encoding added per spec)
+    # Empty log file at program start per spec.md using context manager
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        pass  # Just truncate the file
     
+    evolution_loop(population)
+
+def evolution_loop(population: List[dict]) -> None:
+    """Continuous evolution loop separated to reduce statement count"""
     for generation in itertools.count(0):  # Continuous evolution per spec.md
-        # Evaluate population and update stats
         population = evaluate_population(population)[:MAX_POPULATION]
         stats = update_population_stats(
             update_fitness_window([], [a["fitness"] for a in population]),
@@ -296,6 +299,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
+        assert len(population) <= MAX_POPULATION, "Population exceeded max limit"
 
 
 
