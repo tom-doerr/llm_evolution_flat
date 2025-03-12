@@ -305,14 +305,13 @@ def evolution_loop(population: List[dict]) -> None:
         population = evaluate_population(population)[:MAX_POPULATION]
         
         # Combined stats calculation to reduce locals
-        fitness_values = [a["fitness"] for a in population]
         stats = {
             'generation': generation,
             'population_size': len(population),
             'diversity': calculate_diversity(population),
-            'best': max(fitness_values),
-            'worst': min(fitness_values),
-            **calculate_window_statistics(fitness_values[-WINDOW_SIZE:])
+            'best': max(a["fitness"] for a in population),
+            'worst': min(a["fitness"] for a in population),
+            **calculate_window_statistics([a["fitness"] for a in population][-WINDOW_SIZE:])
         }
         
         # Handle logging/display in one step
