@@ -150,23 +150,25 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighting by fitness^2"""
-    sorted_pop = sorted(population, key=lambda x: -x['fitness'])
-    ranks = np.arange(1, len(sorted_pop) + 1)
-    fitness_squared = np.array([a['fitness']**2 for a in sorted_pop])
+    """Select parents using Pareto distribution weighted by fitness^2 with sliding window"""
+    # Use sliding window of recent fitness values
+    window_size = min(len(population), WINDOW_SIZE)
+    sorted_pop = sorted(population, key=lambda x: -x['fitness'])[:window_size]
     
-    weights = fitness_squared / ranks**2
+    # Square weights for Pareto distribution
+    weights = np.array([a['fitness']**2 for a in sorted_pop], dtype=np.float64)
     weights /= weights.sum()
     
-    # Validate and select
-    assert np.all(weights >= 0), "Negative weights detected"
-    selected_indices = np.random.choice(
-        len(population),
-        size=len(population)//2,
-        replace=False,
-        p=weights
-    )
-    return [sorted_pop[i] for i in selected_indices]
+    # Weighted sampling without replacement
+    selected = []
+    indices = np.arange(len(sorted_pop))
+    while len(selected) < len(population)//2 and len(indices) > 0:
+        chosen_idx = np.random.choice(indices, p=weights/weights.sum())
+        selected.append(sorted_pop[chosen_idx])
+        indices = np.delete(indices, chosen_idx)
+        weights = np.delete(weights, chosen_idx)
+    
+    return selected
 
 
 
@@ -354,7 +356,7 @@ def run_genetic_algorithm(
             stats['median'],
             stats['std'],
             current_diversity,
-            log_file
+            "evolution.log.gz"
         )
 
         # Display statistics using sliding window
