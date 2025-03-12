@@ -91,46 +91,23 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2"""
-    # Filter and sort by fitness descending
-    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
+    """Select parents using Pareto distribution weighted by fitness²"""
+    assert len(population) > 0, "Cannot select from empty population"
     
-    # Calculate Pareto weights with alpha=2
-    fitness_values = [max(a["fitness"], 0)**2 for a in sorted_pop]
-    ranks = range(1, len(sorted_pop)+1)
-    pareto_weights = [f * (1/(r**2)) for f, r in zip(fitness_values, ranks)]  # Alpha=2 Pareto distribution
-    total_weight = sum(pareto_weights)
+    # Calculate squared fitness values for Pareto weighting
+    fitness_squares = [a['fitness']**2 for a in population]
+    total = sum(fitness_squares)
+    assert total > 0, "Total fitness squared must be positive"
     
-    if total_weight <= 0:
-        raise ValueError("All agents have zero fitness - cannot select parents")
-    
-    # Convert weights to probabilities with epsilon to avoid zeros
-    probs = np.array([w/total_weight for w in pareto_weights], dtype=np.float64)
-    probs += 1e-8  # Add small epsilon to avoid zero probabilities
-    probs /= probs.sum()  # Renormalize
-    
-    # True weighted sampling without replacement using priority queue approach
-    sample_size = len(population) // 2
-    selected_indices = []
-    
-    # Create mutable copy of probabilities
-    current_probs = probs.copy()
-    indices = list(range(len(sorted_pop)))
-    
-    for _ in range(sample_size):
-        # Normalize probabilities and handle potential float errors
-        total = current_probs.sum()
-        assert total > 1e-8, "All selection probabilities became zero unexpectedly"
-        current_probs /= total
-        
-        # Select index using weighted choice
-        idx = np.random.choice(indices, p=current_probs)
-        selected_indices.append(idx)
-        
-        # Zero out probability for this index to prevent reselection
-        current_probs[idx] = 0.0
-        # Remove from candidate indices to improve performance
-        indices.remove(idx)
+    # Weighted sampling without replacement using numpy
+    weights = [f/total for f in fitness_squares]
+    selected_indices = np.random.choice(
+        len(population), 
+        size=min(2, len(population)),  # Select 2 parents
+        p=weights,
+        replace=False
+    )
+    return [population[i] for i in selected_indices]
     
     # Validate unique selections
     assert len(set(selected_indices)) == sample_size, "Duplicate selections detected"
