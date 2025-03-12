@@ -279,8 +279,9 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
         return random.choice(candidates)
         
     # Validate selection is within range
-    if 0 <= chosen_id < len(valid_candidates):
-        return valid_candidates[chosen_id]
+    try:
+        if 0 <= chosen_id < len(valid_candidates):
+            return valid_candidates[chosen_id]
     except (ValueError, IndexError, AttributeError):
         return random.choice(candidates)
 
