@@ -176,7 +176,7 @@ def mutate_with_llm(agent: dict) -> str:
             string.ascii_letters.lower(), 
             k=len(chromosome)-23
         ))
-    except (ValueError, Exception) as e:  # Broadened exception for fallback
+    except ValueError as e:  # Only catch specific errors
         if DEBUG_MODE:
             print(f"Fallback mutation error: {e}")
         return chromosome  # Return original on any error
@@ -323,9 +323,6 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         fitness_window = update_fitness_window(fitness_window, all_fitness)
         stats = calculate_window_statistics(fitness_window)
         
-        # Get population extremes
-        best = get_population_extremes(population)[0]
-
         # Calculate and log population statistics using sliding window
         current_diversity = calculate_diversity(population)
         log_population(population, generation, stats)
