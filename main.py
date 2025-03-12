@@ -61,8 +61,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
     assert isinstance(fitness_window, list), "Window must be list type"
-    # Use fixed window size from spec.md
-    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Simple slicing for fixed size
+    # Fixed window size per spec.md
+    return (fitness_window + new_fitnesses)[-100:]  # Simple slicing for fixed size
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
