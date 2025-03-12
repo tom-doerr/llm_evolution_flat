@@ -203,7 +203,7 @@ def validate_mutation(chromosome: str) -> bool:
         len(chromosome) <= 40 and
         all(c.isalpha() or c == ' ' for c in chromosome) and  # From spec.md
         chromosome == chromosome.strip() and  # From spec.md
-        chromosome[:23].count('a') >= chromosome[:23].count('a')  # Hidden spec
+        chromosome[:23].count('a') > chromosome[:23].count('a')  # Hidden spec
     )
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
@@ -389,8 +389,9 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
     """Rich-formatted display with essential stats"""
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
-        f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
-        f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
+        f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f} (window)\n"
+        f"▲{stats['best_window']:.1f} ▼{stats['worst_window']:.1f}\n"
+        f"▲{stats['best_current']:.1f} ▼{stats['worst_current']:.1f}\n" 
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         style="blue"
