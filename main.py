@@ -9,10 +9,9 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Implement proper weighted sampling without replacement in parent selection
-# 2. Add chromosome validation before LLM mating selection
-# 3. Optimize fitness window statistics calculations
-# 4. Add population size monitoring/limiting
+# 1. Add chromosome validation before LLM mating selection
+# 2. Optimize fitness window statistics calculations
+# 3. Add population size monitoring/limiting
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -110,18 +109,32 @@ def select_parents(population: List[dict]) -> List[dict]:
     probs += 1e-8  # Add small epsilon to avoid zero probabilities
     probs /= probs.sum()  # Renormalize
     
-    # Weighted sampling without replacement using numpy choice
+    # True weighted sampling without replacement using priority queue approach
     sample_size = len(population) // 2
-    selected_indices = np.random.choice(
-        len(sorted_pop),
-        size=sample_size,
-        replace=False,
-        p=probs
-    )
+    selected_indices = []
     
-    # Validate unique selection
-    unique_indices = set(selected_indices)
-    assert len(unique_indices) == sample_size, f"Duplicate selections {len(unique_indices)} != {sample_size}"
+    # Create mutable copy of probabilities
+    current_probs = probs.copy()
+    indices = list(range(len(sorted_pop)))
+    
+    for _ in range(sample_size):
+        # Normalize probabilities and handle potential float errors
+        total = current_probs.sum()
+        assert total > 1e-8, "All selection probabilities became zero unexpectedly"
+        current_probs /= total
+        
+        # Select index using weighted choice
+        idx = np.random.choice(indices, p=current_probs)
+        selected_indices.append(idx)
+        
+        # Zero out probability for this index to prevent reselection
+        current_probs[idx] = 0.0
+        # Remove from candidate indices to improve performance
+        indices.remove(idx)
+    
+    # Validate unique selections
+    assert len(set(selected_indices)) == sample_size, "Duplicate selections detected"
+    assert all(0 <= i < len(sorted_pop) for i in selected_indices), "Invalid indices selected"
     
     return [sorted_pop[i] for i in selected_indices]
 
