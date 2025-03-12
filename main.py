@@ -41,13 +41,11 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         }
 
     arr = np.array(window, dtype=np.float64)
-    current_best = arr[-1] if len(arr) > 0 else 0.0
-    
     return {
         'mean': float(np.nanmean(arr)),
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
-        'best_current': current_best,
+        'best_current': float(arr[-1]) if len(arr) > 0 else 0.0,
         'worst_current': float(np.nanmin(arr)),
         'best_window': float(np.nanmax(arr)),
         'worst_window': float(np.nanmin(arr))
@@ -146,13 +144,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     population = population[:MAX_POPULATION]
     assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
     
-    # Weighted sampling without replacement with simplified probability calculation
-    sample_size = min(len(population), MAX_POPULATION//2)
-    probabilities = weights / weights.sum() if weights.sum() > 0 else None
+    # Weighted sampling without replacement with combined probability calculation
     selected_indices = np.random.choice(
         len(population),
-        size=sample_size,
-        p=probabilities,
+        size=min(len(population), MAX_POPULATION//2),
+        p=(weights / weights.sum() if weights.sum() > 0 else None),
         replace=False
     )
     
@@ -274,12 +270,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     )
     
     # Implement spec.md chromosome switching rules
-    parent_chrom = parent["chromosome"]
-    mate_chrom = selected_mate["chromosome"]
-    
-    # Create hotspots at punctuation and spaces
+    # Create hotspots at punctuation and spaces using direct access
     hotspots = [
-        i for i, c in enumerate(parent_chrom)
+        i for i, c in enumerate(parent["chromosome"])
         if c in {'.', '!', '?', ' '} or random.random() < 0.1
     ]
     
