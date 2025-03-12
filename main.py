@@ -102,23 +102,25 @@ def select_parents(population: List[dict]) -> List[dict]:
     pareto_weights = [f * (1/(r**2)) for f, r in zip(fitness_values, ranks)]  # Alpha=2 Pareto distribution
     total_weight = sum(pareto_weights)
     
-    assert total_weight > 0, "Total parent selection weight must be positive"
+    if total_weight <= 0:
         raise ValueError("All agents have zero fitness - cannot select parents")
     
-    # Convert to numpy arrays for efficient computation
+    # Convert weights to probabilities with epsilon to avoid zeros
+    probs = np.array([w/total_weight for w in pareto_weights], dtype=np.float64)
+    probs += 1e-8  # Add small epsilon to avoid zero probabilities
+    probs /= probs.sum()  # Renormalize
+    
+    # Gumbel-max trick for weighted sampling without replacement
     population_size = len(population)
     sample_size = len(population) // 2
-    indices = np.arange(population_size)
+    gumbel_noise = np.random.gumbel(0, 1, population_size)
+    scores = np.log(probs) + gumbel_noise
+    selected_indices = np.argpartition(-scores, sample_size)[:sample_size]
     
-    # Use numpy's weighted sampling without replacement
-    selected_indices = np.random.choice(
-        indices,
-        size=sample_size,
-        replace=False,
-        p=np.array(pareto_weights)/total_weight
-    )
+    # Validate unique selection
+    unique_indices = set(selected_indices)
+    assert len(unique_indices) == sample_size, f"Duplicate selections {len(unique_indices)} != {sample_size}"
     
-    # Return selected parents using advanced indexing
     return [population[i] for i in selected_indices]
 
 
