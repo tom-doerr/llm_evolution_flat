@@ -333,12 +333,7 @@ def run_genetic_algorithm(
 
         # Calculate and log population statistics using sliding window
         current_diversity = calculate_diversity(population)
-        log_population(
-            population,
-            generation,
-            stats,
-            "evolution.log.gz"
-        )
+        log_population(population, generation, stats)
 
         # Display statistics using sliding window
         display_generation_stats(generation, generations, population, best, stats)
@@ -378,7 +373,7 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population: List[dict], generation: int, stats: dict, log_file: str) -> None:
+def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
     
