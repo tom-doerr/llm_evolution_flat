@@ -127,7 +127,7 @@ def initialize_population(pop_size: int) -> List[dict]:
     return [create_agent(c) for c in chromosomes]
 
 
-def select_parents(population: List[dict]) -> List[dict]:
+def select_parents(population: List[dict]) -> List[dict]:  # fitness_window removed per spec.md
     """Select parents using fitness^2 weighted sampling without replacement"""
     candidates = population[-WINDOW_SIZE:]
     weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
