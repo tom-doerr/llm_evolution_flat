@@ -5,7 +5,7 @@ from typing import List
 import dspy
 
 # Configure DSPy with OpenRouter and timeout
-lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40, timeout=10)
+lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40, timeout=10, cache=False)
 dspy.configure(lm=lm)
 
 # Validate configuration
