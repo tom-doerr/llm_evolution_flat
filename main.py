@@ -232,18 +232,28 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     )
 
 def crossover(parent: dict, population: List[dict]) -> dict:
-    """Create child through LLM-assisted mate selection"""
-    # Reduced locals by combining steps
-    # Directly pass sampled candidates to reduce locals
+    """Create child through LLM-assisted mate selection with chromosome switching"""
+    candidates = population[-WINDOW_SIZE:]
+    weights = np.array([a["fitness"]**2 + 1e-6 for a in candidates])
     selected_mate = llm_select_mate(parent, random.choices(
-        population[-WINDOW_SIZE:],
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
+        candidates,
+        weights=weights/weights.sum(),  # Proper weighted sampling without replacement
         k=min(5, len(population))
     ))
-    return create_agent(
-        (parent["chromosome"][:(split_point := random.randint(12, 34))] + 
-         selected_mate["chromosome"][split_point:])[:40]
-    )
+    
+    # Chromosome switching with hotspot logic
+    parent_chrom = parent["chromosome"]
+    mate_chrom = selected_mate["chromosome"]
+    new_chrom = []
+    switch_prob = 1/len(parent_chrom)  # Average one switch per chromosome
+    
+    for c1, c2 in itertools.zip_longest(parent_chrom, mate_chrom, fillvalue=' '):
+        if random.random() < switch_prob or c1 in {'.', '!', '?', ' '}:
+            new_chrom.append(c2 if c2 else ' ')
+        else:
+            new_chrom.append(c1)
+    
+    return create_agent(''.join(new_chrom)[:40])
 
 
 
