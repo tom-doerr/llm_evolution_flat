@@ -272,12 +272,13 @@ def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
-        stats = calculate_window_statistics(fitness_window)
-        stats.update({
+        # Create stats in one consolidated step
+        stats = {
+            **calculate_window_statistics(fitness_window),
             'diversity': calculate_diversity(population),
             'generation': iteration,
             'population_size': len(population)
-        })
+        }
         
         log_population(iteration, stats)
         display_generation_stats(iteration, stats, population)
