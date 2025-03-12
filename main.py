@@ -287,14 +287,10 @@ def run_genetic_algorithm(pop_size: int) -> None:
             population
         )
         stats.update({'generation': generation})
+        
         log_population(stats)
         display_generation_stats(stats)
-        
-        # Validate population and generate next
-        validate_population_state(
-            max(population, key=lambda x: x["fitness"]),
-            min(population, key=lambda x: x["fitness"])
-        )
+        validate_population_extremes(population)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
