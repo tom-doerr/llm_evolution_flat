@@ -158,19 +158,28 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
-    # Pre-validation checks
-    validate_chromosome(parent["chromosome"])
+    # Validate parent first with debugging
+    parent_chrom = validate_chromosome(parent["chromosome"])
+    debug = False  # Set to True for validation troubleshooting
     assert parent["fitness"] > 0, "Parent must have positive fitness"
     
-    # Filter and validate candidates with additional checks
-    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
-    if not valid_candidates:
-        raise ValueError("No valid mating candidates available")
+    # Strict candidate validation with error handling
+    valid_candidates = []
+    for agent in candidates:
+        try:
+            agent_chrom = validate_chromosome(agent["chromosome"])
+            if agent_chrom != parent_chrom and 23 <= len(agent_chrom) <= 40:
+                valid_candidates.append(agent)
+                
+                if debug:
+                    print(f"Valid candidate: {agent_chrom[:23]}... (fitness: {agent['fitness']})")
+                    
+        except AssertionError as e:
+            if debug:
+                print(f"Invalid candidate rejected: {str(e)}")
     
-    # Enforce chromosome structure before LLM selection
-    for c in valid_candidates:
-        c["chromosome"] = validate_chromosome(c["chromosome"])
-        assert 23 <= len(c["chromosome"]) <= 40, "Candidate length violation"
+    if not valid_candidates:
+        raise ValueError(f"No valid mates among {len(candidates)} candidates")
     
     # Create indexed list of first 23 chars (core segment)
     candidate_list = [f"{idx}: {c['chromosome'][:23]} (fitness: {c['fitness']})" 
