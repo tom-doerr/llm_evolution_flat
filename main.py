@@ -385,12 +385,11 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population: List[dict], generation: int, stats: dict) -> None:
+def log_population(population: List[dict], generation: int, log_file: str) -> None:
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
-    # Use stats dict for metrics
-    log_file = "evolution.log.gz"
-    """Log gzipped population data with rotation"""
+    stats = calculate_window_statistics([a["fitness"] for a in population])
+    
     # Trim population to MAX_POPULATION by fitness before logging
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
     """Log gzipped population data with rotation"""
@@ -404,9 +403,9 @@ def log_population(population: List[dict], generation: int, stats: dict) -> None
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
 def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
-    best, worst = get_population_extremes(population)
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
+    best, worst = get_population_extremes(population)
     diversity = calculate_diversity(population)
     
     # Track diversity in window stats
