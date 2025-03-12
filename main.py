@@ -293,8 +293,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     mate_chrom = selected_mate["chromosome"]
     child_chrom = []
     last_switch = 0
-    parent_chrom = parent["chromosome"]
-    mate_chrom = selected_mate["chromosome"]
     for switch_point in sorted(random.sample(hotspots, min(len(hotspots), 1))):
         child_chrom.extend(parent_chromosome[last_switch:switch_point])
         child_chrom.extend(mate_chrom[switch_point:switch_point+1])  # Take 1 char from mate
