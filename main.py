@@ -44,7 +44,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'mean': float(np.nanmean(arr)),
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
-        'best_current': float(np.nanmax(arr[-1:])),  # Last element only
+        'best_current': float(np.nanmax(arr)),
         'worst_current': float(np.nanmin(arr)),
         'best_window': float(np.nanmax(arr)),
         'worst_window': float(np.nanmin(arr))
@@ -463,4 +463,7 @@ def validate_population_state(best, worst) -> None:
     assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
     assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
     assert MAX_CHARS == 40, "MAX_CHARS constant modified"
+    assert len(best['metrics']['core_segment']) == 23, "Core segment length invalid"
+    assert best['chromosome'][:23].islower(), "Core segment must be lowercase"
+    assert ' ' not in best['chromosome'].strip(), "Whitespace only allowed inside"
 
