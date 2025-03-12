@@ -388,11 +388,8 @@ def get_population_limit() -> int:
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
-    diversity = calculate_diversity(population)
-    
-    # Trim population to MAX_POPULATION by fitness before logging
+    log_file = "evolution.log.gz"
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
-    assert log_file.endswith('.gz'), "Log file must use .gz extension"
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
         f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()} | Diversity: {diversity:.2f}\n")
