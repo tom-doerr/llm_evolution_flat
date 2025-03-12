@@ -38,7 +38,9 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
     assert len(fitness_window) >= 0, "Fitness window cannot be negative length"
     assert window_size > 0, "Window size must be positive"
     
-    window = fitness_window[-window_size:]
+    # Use exact window size with validation
+    window = fitness_window[-window_size:] if len(fitness_window) >= window_size else fitness_window.copy()
+    assert 0 <= len(window) <= window_size, f"Window size violation: {len(window)}"
     if not window:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
@@ -302,6 +304,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified
         except AssertionError as e:
             if debug:
                 pass  # Debug placeholder for invalid candidate rejection
+            pass  # Required indented block even if debug is False
     
     if not valid_candidates:
         raise ValueError(f"No valid mates among {len(candidates)} candidates")
