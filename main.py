@@ -176,7 +176,7 @@ def mutate_with_llm(agent: dict) -> str:
     return next(valid_mutations, chromosome[:23] + ''.join(random.choices(
         string.ascii_letters.lower(), 
         k=max(0, len(chromosome)-23)))
-    ))
+    )
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
@@ -298,10 +298,10 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
             size=min(len(population), MAX_POPULATION),
             p=fitness_weights/fitness_weights.sum()
         )
-        population = [population[i] for i in selected_indices]
+        population = [population[i] for i in selected_indices][:MAX_POPULATION]
         
         parents = select_parents(population, fitness_window)
-        population = create_next_generation(generate_children(parents, population), 0.25)
+        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
