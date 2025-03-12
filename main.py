@@ -267,11 +267,6 @@ def get_hotspots(chromosome: str) -> list:
     forced_hotspots = [i for i, c in enumerate(chromosome) if c in {'.', '!', '?', ' '}]
     random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.15]
     return list(set(forced_hotspots + random_hotspots)) or [0]
-    """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
-    return [
-        i for i, c in enumerate(chromosome)
-        if c in {'.', '!', '?', ' '} or random.random() < 0.1
-    ]
 
 def build_child_chromosome(p_chrom: str, m_chrom: str, hotspots: list) -> str:
     """Construct child chromosome with single character switch"""
@@ -296,7 +291,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         parent["chromosome"],
         mate["chromosome"],
         get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
-    ))
+    )
 
 
 
