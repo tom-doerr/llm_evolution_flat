@@ -354,6 +354,11 @@ def generate_children(parents: List[dict], population: List[dict], pop_size: int
 
 MAX_POPULATION = 1_000_000  # Hard cap from spec
 
+def get_population_extremes(population: List[dict]) -> tuple:
+    """Get best and worst agents from population"""
+    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
+    return sorted_pop[0], sorted_pop[-1]
+
 def run_genetic_algorithm(
     problem: str,
     generations: int = 10,
@@ -402,7 +407,7 @@ def run_genetic_algorithm(
         log_population(population, generation, current_mean, current_median, current_std, current_diversity, log_file)
 
         # Display statistics from sliding window
-        display_generation_stats(generation, generations, population, best, len(population), 
+        display_generation_stats(generation, generations, population, best, 
                                stats['mean'], stats['std'], fitness_window)
 
         # Validate population state and size
@@ -454,7 +459,7 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
 def display_generation_stats(generation: int, generations: int, population: list, best: dict, 
-                           pop_size: int, mean_fitness: float, std_fitness: float, fitness_window: list):
+                           mean_fitness: float, std_fitness: float, fitness_window: list):
     from rich.panel import Panel  # Fix missing import
     """Rich-formatted display with essential stats"""
     console = Console()
@@ -524,10 +529,6 @@ def evaluate_population(population: List[dict], problem: str, generation: int) -
     """Evaluate entire population's fitness with generation weighting"""
     return [evaluate_agent(agent, problem, generation) for agent in population]
 
-def get_population_extremes(population: List[dict]) -> tuple:
-    """Get best and worst agents from population"""
-    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
-    return sorted_pop[0], sorted_pop[-1]
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
