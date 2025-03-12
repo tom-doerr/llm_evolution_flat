@@ -264,7 +264,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
                 if validate_mating_candidate(a, parent)
             ])
             p = weights_array / weights_array.sum() if weights_array.sum() > 0 else np.ones(len(weights_array)) / len(weights_array)
-        )]
+        )
     )
     
     # Implement spec.md chromosome switching rules
