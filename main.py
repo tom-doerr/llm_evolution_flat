@@ -186,7 +186,7 @@ def mutate_with_llm(agent: dict) -> str:
         k=len(chromosome)-23
     ))
         
-    except (ValueError, Exception) as e:  # Simplified exception handling
+    except (ValueError, dspy.DSPyException) as e:  # Specific exceptions only
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
         return chromosome  # Return original chromosome on error
@@ -350,7 +350,8 @@ def run_genetic_algorithm(
         assert stats['best'] >= stats['worst'], "Invalid best/worst relationship"
 
         # Validate population state and size
-        validate_population_state(best, worst)
+        best_agent, worst_agent = get_population_extremes(population)
+        validate_population_state(best_agent, worst_agent)
         assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
         # Generate next generation with size monitoring
         parents = select_parents(population, fitness_window)
@@ -404,10 +405,9 @@ def display_generation_stats(generation: int, generations: int, population: List
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
-        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {stats['mean']:.2f}\n" 
-        f"📈 Median: {stats['median']:.2f} (IQR {stats['q25']:.1f}-{stats['q75']:.1f}) | 📉 Std: {stats['std']:.2f}\n"
-        f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
-        f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
+        f"📊 Mean: {stats['mean']:.2f} | 📈 Median: {stats['median']:.2f}\n"
+        f"📉 Std: {stats['std']:.2f} | 🌐 Diversity: {diversity:.1%}\n"
+        f"👥 Size: {len(population)} | 🏅 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
         title="Evolution Progress",
         style="blue"
     )
