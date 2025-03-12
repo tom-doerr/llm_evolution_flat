@@ -383,11 +383,9 @@ if __name__ == "__main__":
                        help='Maximum population size (per spec.md)')
     args = parser.parse_args()
     
-    run_genetic_algorithm(
-        pop_size=min(args.pop_size, args.max_population),
-        max_population=args.max_population
+    run_genetic_algorithm( 
+        pop_size=min(args.pop_size, args.max_population)
     )
-    assert args.max_population <= MAX_POPULATION, "Max population exceeds spec limit"
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format"""
