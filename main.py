@@ -10,9 +10,9 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Implement generation-based scoring weights
-# 2. Add diversity tracking to population statistics
-# 3. Optimize LLM prompt validation
+# 1. Add diversity tracking to population statistics
+# 2. Optimize LLM prompt validation
+# 3. Implement Pareto distribution for parent selection
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -138,12 +138,8 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
         len(chromosome) <= 40
     ), f"Chromosome length {len(chromosome)} exceeds maximum allowed"
 
-    # Generation-based scoring weights (exponential decay)
-    gen_weight = 0.95 ** generation
-    fitness *= gen_weight  # Gradually reduce fitness magnitude over generations
-    
-    # Allow negative fitness as per spec
-    agent["fitness"] = fitness
+    # Use squared fitness for selection weighting as per spec
+    agent["fitness"] = fitness ** 2
     agent["metrics"] = metrics  # Store metrics for analysis
     return agent["fitness"]
 
