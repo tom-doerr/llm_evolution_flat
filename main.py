@@ -132,16 +132,12 @@ def initialize_population(pop_size: int) -> List[dict]:
 def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     """Calculate parent selection weights with Pareto distribution and fitness^2"""
     assert len(population) > 0, "Cannot calculate weights for empty population"
-    # Calculate fitness scores and pareto weights in one step
-    weights = (
-        np.array([a['fitness']**2 for a in population], dtype=np.float64) * 
-        (np.random.pareto(2.0, len(population)) + 1)
-    )
     
-    # Stabilize and normalize weights
+    # Combined fitness^2 and Pareto weights with numeric stability
+    fitness_scores = np.array([a['fitness']**2 for a in population], dtype=np.float64)
+    weights = fitness_scores * (np.random.pareto(2.0, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)
-    total = weights.sum()
-    return weights / total if total > 0 else np.ones_like(weights)/len(weights)
+    return weights / weights.sum() if (total := weights.sum()) > 0 else np.ones_like(weights)/len(weights)
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
@@ -279,17 +275,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     if not hotspots:
         hotspots = random.sample(range(len(parent["chromosome"])), k=1)
     
-    # Perform switches at hotspots with vectorized operations
+    # Perform chromosome combination with single switch point
     parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
-    
-    # Build child chromosome using slicing with single switch point
     switch_point = random.choice(hotspots) if hotspots else 0
-    child_chrom = (
-        parent_chrom[:switch_point] + 
-        mate_chrom[switch_point:switch_point+1] + 
-        parent_chrom[switch_point+1:]
-    )
+    child_chrom = parent_chrom[:switch_point] + mate_chrom[switch_point:]
     
     return create_agent(''.join(child_chrom)[:40])
 
