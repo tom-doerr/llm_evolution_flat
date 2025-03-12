@@ -341,7 +341,7 @@ def run_genetic_algorithm(
         log_population(population, generation, stats)
 
         # Display statistics using sliding window
-        display_generation_stats(generation, generations, population, best, stats)
+        display_generation_stats(generation, generations, population, stats)
         
         # Trim population to MAX_POPULATION by fitness before continuing
         population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
@@ -379,6 +379,7 @@ def get_population_limit() -> int:
     return MAX_POPULATION
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
+    diversity = calculate_diversity(population)
     """Log gzipped population data with rotation"""
     log_file = "evolution.log.gz"
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
@@ -389,7 +390,7 @@ def log_population(population: List[dict], generation: int, stats: dict) -> None
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, stats: dict):
+def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
     best = stats['best']
