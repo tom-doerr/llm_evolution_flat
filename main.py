@@ -212,41 +212,29 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid:
         raise ValueError("No valid mates")
 
-    # Get LLM selection or fallback
     response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
-    )
-    selected = response.selected_mate.strip()[:40]
+    ).selected_mate.strip()[:40]
 
-    # Check validity of LLM selection or fallback to weighted random
     return next(
-        (c for c in valid if c["chromosome"] == selected),
-        random.choices(
-            valid,
-            weights=[c["fitness"]**2 + 1e-6 for c in valid],
-            k=1
-        )[0]
+        (c for c in valid if c["chromosome"] == response),
+        random.choices(valid, weights=[c["fitness"]**2 + 1e-6 for c in valid])[0]
     )
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    # Combined candidate selection and weighting
-    window = population[-WINDOW_SIZE:]
     candidates = random.choices(
-        window,
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in window]),
+        population[-WINDOW_SIZE:],
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
         k=min(5, len(population))
     )
     
-    # Create child with validation
     mate = llm_select_mate(parent, candidates)
-    child_chromosome = (
-        parent["chromosome"][:(split_point := random.randint(12, 34))] +  # Walrus operator
-        mate["chromosome"][split_point:]
-    )[:40]
+    split_point = random.randint(12, 34)
+    child_chromosome = (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
     
     return create_agent(
         child_chromosome if validate_chromosome(child_chromosome) 
@@ -285,7 +273,7 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     fitness_window = []
 
     # Clear log using context manager
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8"):
         pass  # Truncate file
 
     # Main evolution loop
@@ -319,7 +307,10 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(stats: dict, diversity: float, pop_count: int) -> None:
+def display_generation_stats(generation: int, stats: dict, population: List[dict]) -> None:
+    """Rich-formatted display with essential stats"""
+    pop_count = len(population)
+    diversity = calculate_diversity(population)
     """Rich-formatted display with essential stats"""
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"  # Get generation from stats
@@ -345,9 +336,10 @@ def calculate_diversity(population: List[dict]) -> float:
 def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     div_ratio = calculate_diversity(generation)
+    mutation_rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     return [
         {**agent, "chromosome": mutate(agent["chromosome"])} 
-        if random.random() < (rate := np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8))
+        if random.random() < mutation_rate
         else agent
         for agent in generation
     ]
