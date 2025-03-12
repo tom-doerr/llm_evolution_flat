@@ -323,11 +323,12 @@ def validate_population_extremes(population: List[dict]) -> None:
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
+    MAX_POPULATION = args.max_population  # Allow CLI override per spec.md
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Truncate file by opening in write mode (spec.md requirement)
+        f.write("")  # Explicit truncation per spec.md
     
     evolution_loop(population)
 
