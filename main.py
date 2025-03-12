@@ -25,11 +25,10 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
 def calculate_window_statistics(fitness_window: list, window_size: int = 100) -> dict:
-    """Calculate statistics for current fitness window using vectorized operations"""
+    """Calculate statistics for sliding window of last 100 evaluations"""
     window = fitness_window[-window_size:]
     if not window:
-        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0, 
-                "diversity": 0.0, "q25": 0.0, "q75": 0.0}
+        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0}
     
     arr = np.array(window)
     return {
@@ -37,10 +36,7 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
         "median": float(np.median(arr)),
         "std": float(np.std(arr)),
         "best": float(np.max(arr)),
-        "worst": float(np.min(arr)),
-        "diversity": float(np.std(arr) / (np.mean(arr) + 1e-8)),  # Simple diversity metric
-        "q25": float(np.quantile(arr, 0.25)),
-        "q75": float(np.quantile(arr, 0.75))
+        "worst": float(np.min(arr))
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
