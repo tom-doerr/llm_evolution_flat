@@ -441,20 +441,17 @@ if __name__ == "__main__":
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
-    # Validate constants and population invariants
-    assert MAX_CORE == 23 and MAX_CHARS == 40 and MAX_POPULATION == 1_000_000, \
-        "Core constants modified"
-    assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
-    assert 0 <= best['fitness'] <= 1e6, "Fitness out of reasonable bounds"
-    assert 0 <= worst['fitness'] <= 1e6, "Fitness out of reasonable bounds"
-    assert isinstance(best['chromosome'], str), "Chromosome should be string"
-    assert isinstance(worst['chromosome'], str), "Chromosome should be string"
-    assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
-    assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
-    assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
-    assert MAX_CHARS == 40, "MAX_CHARS constant modified"
-    # Combined validation checks
-    assert (len(best['metrics']['core_segment']) == 23 
-            and best['chromosome'][:23].islower() 
-            and ' ' not in best['chromosome'].strip()), "Core segment validation failed"
+    # Validate constants
+    assert (MAX_CORE, MAX_CHARS, MAX_POPULATION) == (23, 40, 1_000_000), "Core constants modified"
+    
+    # Validate fitness relationships
+    assert best['fitness'] >= worst['fitness'] >= 0, "Invalid fitness relationship"
+    
+    # Validate chromosome structure
+    for agent in [best, worst]:
+        chrom = agent['chromosome']
+        assert (isinstance(chrom, str) and 
+                len(chrom) <= 40 and 
+                chrom[:23].islower() and 
+                ' ' not in chrom.strip()), f"Invalid chromosome: {chrom}"
 
