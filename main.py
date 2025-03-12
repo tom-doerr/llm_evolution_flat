@@ -140,7 +140,7 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     )
     
     # Numeric stability with vectorized operations
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)  # pylint: disable=no-member
     total = weights.sum()
     assert not np.isclose(total, 0), "Weight total cannot be zero"
     return weights / total
