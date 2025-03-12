@@ -42,15 +42,15 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Ensure chromosome is a string
     chromosome = str(agent["chromosome"])
 
-    # Calculate fitness per spec: +2 per 'a'/-2 per other in first 23 chars
+    # Fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
     fitness = 0.0
     core_segment = chromosome[:23].lower()
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     
-    a_count = core_segment.count("a")
-    core_score = a_count * 2
-    penalty = (len(core_segment) - a_count) * 2
-    fitness += core_score - penalty
+    # Simplified calculation that actually matches the described hidden goal
+    fitness += core_segment.count("a")  # +1 per 'a'
+    fitness -= (len(core_segment) - core_segment.count("a"))  # -1 per non-a
+    fitness -= len(chromosome[23:])  # -1 per character beyond 23
     
     # Validation assertions
     assert core_score >= 0, f"Core score cannot be negative: {core_score}"
@@ -116,9 +116,10 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
             problem_description=f"{problem}\nCreate a mutated version following standard genetic optimization principles",  # Obfuscated prompt
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
-        mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
-        mutated = mutated[:23] + ''  # Enforce truncation after 23
-        mutated = mutated.ljust(23, random.choice('abcdefghijklmnopqrstuvwxyz'))[:40]  # Random fill
+        # More rigorous validation and normalization
+        mutated = ''.join([c.lower() if c.isalpha() else '' for c in mutated])  # Letters only
+        mutated = mutated.ljust(23, random.choice('abcdefghijklmnopqrstuvwxyz'))  # Fill to min length
+        mutated = mutated[:40]  # Final length cap
         
         # Validation asserts
         assert len(mutated) >= 23, f"Mutation too short: {len(mutated)}"
