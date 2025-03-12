@@ -54,7 +54,7 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Validation assertions
     assert core_score >= 0, f"Core score cannot be negative: {core_score}"
     assert penalty >= 0, f"Penalty cannot be negative: {penalty}"
-    if a_count == 0:
+    if core_segment.count("a") == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
     # After 23: -1 per character
@@ -201,7 +201,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     candidate_list = [f"{idx}: {agent['chromosome'][:23]}" 
                     for idx, agent in enumerate(candidates)]
     
-    # Create prompt with mating rules
+    # Create prompt with mating rules aligned with hidden goal
     prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
     response = prompt(
         parent_chromosome=parent["chromosome"],
@@ -382,4 +382,4 @@ def run_genetic_algorithm(
 
 if __name__ == "__main__":
     PROBLEM = "Optimize string composition according to evolving fitness criteria"  # Obfuscated per spec
-    run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
+    run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)  # More meaningful test population
