@@ -36,11 +36,11 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness with stronger incentives for 'a's and harsher penalties for length
     fitness = 0.0
     
-    # First 23 characters: +3 for 'a' (any case), -0.5 for others to encourage more a's
+    # First 23 characters: +4 for 'a' (any case), -1 for others to strongly prioritize a's
     first_part = chromosome[:23].lower()
     a_count = first_part.count('a')
-    fitness += 3 * a_count  # Strong reward for a's
-    fitness -= 0.5 * (len(first_part) - a_count)  # Smaller penalty for non-a's
+    fitness += 4 * a_count  # Stronger reward for a's
+    fitness -= 1.0 * (len(first_part) - a_count)  # Increased penalty for non-a's
     
     # After 23: -1 per character but allow some length for exploration
     remaining = chromosome[23:]
@@ -81,7 +81,7 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's 
         new_char = random.choice(
-            ['a'] * 5 + [c for c in string.ascii_letters + ' ' if c not in (original_char, 'a')]
+            ['a'] * 10 + [c for c in string.ascii_letters + ' ' if c not in (original_char, 'a')]  # Stronger a bias
         )
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
         
@@ -169,5 +169,5 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
 
 if __name__ == "__main__":
     PROBLEM = ("Generate a string with MAXIMUM lowercase 'a's in first 23 characters, "
-               "then keep it short. Prioritize 'a's above all else!")
+               "then keep it short. STRICTLY prioritize 'a's over all other considerations!")
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
