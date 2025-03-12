@@ -411,7 +411,7 @@ def log_population(population, generation, mean, median, std, log_file):
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
+def display_generation_stats(generation: int, generations: int, population: list, best: dict, stats: dict):
     best, worst = get_population_extremes(population)
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
