@@ -183,10 +183,15 @@ def mutate_with_llm(agent: dict) -> str:
             return mutated
     
     # Fallback mutation if no valid responses
-    return chromosome[:23] + ''.join(random.choices(
-        string.ascii_letters.lower(), 
-        k=len(chromosome)-23
-    ))
+    try:
+        return chromosome[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(), 
+            k=len(chromosome)-23
+        ))
+    except (ValueError, Exception) as e:  # Broadened exception for fallback
+        if DEBUG_MODE:
+            print(f"Fallback mutation error: {e}")
+        return chromosome  # Return original on any error
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
