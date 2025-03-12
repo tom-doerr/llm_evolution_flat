@@ -195,10 +195,9 @@ def mutate_with_llm(agent: dict) -> str:
     # Return first valid mutation or fallback to core + random
     return next(
         valid_mutations,
-        agent_chrom[:23] + ''.join(random.choices(
+        agent["chromosome"][:23] + ''.join(random.choices(
             string.ascii_letters.lower(), 
-            k=random.randint(0, 17)  # 40-23=17 max additional chars
-        ))
+            k=random.randint(0, max(0, len(agent["chromosome"])-23))  # 40-23=17 max extra chars
     )
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
