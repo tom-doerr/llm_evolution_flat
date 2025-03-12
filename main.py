@@ -463,13 +463,13 @@ def log_population(population, generation, mean_fitness, median_fitness, std_fit
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation: int, generations: int, population: list, best: dict,
-                           mean_fitness: float, std_fitness: float, fitness_window: list):
+def display_generation_stats(generation: int, generations: int, population: list, 
+                           best: dict, fitness_window: list):
     """Rich-formatted display with essential stats"""
-    from rich.panel import Panel
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
     diversity = calculate_diversity(population)
+    current_pop_size = len(population)
     
     # Track diversity in window stats
     stats['diversity'] = diversity
@@ -524,7 +524,9 @@ def apply_mutations(generation, base_mutation_rate, problem):  # Add missing pro
 
 def evaluate_population(population: List[dict], problem: str, generation: int) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
-    return [evaluate_agent(agent, problem, generation) for agent in population]
+    for agent in population:
+        evaluate_agent(agent, problem, generation)
+    return population
 
 
 def validate_population_state(best, worst):
