@@ -418,7 +418,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
             'generation': generation,
             'population_size': len(population),
             'diversity': calculate_diversity(population),
-            'best': max(population, key=lambda x: x["fitness"])["fitness"],
+            'best': max(a["fitness"] for a in population),
             'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
             'worst': min(a["fitness"] for a in population)
         }, population)
