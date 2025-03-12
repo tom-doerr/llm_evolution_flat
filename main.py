@@ -294,6 +294,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         mate["chromosome"],
         get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
     ))
+    ))
 
 
 
