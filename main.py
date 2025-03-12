@@ -434,6 +434,21 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     })
     return stats
 
+# Main execution block at end per Python best practices
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
+    parser.add_argument('--pop-size', type=int, default=1000,
+                       help='Initial population size')
+    parser.add_argument('--max-population', type=int, default=1_000_000,
+                       help='Maximum population size (per spec.md)')
+    args = parser.parse_args()
+    
+    try:
+        run_genetic_algorithm(pop_size=min(args.pop_size, args.max_population))
+    except KeyboardInterrupt:
+        print("\nEvolution stopped by user. Exiting gracefully.")
+
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
     assert MAX_CORE == 23, "MAX_CORE constant modified"
