@@ -245,11 +245,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     _, weights = zip(*weighted_candidates)
     sum_weights = sum(weights)
     assert sum_weights > 0, "All candidate weights are zero"
+    weights = [w/sum_weights for w in weights]
 
     # Get LLM selection
     result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid],
+        candidate_chromosomes=[c["chromosome"] for c, _ in weighted_candidates],
         temperature=0.7,
         top_p=0.9
     ).selected_mate
