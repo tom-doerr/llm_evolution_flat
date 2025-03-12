@@ -34,7 +34,8 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
     """Calculate statistics for sliding window of last 100 evaluations"""
     window = fitness_window[-window_size:]
     if not window:
-        return {"mean": 0.0, "median": 0.0, "std": 0.0, "best": 0.0, "worst": 0.0}
+        return {"mean": 0.0, "median": 0.0, "std": 0.0, 
+                "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
     
     arr = np.array(window)
     return {
