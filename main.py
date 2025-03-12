@@ -308,9 +308,9 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
     
     next_gen.extend([
-        crossover(random.choice(parents), population)
+        (crossover(random.choice(parents), population)
         if random.random() < 0.9 else  # 90% crossover, 10% mutation
-        create_agent(mutate(random.choice(parents)))
+        create_agent(mutate(random.choice(parents))))
         for _ in range(max_children)
     ])
     
