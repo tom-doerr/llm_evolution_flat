@@ -216,57 +216,41 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
-    if not valid_candidates:
+    valid = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid:
         raise ValueError("No valid mates")
 
-    candidate_chromosomes = [c["chromosome"] for c in valid_candidates]
     response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
-        candidate_chromosomes=candidate_chromosomes,
+        candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
     )
 
     selected = str(response.selected_mate).strip()[:40]
-    for candidate in valid:
-        if candidate["chromosome"] == selected:
-            return candidate
-
-    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
-    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
+    found = next((c for c in valid if c["chromosome"] == selected), None)
+    return found or valid[np.argmax([c["fitness"]**2 for c in valid])]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    window_pop = population[-WINDOW_SIZE:]
-    weights = np.array([a["fitness"]**2 + 1e-6 for a in window_pop], dtype=np.float64)
-    
     candidates = random.choices(
-        population=window_pop,
-        weights=weights,
-        k=min(5, len(window_pop)))
-    
-    # Select mate using LLM prompt from qualified candidates
-    mate = llm_select_mate(parent, candidates)
-    
-    # Combine chromosomes with core validation
-    split = random.randint(
-        max(1, 23 - len(mate["chromosome"])), 
-        len(parent["chromosome"]) - 1
+        population=population[-WINDOW_SIZE:],
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]], dtype=np.float64),
+        k=min(5, len(population))
     )
     
     try:
+        mate = llm_select_mate(parent, candidates)
+        max_split = min(len(parent["chromosome"]), len(mate["chromosome"])) 
+        split = random.randint(23 - min(23, max_split), max_split - 1)
         new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
+        
         validate_chromosome(new_chromosome)
-        # Core segment validation for hidden optimization goal
         if new_chromosome[:23].count('a') < parent["chromosome"][:23].count('a'):
-            raise ValueError("Core 'a' count decreased during crossover")
+            raise ValueError("Core 'a' count decreased")
             
         return create_agent(new_chromosome)
     except (AssertionError, ValueError) as e:
-        if DEBUG_MODE:
-            print(f"Crossover validation failed: {e}, using mutation")
-        # Fallback to mutated parent chromosome
         return create_agent(mutate(parent["chromosome"]))
 
 
