@@ -276,11 +276,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
-    # Force at least one hotspot and ensure ~1 switch per combination on average
-    forced_hotspots = [i for i, c in enumerate(chromosome) if c in {'.', '!', '?', ' '}]
-    # 10% base probability per spec.md requirement
-    random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.1]
-    return list(set(forced_hotspots + random_hotspots)) or [0]
+    # Force exactly 1 switch per chromosome combination on average
+    hotspots = [
+        i for i, c in enumerate(chromosome) 
+        if c in {'.', '!', '?', ' '} or random.random() < 0.10
+    ]
+    return hotspots if hotspots else [random.randint(0, len(chromosome)-1)]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
@@ -326,9 +327,9 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
     
     next_gen.extend([
-        (crossover(random.choice(parents), population)
+        crossover(random.choice(parents), population)
         if random.random() < 0.9 else  # 90% crossover, 10% mutation
-        create_agent(mutate(random.choice(parents))))
+        create_agent(mutate(random.choice(parents)))
         for _ in range(max_children)
     ])
     
