@@ -240,10 +240,13 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_candidates:
         raise ValueError("No valid mates")
 
-    # Validate fitness weighting in one line
-    assert sum(c['fitness']**2 + 1e-6 for c in valid_candidates) > 0, "All candidate weights are zero"
+    # Calculate normalized weights in one step
+    weights = [c['fitness']**2 + 1e-6 for c in valid_candidates]
+    sum_weights = sum(weights)
+    weights = [w / sum_weights for w in weights]
+    assert sum_weights > 0, "All candidate weights are zero"
 
-    # Get LLM selection from valid candidates
+    # Get LLM selection with weighted candidates
     result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid_candidates],  # Fix typo in chromosome
