@@ -313,7 +313,7 @@ def run_genetic_algorithm(
         log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file)
 
         # Display generation statistics
-        display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness)
+        display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window)
 
         # Validate population state
         validate_population_state(best, worst)
@@ -333,34 +333,29 @@ if __name__ == "__main__":
 
 # Remaining helper functions below
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
-    """Log population data with generation statistics"""
-    with gzip.open(log_file, "at", encoding="utf-8") as f:
-        # Batch write all entries with minimal data
-        log_entries = [
-            json.dumps({
-                "g": generation,
-                "f": round(agent['fitness'], 1),
-                "c": agent['chromosome'][:23]  # Only core segment matters
-            }) for agent in population
-        ]
-        f.write("\n".join(log_entries) + "\n")
+    """Log gzipped population data with rotation"""
+    assert log_file.endswith('.gz'), "Log file must use .gz extension"
+    mode = 'wt' if generation == 0 else 'at'
+    with gzip.open(log_file, mode, encoding='utf-8') as f:
+        f.write(f"Generation {generation}\n")
+        f.write(f"Mean: {mean_fitness}, Median: {median_fitness}, Std: {std_fitness}\n")
+        for agent in population:
+            f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
 
-def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness):
-    """Display generation statistics using rich table"""
+def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window):
+    """Rich-formatted display with essential stats"""
     console = Console()
-    table = Table(show_header=False, box=None, padding=0)
-    table.add_column(style="cyan")
-    table.add_column(style="yellow")
+    stats = calculate_window_statistics(fitness_window, 100)
     
-    table.add_row("Generation", f"{generation+1}/{generations}")
-    table.add_row("Population", f"{len(population):,}")  # Format with commas
-    table.add_row("Best Fitness", f"{best['fitness']:.0f}")
-    table.add_row("Worst Fitness", f"{worst['fitness']:.0f}") 
-    table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
-    table.add_row("Window Best/Worst", f"{best_window:.0f} / {worst_window:.0f}")
-    table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
-    
-    console.print(table)
+    panel = Panel(
+        f"[bold]Generation {generation}/{generations}[/]\n"
+        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n"
+        f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
+        f"👥 Population: {len(population)}",
+        title="Evolution Progress",
+        style="blue"
+    )
+    console.print(panel)
 
 def update_fitness_window(fitness_window, new_fitnesses, window_size):
     """Update sliding window of fitness values"""
