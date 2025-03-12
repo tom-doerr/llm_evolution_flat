@@ -46,7 +46,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
         'best_current': float(arr[-1]) if len(arr) > 0 else 0.0,
-        'worst_current': float(np.nanmin(arr)),
+        'worst_current': float(np.nanmin(arr)) if len(arr) > 0 else 0.0,
         'best_window': float(np.nanmax(arr)),
         'worst_window': float(np.nanmin(arr))
     }
@@ -335,9 +335,9 @@ def validate_population_extremes(population: List[dict]) -> None:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    max_population = args.max_population  # Use snake_case variable
+    max_population = MAX_POPULATION  # Use constant from spec.md
     population = initialize_population(min(pop_size, max_population))[:max_population]
-    assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
+    assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates unused var
