@@ -395,14 +395,12 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     return [population[i] for i in selected_indices]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
-    """Continuous evolution loop with combined operations"""
+    """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
     for generation in itertools.count(0):
-        # Continuous population trimming with combined operations
         population = trim_population(population, max_population)
         population, fitness_window = evaluate_generation(population, fitness_window, generation)
-        
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
