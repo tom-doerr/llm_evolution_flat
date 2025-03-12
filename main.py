@@ -137,25 +137,26 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     fitness_scores = np.array([a['fitness']**2 for a in population], dtype=np.float64)
     weights = fitness_scores * (np.random.pareto(2.0, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)
-    return weights / weights.sum() if (total := weights.sum()) > 0 else np.ones_like(weights)/len(weights)
+    return weights / weights.sum() if weights.sum() > 0 else np.ones_like(weights)/len(weights)
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
     if not population:
         return []
     
-    # Enforce population limit and get weights
+    # Enforce population limit first (spec.md requirement)
     population = population[:MAX_POPULATION]
     weights = calculate_parent_weights(population)
     
-    # Weighted sampling without replacement using numpy
+    # Efficient weighted sampling without replacement
     sample_size = min(len(population), MAX_POPULATION//2)
-    selected_indices = np.random.choice(
+    # Use generator to avoid storing full permutation array
+    selected_indices = (i for i in np.random.choice(
         len(population),
         size=sample_size,
         replace=False,
         p=weights
-    )
+    ))
     
     return [population[i] for i in selected_indices]
 
