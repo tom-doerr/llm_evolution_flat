@@ -164,6 +164,7 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     # Combined extraction and validation
     mc = agent["mutation_chromosome"]
+    # Extract and validate parameters from mutation chromosome
     temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))
     top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))
     
