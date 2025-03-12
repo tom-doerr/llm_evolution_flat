@@ -259,8 +259,6 @@ def get_hotspots(chromosome: str) -> list:
     forced_hotspots = [i for i, c in enumerate(chromosome) if c in {'.', '!', '?', ' '}]
     random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.15]
     return list(set(forced_hotspots + random_hotspots)) or [0]
-
-def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
     return [
         i for i, c in enumerate(chromosome)
