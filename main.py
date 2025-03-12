@@ -4,6 +4,7 @@ import string
 import gzip
 import numpy as np
 import dspy
+import dspy
 from rich.console import Console
 from rich.panel import Panel
 import dspy
@@ -190,13 +191,7 @@ def mutate_with_llm(agent: dict) -> str:
     except (dspy.DSPyException, ValueError) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
-            
-    # Fallback to minimal mutation preserving 'a' count        
-    chars = list(chromosome)
-    for _ in range(2):
-        idx = random.randint(23, len(chars)-1)
-        chars[idx] = random.choice(string.ascii_letters.lower())
-    return ''.join(chars)
+            return chromosome  # Return original if mutation fails
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
