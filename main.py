@@ -414,19 +414,6 @@ def calculate_diversity(population: List[dict]) -> float:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     return unique_chromosomes / len(population) if population else 0.0
 
-def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
-    """Auto-adjust mutation rate based on population diversity"""
-    # Combined calculations to reduce locals
-    mutation_rate = np.clip(
-        base_rate * (1.0 - np.log1p(calculate_diversity(generation))),
-        0.1, 
-        0.8
-    )
-    return [
-        ({**agent, "chromosome": mutate(agent["chromosome"])} 
-         if random.random() < mutation_rate else agent)
-        for agent in generation
-    ]
 
 
 
@@ -459,4 +446,6 @@ def validate_population_state(best, worst) -> None:
     assert isinstance(worst['chromosome'], str), "Chromosome should be string"
     assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
     assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
+    assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
+    assert MAX_CHARS == 40, "MAX_CHARS constant modified"
 
