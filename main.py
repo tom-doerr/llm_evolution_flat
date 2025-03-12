@@ -161,8 +161,16 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 # Configuration constants from spec.md
 MUTATION_RATE = 0.1  # Base mutation probability 
-HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space
+HOTSPOT_CHARS = {'.', '!', '?', ' '}
+HOTSPOT_RANDOM_PROB = 0.1  # Probability to create hotspot at space
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
+
+def validate_mutation_rate(chromosome: str) -> None:
+    """Ensure mutation parameters stay within valid ranges"""
+    temp = float(chromosome[:3] or 0.7)
+    top_p = float(chromosome[3:7] or 0.9)
+    assert 0.0 <= temp <= 2.0, f"Invalid temperature {temp}"
+    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
 
 
 
