@@ -359,7 +359,7 @@ def get_population_extremes(population: List[dict]) -> tuple:
 def run_genetic_algorithm(
     generations: int = 10,
     pop_size: int = 1_000_000,
-    log_file: str = "evolution.log.gz",
+    log_file: str = "evolution.log.gz"  # Default per spec.md
 ) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
