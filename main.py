@@ -101,11 +101,11 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
             original_chromosome=chromosome,
             problem_description=f"Rephrase this while maintaining its core meaning. {problem}"
         )
-        if (response.completion and 
-            len(response.completion) > 0 and
-            len(response.completion) <= 40 and
-            all(c in string.ascii_letters + ' ' for c in response.completion)):
-            return response.completion.strip()[:40]
+        if (response.completions[0] and 
+            len(response.completions[0]) > 0 and
+            len(response.completions[0]) <= 40 and
+            all(c in string.ascii_letters + ' ' for c in response.completions[0])):
+            return response.completions[0].strip()[:40]
     except (TimeoutError, RuntimeError):
         pass
     return mutate(chromosome)  # Fallback to traditional mutation
@@ -237,14 +237,14 @@ def run_genetic_algorithm(
                     )
                     # Validate and apply response
                     if (
-                        response.completion
-                        and len(response.completion) > 0
-                        and len(response.completion) <= 40
+                        response.completions[0]
+                        and len(response.completions[0]) > 0
+                        and len(response.completions[0]) <= 40
                         and all(
-                            c in string.ascii_letters + " " for c in response.completion
+                            c in string.ascii_letters + " " for c in response.completions[0]
                         )
                     ):
-                        next_gen[i]["chromosome"] = response.completion.strip()[:40]
+                        next_gen[i]["chromosome"] = response.completions[0].strip()[:40]
                     else:
                         # If invalid response, mutate instead
                         next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
