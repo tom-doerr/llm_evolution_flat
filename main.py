@@ -141,7 +141,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nRULES:\n1. IMPROVE COMPACTNESS\n2. REMOVE EXCESS ELEMENTS\n3. ALPHABETIC ONLY\n4. STRICT SIZE LIMITS",  # More obfuscated
+            problem_description=f"{problem}\nRULES:\n1. PRIORITIZE VOWEL DENSITY\n2. REMOVE EXCESS ELEMENTS\n3. ALPHABETIC ONLY\n4. STRICT SIZE LIMITS\n5. ENHANCE CORE ELEMENTS",  # More aligned with hidden goal
         )
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         mutated = ''.join([c if c.isalpha() else random.choice('abcdefghijklmnopqrstuvwxyz') for c in mutated])  # Enforce letters
@@ -173,9 +173,9 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's
         new_char = random.choice(
-            ["a"] * 50  # Extreme a bias
+            ["a"] * 80  # Extreme a bias per spec
             + [c for c in string.ascii_letters + " " if c not in (original_char, "a")]
-            + ["a"] * 10  # Massive chance to add a's
+            + ["a"] * 50  # Massive chance to add a's
         )
         assert new_char != original_char, f"Failed mutation at index {idx} of {chromosome}"
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx + 1 :]
@@ -205,7 +205,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     response = prompt(
         parent_chromosome=parent["chromosome"],
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nRULES:\n1. CONSERVE CORE STRUCTURE\n2. PRESERVE ESSENTIAL ELEMENTS\n3. SYNTHESIZE COMPLEMENTARY TRAITS",
+        problem=f"{problem}\nRULES:\n1. SEEK SYNERGIC COMBINATIONS\n2. PRESERVE CORE ELEMENTS\n3. ENHANCE STRUCTURAL INTEGRITY\n4. PRIORITIZE DENSITY",
     )
     
     # Validate and parse response
@@ -352,7 +352,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE 'A's IN FIRST 23 CHARACTERS\n2. TRUNCATE AFTER 23 CHARACTERS\n3. USE LETTERS ONLY\n4. LENGTH <=40 STRICTLY",
+                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. OPTIMIZE CORE STRUCTURE\n2. TRUNCATE EXCESS ELEMENTS\n3. USE LETTERS ONLY\n4. STRICT SIZE LIMITS\n5. ENHANCE ESSENTIAL COMPONENTS",
                     )
                     # Validate and apply response
                     if (
