@@ -99,7 +99,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str) -> float:
+def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> float:
     """Evaluate the agent based on the optimization target"""
     # Validate input before scoring
     chromosome = str(agent["chromosome"])
@@ -133,11 +133,12 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
         len(chromosome) <= 40
     ), f"Chromosome length {len(chromosome)} exceeds maximum allowed"
 
-    # Incorporate structural metrics into fitness
-    fitness *= metrics['vowel_ratio'] * (1 + metrics['uniqueness'])
-    fitness -= metrics['consecutive_repeats'] * 0.2  # Penalize repeats
-    fitness += metrics['length_score'] * 5  # Favor longer chromosomes
-    fitness += metrics['positional_diversity'] * 2  # Reward spaced diversity
+    # Generation-weighted metric incorporation
+    time_decay = 0.95 ** generation  # Gradually reduce metric influence
+    fitness *= (metrics['vowel_ratio'] * (1 + metrics['uniqueness'])) ** (0.5 + time_decay)
+    fitness -= metrics['consecutive_repeats'] * (0.2 * time_decay)
+    fitness += metrics['length_score'] * (5 * time_decay)
+    fitness += metrics['positional_diversity'] * (2 * time_decay)
     # Note: a_count is already accounted for in base fitness
     
     # Allow negative fitness as per spec
@@ -165,9 +166,9 @@ def select_parents(population: List[dict]) -> List[dict]:
     unique_chromosomes = len({agent["chromosome"] for agent in population})
     diversity = unique_chromosomes / len(population) if population else 0.0
     
-    # Adapt weights based on diversity (more exploration when diversity is low)
-    exponent = 3 if diversity < 0.1 else 2 if diversity < 0.3 else 1.5
-    weights = np.array([agent['fitness']**exponent for agent in population])
+    # Dynamically adapt weights using continuous diversity measure
+    exponent = 1 + 2 * (1 - diversity)  # Scales from 1 (max diversity) to 3 (min diversity)
+    weights = np.array([(agent['fitness'] - min_fitness + 1e-8)**exponent for agent in population])
     weights += 1e-8  # Add epsilon to avoid zero weights
     weights /= weights.sum()  # Normalize
     
@@ -393,7 +394,9 @@ def run_genetic_algorithm(
 
         # Auto-adjust mutation rate based on diversity
         current_diversity = calculate_diversity(population)
-        mutation_rate = 0.8 if current_diversity < 0.1 else 0.5 if current_diversity < 0.3 else 0.2
+        # Auto-adjust mutation rate inversely to diversity using logarithmic scaling
+        mutation_rate = 0.7 * (1 - current_diversity) + 0.1  # Ranges from 0.1 (max diversity) to 0.8 (min diversity)
+        assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
         
         # Create and evolve next generation
         population = create_next_generation(next_gen, problem, mutation_rate, generation)
@@ -477,9 +480,9 @@ def apply_mutations(generation, mutation_rate):
             generation[i]["chromosome"] = mutate(generation[i]["chromosome"])
     return generation
 
-def evaluate_population(population: List[dict], problem: str) -> List[dict]:
-    """Evaluate entire population's fitness"""
-    return [evaluate_agent(agent, problem) for agent in population]
+def evaluate_population(population: List[dict], problem: str, generation: int) -> List[dict]:
+    """Evaluate entire population's fitness with generation weighting"""
+    return [evaluate_agent(agent, problem, generation) for agent in population]
 
 def get_population_extremes(population: List[dict]) -> tuple:
     """Get best and worst agents from population"""
