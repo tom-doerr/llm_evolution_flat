@@ -135,7 +135,6 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     candidates = [a for a in population if a['fitness'] in window]
     
     # Pareto distribution weighting by fitness^2 per spec.md
-    # Pareto distribution weighted by fitness^2 per spec.md
     fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
     pareto_weights = fitness_scores  # Already squared per spec.md
     return [candidates[i] for i in np.random.default_rng().choice(
@@ -179,7 +178,6 @@ def mutate_with_llm(agent: dict) -> str:
         string.ascii_letters.lower(), 
         k=max(0, len(chromosome)-23))
     ))
-    )
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
