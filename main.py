@@ -130,8 +130,8 @@ def initialize_population(pop_size: int) -> List[dict]:
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using fitness^2 weighted sampling without replacement"""
     candidates = population[-WINDOW_SIZE:]
-    probs = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
-    probs /= np.sum(probs) + 1e-6  # Combine normalization steps
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    probs = weights / weights.sum()
     
     return list(np.random.choice(
         candidates,
