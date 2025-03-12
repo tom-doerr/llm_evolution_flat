@@ -513,7 +513,7 @@ def evaluate_generation(population: List[dict], fitness_window: list, generation
         'diversity': calculate_diversity(population),
         'best': max(new_fitness),
         'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
-        'worst': min(new_fitness)
+        'worst': min(new_fitness),
     }
     handle_generation_output(stats, population)
     
