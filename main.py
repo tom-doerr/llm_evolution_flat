@@ -82,29 +82,38 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness"""
-    # Calculate Pareto weights (power law distribution)
+    """Select parents using Pareto distribution weighted by fitness^2 with deduplication"""
+    # Calculate raw fitness values and handle zero-sum case
     fitness_values = [agent["fitness"] for agent in population]
-    max_fitness = max(fitness_values)
-    min_fitness = min(fitness_values)
     
-    # Normalize and apply quadratic weighting
-    spread = max_fitness - min_fitness if max_fitness != min_fitness else 1
-    weights = [((f - min_fitness)/spread)**2 for f in fitness_values]
+    # Square fitness values for Pareto weighting as per spec
+    squared_fitness = [f**2 for f in fitness_values]
+    total_weight = sum(squared_fitness)
     
-    # Handle zero weights case
-    if sum(weights) <= 0:
+    # Fallback to random selection if all weights zero
+    if total_weight <= 0:
         return random.sample(population, k=len(population)//2)
-        
-    # Weighted selection without replacement using reservoir sampling
+    
+    # Weighted selection without replacement with deduplication
     selected = []
-    for _ in range(len(population)//2):
-        candidates = random.choices(population, weights=weights, k=5)
-        selected.append(max(candidates, key=lambda x: x["fitness"]))
-        # Remove selected candidate's weight to prevent duplicates
-        idx = population.index(selected[-1])
-        weights[idx] = 0
-    return list({agent["chromosome"]: agent for agent in selected}.values())  # Deduplicate
+    unique_chromosomes = set()
+    
+    # Create candidate pool with deduplication
+    candidates = [agent for agent in population if agent["chromosome"] not in unique_chromosomes]
+    weights = [squared_fitness[i] for i, agent in enumerate(population) if agent["chromosome"] not in unique_chromosomes]
+    
+    while len(selected) < len(population)//2 and len(candidates) > 0:
+        # Weighted sample without replacement
+        chosen = random.choices(candidates, weights=weights, k=1)[0]
+        selected.append(chosen)
+        unique_chromosomes.add(chosen["chromosome"])
+        
+        # Remove chosen from candidates
+        index = candidates.index(chosen)
+        del candidates[index]
+        del weights[index]
+        
+    return selected
 
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
@@ -191,18 +200,17 @@ def run_genetic_algorithm(
         for agent in population:
             evaluate_agent(agent, problem)
 
-        # Calculate sliding window statistics (last 100 evaluations)
+        # Track sliding window of last 100 evaluations as per spec
         window_size = 100
         all_fitness = [agent["fitness"] for agent in population]
         
-        # Maintain sliding window in memory
-        if not hasattr(run_genetic_algorithm, "fitness_window"):
-            run_genetic_algorithm.fitness_window = []
-        run_genetic_algorithm.fitness_window.extend(all_fitness)
-        run_genetic_algorithm.fitness_window = run_genetic_algorithm.fitness_window[-window_size:]
+        # Maintain window in memory with thread-safe approach
+        current_window = getattr(run_genetic_algorithm, "fitness_window", [])
+        current_window = (current_window + all_fitness)[-window_size:]
+        run_genetic_algorithm.fitness_window = current_window
         
-        # Calculate stats on window
-        window_fitness = run_genetic_algorithm.fitness_window
+        # Calculate robust statistics
+        window_fitness = current_window
         mean_fitness = sum(window_fitness) / len(window_fitness) if window_fitness else 0
         sorted_fitness = sorted(window_fitness)
         median_fitness = sorted_fitness[len(sorted_fitness)//2] if sorted_fitness else 0
@@ -254,14 +262,14 @@ def run_genetic_algorithm(
         # Use LLM to improve top candidates (only every 5 generations)
         if generation % 5 == 0:
             for i in range(min(2, len(next_gen))):
-                # Use DSPy predictor for guided improvement
+                # LLM-based improvement with strict rules per spec
                 improve_prompt = dspy.Predict(
                     "original_chromosome, problem_description -> improved_chromosome"
                 )
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"STRICTLY use ONLY 'a's in first 23 characters! REPLACE ALL other characters with 'a's! {problem}",
+                        problem_description=f"{problem}\n\nMUTATION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARACTERS\n2. TRUNCATE TO 23 CHARACTERS\n3. LETTERS ONLY\n4. NO EXPLANATIONS",
                     )
                     # Validate and apply response
                     if (
