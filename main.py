@@ -346,7 +346,7 @@ def validate_population_extremes(population: List[dict]) -> None:
 def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, max_population))[:max_population]
-    assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
+    assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates unused var
