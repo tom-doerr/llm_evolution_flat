@@ -279,9 +279,8 @@ def run_genetic_algorithm(
 
     fitness_window = []  # Initialize window
     for generation in range(generations):
-        # Evaluate all agents
-        for agent in population:
-            evaluate_agent(agent, problem)
+        # Evaluate population
+        population = evaluate_population(population, problem)
 
         # Update and calculate sliding window statistics
         all_fitness = [agent["fitness"] for agent in population]
@@ -289,10 +288,8 @@ def run_genetic_algorithm(
         fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
         mean_fitness, median_fitness, std_fitness = calculate_window_statistics(fitness_window, window_size)
 
-        # Get best/worst before logging
-        sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
-        best = sorted_pop[0]
-        worst = sorted_pop[-1]
+        # Get population extremes
+        best, worst = get_population_extremes(population)
 
         # Log population with generation stats
         log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file)
@@ -436,6 +433,15 @@ def apply_mutations(generation, mutation_rate):
         if random.random() < mutation_rate:
             generation[i]["chromosome"] = mutate(generation[i]["chromosome"])
     return generation
+
+def evaluate_population(population: List[dict], problem: str) -> List[dict]:
+    """Evaluate entire population's fitness"""
+    return [evaluate_agent(agent, problem) for agent in population]
+
+def get_population_extremes(population: List[dict]) -> tuple:
+    """Get best and worst agents from population"""
+    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
+    return sorted_pop[0], sorted_pop[-1]
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
