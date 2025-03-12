@@ -419,8 +419,8 @@ def log_population(stats: dict) -> None:
             f"{stats['mean']:.1f}\t"
             f"{stats['median']:.1f}\t"
             f"{stats['std']:.1f}\t"
-            f"{stats['best_window']:.1f}\t"
-            f"{stats['worst_window']:.1f}\t"
+            f"{stats['best']:.1f}\t"
+            f"{stats['worst']:.1f}\t"
             f"{stats['diversity']:.2f}\n"  # Added diversity metric
         )
 
@@ -429,8 +429,7 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f} (window)\n"
-        f"▲{stats['best_window']:.1f} ▼{stats['worst_window']:.1f}\n"
-        f"▲{stats['best_current']:.1f} ▼{stats['worst_current']:.1f}\n" 
+        f"▲{stats['best_current']:.1f} ▼{stats['worst_current']:.1f}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         style="blue"
