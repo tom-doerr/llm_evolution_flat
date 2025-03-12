@@ -34,8 +34,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     
     if not window:
-        return dict(mean=0.0, median=0.0, std=0.0, 
-                best=0.0, worst=0.0, q25=0.0, q75=0.0)
+        return {'mean': 0.0, 'median': 0.0, 'std': 0.0,
+                'best': 0.0, 'worst': 0.0, 'q25': 0.0, 'q75': 0.0}
 
     arr = np.array(window, dtype=np.float64)
     return {
@@ -129,13 +129,14 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
-    candidates = population[-WINDOW_SIZE:]
-    weights = [a['fitness']**2 + 1e-6 for a in candidates]
+    # Combined candidates and weights into single list comprehension
+    parent_pool = [(a, a['fitness']**2 + 1e-6) 
+                  for a in population[-WINDOW_SIZE:]]
     
-    # Weighted sampling without replacement with list comprehension
     selected = []
-    max_select = min(len(candidates)//2, MAX_POPULATION)
-    while len(selected) < max_select and candidates:
+    max_select = min(len(parent_pool)//2, MAX_POPULATION)
+    while len(selected) < max_select and parent_pool:
+        candidates, weights = zip(*parent_pool)
         idx = random.choices(range(len(candidates)), weights=weights, k=1)[0]
         selected.append(candidates.pop(idx))
         weights.pop(idx)
@@ -312,7 +313,7 @@ def log_population(generation: int, stats: dict) -> None:
                 f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
                 f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
-def display_generation_stats(stats: dict) -> None:
+def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
     """Rich-formatted display with essential stats"""
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
@@ -353,6 +354,18 @@ def evaluate_population(population: List[dict]) -> List[dict]:
     for agent in population:
         evaluate_agent(agent)
     return population
+
+def update_population_stats(fitness_window: list, population: list) -> dict:
+    """Helper to calculate population statistics"""
+    stats = calculate_window_statistics(fitness_window)
+    stats.update({
+        'diversity': calculate_diversity(population),
+        'population_size': len(population),
+        'best': max(a['fitness'] for a in population),
+        'worst': min(a['fitness'] for a in population),
+        'generation': stats.get('generation', 0) + 1
+    })
+    return stats
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
