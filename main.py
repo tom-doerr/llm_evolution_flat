@@ -328,8 +328,8 @@ def validate_population_extremes(population: List[dict]) -> None:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     MAX_POPULATION = args.max_population  # Allow CLI override per spec.md
+    population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Empty log file at program start per spec.md requirements
