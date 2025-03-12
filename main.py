@@ -308,9 +308,8 @@ def run_genetic_algorithm(
 ):
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
-    MAX_POPULATION = 1_000_000
-    pop_size = min(pop_size, MAX_POPULATION)
-    assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
+    pop_size = min(pop_size, get_population_limit())
+    assert 1 < pop_size <= get_population_limit(), f"Population size must be 2-{get_population_limit()}"
     assert generations > 0, "Number of generations must be positive"
 
     population = initialize_population(pop_size)
@@ -401,7 +400,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n"
         f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
-        f"👥 Population: {pop_size:.1f}{suffix}",
+        f"👥 Population: {len(population)}/{get_population_limit()}",
         title="Evolution Progress",
         style="blue"
     )
