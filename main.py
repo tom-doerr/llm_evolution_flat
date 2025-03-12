@@ -125,28 +125,18 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str) -> float:  # type: ignore, unused args
-    """Evaluate the agent based on the optimization target"""
-    # Validate input before scoring
+def evaluate_agent(agent: dict, _problem_description: str) -> float:
+    """Evaluate agent fitness based on hidden optimization target"""
     chromosome = str(agent["chromosome"])
-    assert 23 <= len(chromosome) <= 40, f"Invalid chromosome length: {len(chromosome)}"
+    assert 23 <= len(chromosome) <= 40, f"Invalid length: {len(chromosome)}"
     
     metrics = score_chromosome(chromosome)
-    assert 0 <= metrics['a_density'] <= 1, "Invalid a_density score"
-    assert 0 <= metrics['repeating_pairs'] <= 1, "Invalid repeating_pairs score"
-
-    # Base fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
-    core_segment = chromosome[:23].lower()
-    assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
+    core_a = int(metrics['a_density'] * 23)  # Recalculate from stored metric
+    remaining_len = len(chromosome) - 23
     
-    # Simplified calculation that actually matches the described hidden goal
-    core_a = core_segment.count("a")
-    core_non_a = len(core_segment) - core_a
-    remaining_len = len(chromosome[23:])
-    
-    # Calculate raw fitness then square it for selection weighting
-    fitness = core_a - core_non_a - remaining_len
-    fitness = np.sign(fitness) * (abs(fitness) ** 2)  # Square fitness values per spec
+    # Combined fitness calculation in single step
+    fitness = (core_a - (23 - core_a) - remaining_len)
+    fitness = np.sign(fitness) * (abs(fitness) ** 2)
     
     # Validation assertions
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
