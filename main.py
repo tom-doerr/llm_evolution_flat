@@ -3,7 +3,8 @@ import string
 import gzip
 import numpy as np
 from typing import List
-from rich.console import Console, Panel
+from rich.console import Console
+from rich.panel import Panel
 import dspy
 
 # Completed:
@@ -479,8 +480,6 @@ def display_generation_stats(generation: int, generations: int, population: list
     stats = calculate_window_statistics(fitness_window, 100)
     diversity = calculate_diversity(population)
     
-    # Track diversity in window stats
-    stats['diversity'] = diversity
     suffix = ''
     current_pop_size = len(population)
     if current_pop_size >= 1_000_000:
@@ -493,7 +492,7 @@ def display_generation_stats(generation: int, generations: int, population: list
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
-        f"📈 Median: {stats['median']:.2f} (IQR {stats['q25']:.1f}-{stats['q75']:.1f}) | 📉 Std: {std_fitness:.2f}\n"
+        f"📈 Median: {stats['median']:.2f} (IQR {stats['q25']:.1f}-{stats['q75']:.1f}) | 📉 Std: {stats['std']:.2f}\n"
         f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
         f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
         title="Evolution Progress",
