@@ -284,13 +284,9 @@ def get_hotspots(chromosome: str) -> list:
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
     p_chrom = parent["chromosome"]
-    m_chrom = mate["chromosome"]
-    hotspots = get_hotspots(p_chrom)
-    switch = random.choice(hotspots) if hotspots else 0
-    
-    # Handle edge cases where switch might be out of bounds
-    switch = min(switch, len(p_chrom)-1, len(m_chrom)-1)
-    return f"{p_chrom[:switch]}{m_chrom[switch]}{p_chrom[switch+1:]}"[:MAX_CHARS]
+    switch = random.choice(get_hotspots(p_chrom))
+    return (f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] 
+            if switch else p_chrom)
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
