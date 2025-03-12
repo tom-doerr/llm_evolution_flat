@@ -273,17 +273,21 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     if not hotspots:
         hotspots = random.sample(range(len(parent["chromosome"])), k=1)
     
-    # Perform switches at hotspots
-    parent_chromosome = parent["chromosome"]
+    # Perform switches at hotspots with vectorized operations
+    parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
-    child_chrom = []
-    last_switch = 0
-    for switch_point in sorted(random.sample(hotspots, min(len(hotspots), 1))):
-        child_chrom.extend(parent_chromosome[last_switch:switch_point])
-        child_chrom.extend(mate_chrom[switch_point:switch_point+1])  # Take 1 char from mate
-        last_switch = switch_point + 1
+    switch_points = sorted(random.sample(hotspots, min(len(hotspots), 1)))
     
-    child_chrom.extend(parent_chrom[last_switch:])
+    # Build child chromosome using slicing
+    child_chrom = []
+    prev = 0
+    for point in switch_points:
+        child_chrom.append(parent_chrom[prev:point])
+        child_chrom.append(mate_chrom[point])
+        prev = point + 1
+    child_chrom.append(parent_chrom[prev:])
+    
+    return create_agent(''.join(child_chrom)[:40])
     return create_agent(''.join(child_chrom)[:40])
 
 
@@ -332,8 +336,8 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Explicitly clear log while ensuring file handle closure
+    # Empty log file at program start per spec.md requirements
+    open("evolution.log", "w", encoding="utf-8").close()
     
     evolution_loop(population, max_population)
 
@@ -437,6 +441,9 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
+    assert MAX_CORE == 23, "MAX_CORE constant modified"
+    assert MAX_CHARS == 40, "MAX_CHARS constant modified"
+    assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
     # Validate population invariants
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
     assert 0 <= best['fitness'] <= 1e6, "Fitness out of reasonable bounds"
