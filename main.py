@@ -121,9 +121,12 @@ def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> f
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     
     # Simplified calculation that actually matches the described hidden goal
-    fitness += core_segment.count("a")  # +1 per 'a'
-    fitness -= (len(core_segment) - core_segment.count("a"))  # -1 per non-a
-    fitness -= len(chromosome[23:])  # -1 per character beyond 23
+    core_a = core_segment.count("a")
+    core_non_a = len(core_segment) - core_a
+    remaining_len = len(chromosome[23:])
+    
+    # Apply generation-based weighting to core components
+    fitness = (core_a * gen_weight) - (core_non_a * (1 - gen_weight)) - remaining_len
     
     # Validation assertions
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
