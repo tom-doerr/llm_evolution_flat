@@ -479,20 +479,21 @@ def apply_mutations(generation, mutation_rate, problem):
     unique_chromosomes = len({agent["chromosome"] for agent in generation})
     diversity_ratio = unique_chromosomes / len(generation)
     
-    # Adjust mutation rate using inverse square relationship to diversity
-    mutation_rate *= (1.0 - diversity_ratio) ** 2
-    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)  # Keep within sane bounds
+    # Simple linear adaptation based on diversity
+    mutation_rate = 0.8 - (0.7 * diversity_ratio)  # 80% at 0% diversity, 10% at 100% diversity
+    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)
     
-    # Apply mutations with adapted rate
-    for i in range(len(generation)):
+    # Validate mutation parameters
+    assert 0 <= diversity_ratio <= 1, f"Invalid diversity ratio: {diversity_ratio}"
+    assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate out of bounds: {mutation_rate}"
+    
+    # Apply mutations using vectorized operations
+    for agent in generation:
         if random.random() < mutation_rate:
-            generation[i]["chromosome"] = mutate(generation[i]["chromosome"], problem)
+            agent["chromosome"] = mutate(agent["chromosome"])
     
-    # Log adaptation metrics
-    console = Console()
-    console.print(f"\nMutation Rate Adaptation:\n"
-                f"Diversity: {diversity_ratio:.1%} → Rate: {mutation_rate:.1%}\n"
-                f"Unique Chromosomes: {unique_chromosomes}/{len(generation)}")
+    # Simple logging without external dependencies
+    print(f"\n[Mutation] Diversity: {diversity_ratio:.1%} → Rate: {mutation_rate:.1%}")
     
     return generation
 
