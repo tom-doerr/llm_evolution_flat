@@ -239,16 +239,22 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         raise ValueError("No candidates available for crossover")
         
     weights = np.array([a["fitness"]**2 + 1e-6 for a in candidates])
-    selected_mate = llm_select_mate(parent, random.choices(
-        candidates,
-        weights=weights/weights.sum(),
-        k=min(5, len(population))
-    ))
+    selected_indices = np.random.choice(
+        len(candidates),
+        size=min(5, len(candidates)),
+        replace=False,
+        p=weights/weights.sum()
+    )
+    selected_mate = llm_select_mate(parent, [candidates[i] for i in selected_indices])
     
     return create_agent(''.join(
-        selected_mate["chromosome"][i] if (random.random() < 1/len(parent["chromosome"]) or c in {'.', '!', '?', ' '})
-        else c
-        for i, c in enumerate(parent["chromosome"])
+        m_char if (random.random() < 1/len(parent["chromosome"])) or (p_char in {'.', '!', '?', ' '})
+        else p_char
+        for p_char, m_char in itertools.zip_longest(
+            parent["chromosome"],
+            selected_mate["chromosome"],
+            fillvalue=' '
+        )
     )[:40])
 
 
