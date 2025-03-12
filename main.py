@@ -274,12 +274,20 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
-    # Force exactly 1 switch per chromosome combination on average
-    hotspots = [
-        i for i, c in enumerate(chromosome) 
-        if c in {'.', '!', '?', ' '} or random.random() < 0.10
-    ]
-    return hotspots if hotspots else [random.randint(0, len(chromosome)-1)]
+    hotspots = []
+    for i, c in enumerate(chromosome):
+        # Always include punctuation hotspots
+        if c in {'.', ',', '!', '?', ';', ':'}:
+            hotspots.append(i)
+        # Include spaces with 10% probability
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
+            hotspots.append(i)
+        # Small chance to create hotspot anywhere
+        elif random.random() < 0.02:  # ~1 hotspot per 50 chars on average
+            hotspots.append(i)
+    
+    # Ensure minimum hotspots and return
+    return hotspots or [random.randint(0, len(chromosome)-1)]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
