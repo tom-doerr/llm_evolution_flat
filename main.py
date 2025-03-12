@@ -315,10 +315,14 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    # Trim population first to stay under MAX_POPULATION (spec.md requirement)
-    parents = parents[:MAX_POPULATION//2]
-    next_gen = parents.copy()
-    max_children = min(MAX_POPULATION - len(next_gen), len(parents)*2)
+    # Trim population using weighted sampling to maintain diversity
+    parents = random.choices(
+        parents,
+        weights=[a['fitness']**2 for a in parents],
+        k=min(len(parents), MAX_POPULATION//2)
+    )
+    next_gen = []
+    max_children = MAX_POPULATION - len(parents)
     
     # Enforce population limit before generation (spec.md requirement)
     assert len(parents) <= MAX_POPULATION//2, "Parent population exceeds limit"
