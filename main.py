@@ -309,9 +309,15 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
 
 
 if __name__ == "__main__":
-    PROBLEM = "Optimize string patterns through evolutionary processes"
-    dspy.configure(problem=PROBLEM)
-    run_genetic_algorithm(generations=20)
+    import argparse
+    parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
+    parser.add_argument('--generations', type=int, default=20,
+                       help='Number of generations to run')
+    parser.add_argument('--pop-size', type=int, default=1000,
+                       help='Initial population size')
+    args = parser.parse_args()
+    
+    run_genetic_algorithm(generations=args.generations, pop_size=args.pop_size)
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log population data with rotation"""
