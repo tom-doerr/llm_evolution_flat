@@ -322,8 +322,13 @@ def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop separated to reduce statement count"""
     assert MAX_POPULATION == 1_000_000, "Population limit mismatch with spec.md"
     population = population[:MAX_POPULATION]  # Ensure initial population size limit
+    fitness_window = []
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
+        
+        # Update fitness window with new values
+        new_fitnesses = [a["fitness"] for a in population]
+        fitness_window = update_fitness_window(fitness_window, new_fitnesses)
         
         # Combined stats calculation to reduce locals
         stats = {
@@ -332,13 +337,11 @@ def evolution_loop(population: List[dict]) -> None:
             'diversity': calculate_diversity(population),
             'best': max(a["fitness"] for a in population),
             'worst': min(a["fitness"] for a in population),
-            **calculate_window_statistics([a["fitness"] for a in population][-WINDOW_SIZE:])
+            **calculate_window_statistics(fitness_window)
         }
         
         # Handle logging/display in one step
-        log_population(stats)
-        display_generation_stats(stats)
-        validate_population_extremes(population)
+        log_and_display(stats, population)
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
