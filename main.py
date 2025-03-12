@@ -133,15 +133,17 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     """Calculate parent selection weights with Pareto distribution and fitness^2"""
     assert len(population) > 0, "Cannot calculate weights for empty population"
     
-    # Fitness^2 weighted with Pareto distribution (spec.md requirement)
-    fitness_scores = np.array([a['fitness']**2 for a in population], dtype=np.float64)
-    pareto_weights = np.random.pareto(2.0, len(population)) + 1  # Add 1 to shift distribution
-    weights = fitness_scores * pareto_weights
+    # Combined fitness^2 and Pareto weighting in single operation
+    weights = (
+        np.array([a['fitness']**2 for a in population], dtype=np.float64) * 
+        (np.random.pareto(2.0, len(population)) + 1)  # Spec-compliant Pareto
+    )
     
-    # Numeric stability safeguards
+    # Numeric stability with vectorized operations
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)
     total = weights.sum()
-    return weights / total if total > 0 else np.ones_like(weights)/len(weights)
+    assert not np.isclose(total, 0), "Weight total cannot be zero"
+    return weights / total
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
