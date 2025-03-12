@@ -263,25 +263,29 @@ def get_hotspots(chromosome: str) -> list:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
-    candidates = population[-WINDOW_SIZE:] or population
-    if not candidates:
-        raise ValueError("No candidates available for crossover")
-    
-    # Get validated candidates with weights
+    candidates = (population[-WINDOW_SIZE:] or population)[:100]  # Hard limit
     valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
-    weights = [a['fitness']**2 + 1e-6 for a in valid_candidates]
-    selected = random.choices(valid_candidates, weights=weights, k=min(5, len(valid_candidates)))
     
-    # Select mate and create child
-    mate = llm_select_mate(parent, selected)
-    hotspots = get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
-    switch_point = random.choice(hotspots)
+    # Combined selection and mating
+    mate = llm_select_mate(
+        parent,
+        random.choices(
+            valid_candidates,
+            weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
+            k=min(5, len(valid_candidates))
+    )
     
-    # Build child chromosome with single character switch
-    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
-    child_chrom = f"{p_chrom[:switch_point]}{m_chrom[switch_point:switch_point+1]}{p_chrom[switch_point+1:]}"
+    # Simplified chromosome switching
+    switch_point = random.choice(
+        get_hotspots(parent["chromosome"]) or 
+        [random.randint(0, len(parent["chromosome"])-1]
+    )
+    p_chrom = parent["chromosome"]
+    m_chrom = mate["chromosome"]
     
-    return create_agent(child_chrom[:40])
+    return create_agent(
+        f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:40]
+    )
 
 
 
@@ -333,7 +337,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     
     evolution_loop(population, max_population)
 
-def update_generation_stats(generation: int, population: List[dict], fitness_window: list) -> tuple:
+def update_generation_stats(population: List[dict], fitness_window: list) -> tuple:
     """Calculate statistics for current generation"""
     evaluated_pop = evaluate_population(population)
     new_fitnesses = [a["fitness"] for a in evaluated_pop]
@@ -344,7 +348,6 @@ def update_generation_stats(generation: int, population: List[dict], fitness_win
     worst_fitness = min(a["fitness"] for a in evaluated_pop)
     
     stats.update({
-        'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
         'best': best_agent["fitness"],
