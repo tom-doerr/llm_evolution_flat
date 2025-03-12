@@ -164,19 +164,22 @@ def mutate_with_llm(agent: dict) -> str:
         top_p=0.9
     )
     
-    # Validate mutations in generator expression
-    valid_mutation = next(
-        (str(r).strip()[:40].lower() for r in response.completions
-         if len(r) >= 23 
-         and r.startswith(chromosome[:23])
-         and r[:23].count('a') >= chromosome[:23].count('a')),
-        None
+    # Validate mutations with generator expression
+    valid_mutations = (
+        str(r).strip()[:40].lower()
+        for r in response.completions
+        if (len(str(r).strip()) >= 23 
+            and str(r).strip().startswith(chromosome[:23].lower())
+            and str(r).strip()[:23].count('a') >= chromosome[:23].count('a'))
     )
-    
-    return valid_mutation or chromosome[:23] + ''.join(random.choices(
-        string.ascii_letters.lower(), 
-        k=max(0, len(chromosome)-23)
-    ))
+
+    # Return first valid mutation or fallback
+    return next(valid_mutations, 
+        chromosome[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(), 
+            k=max(0, len(chromosome)-23
+        ))
+    )
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
