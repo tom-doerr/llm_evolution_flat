@@ -276,9 +276,9 @@ def get_hotspots(chromosome: str) -> list:
     hotspots = list(set(hotspots))
     target_hotspots = max(MIN_HOTSPOTS, len(chromosome) // 40)
     while len(hotspots) < target_hotspots:
-        hotspots.append(random.randint(0, len(chromosome)-1)
+        hotspots.append(random.randint(0, len(chromosome)-1))
     
-    return hotspots if hotspots else [random.randint(0, len(chromosome)-1]
+    return hotspots if hotspots else [random.randint(0, len(chromosome)-1)]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
