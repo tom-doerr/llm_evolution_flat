@@ -216,8 +216,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    # Get problem from DSPy configuration instead of global
-    return mutate_with_llm(chromosome, dspy.settings.get("problem"))
+    return mutate_with_llm(chromosome)
 
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
