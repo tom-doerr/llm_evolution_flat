@@ -1,6 +1,8 @@
 import random
 import string
 import gzip
+from rich.console import Console
+from rich.table import Table
 from typing import List
 import dspy
 
@@ -255,18 +257,24 @@ def run_genetic_algorithm(
         best = sorted_pop[0]
         worst = sorted_pop[-1]
 
-        # Compressed logging
+        # Detailed compressed logging per spec
         with gzip.open(log_file, "at", encoding="utf-8") as f:
-            f.write(f"{generation},{best['fitness']},{best['chromosome']}\n")
+            for agent in population:
+                f.write(f"{generation},{agent['fitness']},{agent['chromosome']}\n")
 
-        # Information-dense output
-        print(f"\n—— Generation {generation+1}/{generations} ——")
-        print(f"Population: {pop_size} agents")
-        print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']:.1f})")
-        print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']:.1f})")
-        print(
-            f"Stats: μ={mean_fitness:.1f} ±{std_fitness:.1f} | Med={median_fitness:.1f}"
-        )
+        # Rich formatted output
+        console = Console()
+        table = Table(show_header=False, box=None, padding=0)
+        table.add_column(style="cyan")
+        table.add_column(style="yellow")
+        
+        table.add_row("Generation", f"{generation+1}/{generations}")
+        table.add_row("Population", f"{pop_size} agents")
+        table.add_row("Best", f"{best['chromosome'][:23]}... [green]({best['fitness']:.1f})")
+        table.add_row("Worst", f"{worst['chromosome'][:23]}... [red]({worst['fitness']:.1f})")
+        table.add_row("Stats", f"μ={mean_fitness:.1f} ±{std_fitness:.1f} | Med={median_fitness:.1f}")
+        
+        console.print(table)
 
         # Validate population state
         assert best["fitness"] >= worst["fitness"], "Fitness ordering invalid"
