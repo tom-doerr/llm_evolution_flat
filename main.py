@@ -35,14 +35,15 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness with stronger incentives for 'a's and harsher penalties for length
     fitness = 0.0
     
-    # First 23 characters: +2 for each 'a', -1 for other characters
-    first_part = chromosome[:23]
-    fitness += 2 * first_part.count('a')  # Stronger reward for actual 'a's
-    fitness -= len(first_part) - first_part.count('a')  # Penalize non-a characters
+    # First 23 characters: +3 for 'a' (any case), -0.5 for others to encourage more a's
+    first_part = chromosome[:23].lower()
+    a_count = first_part.count('a')
+    fitness += 3 * a_count  # Strong reward for a's
+    fitness -= 0.5 * (len(first_part) - a_count)  # Smaller penalty for non-a's
     
-    # After 23: -2 per character to encourage shorter strings
+    # After 23: -1 per character but allow some length for exploration
     remaining = chromosome[23:]
-    fitness -= 2 * len(remaining)
+    fitness -= 1 * len(remaining)
     
     # Extra penalty for exceeding 40 characters (should never happen due to truncation)
     fitness -= 10 * max(0, len(chromosome) - 40)
@@ -76,7 +77,10 @@ def mutate(chromosome: str) -> str:
         idx = random.randint(0, len(chromosome)-1)
         original_char = chromosome[idx]
         # Get a different random character
-        new_char = random.choice([c for c in string.ascii_letters + ' ' if c != original_char])
+        # Bias mutation towards adding 'a's 
+        new_char = random.choice(
+            ['a'] * 5 + [c for c in string.ascii_letters + ' ' if c != original_char and c != 'a']
+        )
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
         
         if new_chromosome != chromosome:
@@ -156,5 +160,5 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         population = next_gen
 
 if __name__ == "__main__":
-    PROBLEM = "Generate a string with many 'a's in first 23 chars and short after"
+    PROBLEM = "Generate a string with MAXIMUM lowercase 'a's in first 23 characters, then keep it short. Prioritize 'a's above all else!"
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
