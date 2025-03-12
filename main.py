@@ -352,8 +352,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
-    with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates unused var
-        pass  # Just opening in write mode truncates the file
+    open("evolution.log", "w", encoding="utf-8").close()  # More explicit file clearing
     
     evolution_loop(population, max_population)
 
