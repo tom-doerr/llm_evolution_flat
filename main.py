@@ -261,11 +261,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             len(candidates),
             size=min(5, len(candidates)),
             replace=False,
-            p=np.array([
-                (a['fitness']**2 * (np.random.pareto(2) + 1e-6)
-                for a in candidates
-                if validate_mating_candidate(a, parent)
-            ])/sum(a['fitness']**2 * (np.random.pareto(2) + 1e-6) for a in candidates if validate_mating_candidate(a, parent))
+            p=np.array([(a['fitness']**2 * (np.random.pareto(2) + 1e-6))
+                for a in candidates 
+                if validate_mating_candidate(a, parent)])/sum([a['fitness']**2 * (np.random.pareto(2) + 1e-6) 
+                for a in candidates 
+                if validate_mating_candidate(a, parent)])
         )
     )
     
@@ -281,14 +281,14 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         hotspots = random.sample(range(len(parent_chrom)), k=1)
     
     # Perform switches at hotspots
-    parent_chrom = parent["chromosome"]
+    parent_chromosome = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
     child_chrom = []
     last_switch = 0
     parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
     for switch_point in sorted(random.sample(hotspots, min(len(hotspots), 1))):
-        child_chrom.extend(parent_chrom[last_switch:switch_point])
+        child_chrom.extend(parent_chromosome[last_switch:switch_point])
         child_chrom.extend(mate_chrom[switch_point:switch_point+1])  # Take 1 char from mate
         last_switch = switch_point + 1
     
