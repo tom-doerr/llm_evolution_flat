@@ -2,6 +2,7 @@ from typing import List
 import random
 import string
 import numpy as np
+import itertools
 from rich.console import Console
 from rich.panel import Panel
 import dspy
@@ -268,6 +269,9 @@ def run_genetic_algorithm(pop_size: int) -> None:
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     fitness_window = []
+    
+    # Empty log file at program start per spec.md
+    open("evolution.log", "w").close()
     
     for generation in itertools.count(0):  # Continuous evolution per spec.md
         population = evaluate_population(population)[:MAX_POPULATION]
