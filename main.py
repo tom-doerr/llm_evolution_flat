@@ -158,8 +158,8 @@ def mutate_with_llm(agent: dict) -> str:
     chromosome = agent["chromosome"]
     
     response = dspy.Predict(MutateSignature)(
-        chromosome=[agent["chromosome"]]*3,
-        instructions=[agent.get("mutation_chromosome", "Change 1-2 chars post-23")]*3,
+        chromosome=agent["chromosome"],
+        instructions=agent.get("mutation_chromosome", "Change 1-2 chars post-23"),
         temperature=0.7,
         top_p=0.9
     )
@@ -305,7 +305,7 @@ if __name__ == "__main__":
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format"""
-    with open("evolution.log", "a", encoding='utf-8') as f:
+    with open("evolution.log", "w", encoding='utf-8') as f:
         f.write(
             f"Mean:{stats['mean']:.2f} Best:{stats['best']:.2f} "
             f"Worst:{stats['worst']:.2f} σ:{stats['std']:.1f} "
