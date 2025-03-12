@@ -350,6 +350,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
                        help='Initial population size')
+    parser.add_argument('--max-population', type=int, default=1_000_000,
+                       help='Maximum population size (per spec.md)')
     args = parser.parse_args()
     
     run_genetic_algorithm(pop_size=args.pop_size)
