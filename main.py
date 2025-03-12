@@ -42,16 +42,17 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         return {"mean": 0.0, "median": 0.0, "std": 0.0, 
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
 
-    arr = np.array(window, dtype=np.float64)
-    return {
-        "mean": float(np.nanmean(arr)),
-        "median": float(np.nanmedian(arr)),
-        "std": float(np.nanstd(arr)),
-        "best": float(np.nanmax(arr)),
-        "worst": float(np.nanmin(arr)),
-        "q25": float(np.nanpercentile(arr, 25)),
-        "q75": float(np.nanpercentile(arr, 75))
-    }
+    try:
+        arr = np.array(window, dtype=np.float64)
+        return {
+            "mean": float(np.nanmean(arr)),
+            "median": float(np.nanmedian(arr)),
+            "std": float(np.nanstd(arr)),
+            "best": float(np.nanmax(arr)),
+            "worst": float(np.nanmin(arr)),
+            "q25": float(np.nanpercentile(arr, 25)),
+            "q75": float(np.nanpercentile(arr, 75))
+        }
     except Exception as e:
         raise RuntimeError(f"Window statistics calculation failed: {str(e)}") from e
 
