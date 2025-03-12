@@ -136,14 +136,16 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    # Get candidates and calculate weights in one step
-    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
+    # Get sliding window of recent evaluations
+    recent_fitness = fitness_window[-WINDOW_SIZE:]
+    candidates = [a for a in population if a['fitness'] in recent_fitness]
     weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
     
     # Apply Pareto distribution and normalize
     weights = 1.0 / (1.0 + np.argsort(-weights))  # Combined Pareto calculation
     weights /= weights.sum()
     
+    # Weighted sampling without replacement
     return [candidates[i] for i in np.random.choice(
         len(candidates),
         size=min(len(candidates)//2, MAX_POPULATION),
@@ -258,6 +260,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     # Add epsilon to avoid zero weights
     weights += 1e-6 * np.mean(weights)
     
+    # Get candidates using weighted sampling without replacement
     # Get candidates using weighted sampling without replacement
     candidates = random.choices(
         population=window_pop,
