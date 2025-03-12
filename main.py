@@ -392,7 +392,6 @@ def log_population(population: List[dict], generation: int, log_file: str) -> No
     
     # Trim population to MAX_POPULATION by fitness before logging
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
-    """Log gzipped population data with rotation"""
     # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
     mode = 'wt' if generation == 0 else 'at'
