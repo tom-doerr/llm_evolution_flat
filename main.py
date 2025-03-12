@@ -496,23 +496,6 @@ def display_generation_stats(generation: int, generations: int, population: list
     console.print(panel)
 
 
-# Removed duplicate function definition
-    """Improve top candidates using LLM optimization"""
-    for i in range(min(2, len(next_gen))):
-        improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
-        try:
-            response = improve_prompt(
-                original_chromosome=next_gen[i]["chromosome"],
-                problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE VOWEL DENSITY IN FIRST 23\n2. TRUNCATE BEYOND 23 CHARACTERS\n3. LETTERS ONLY\n4. MAX LENGTH 40\n5. ENHANCE STRUCTURAL INTEGRITY",
-            )
-            if validate_improvement(response):
-                next_gen[i]["chromosome"] = response.completions[0].strip()[:40]
-            else:
-                next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
-        except (TimeoutError, RuntimeError) as e:
-            print(f"LLM improvement failed: {str(e)}")
-            next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
-    return next_gen
 
 def create_next_generation(next_gen, problem, mutation_rate, generation):
     """Handle mutation and periodic improvement of new generation"""
