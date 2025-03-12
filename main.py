@@ -285,7 +285,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         last_switch = switch_point + 1
     
     child_chrom.extend(parent_chrom[last_switch:])
-    return create_agent(''.join(child_chrom)[:40]
+    return create_agent(''.join(child_chrom)[:40])
 
 
 
