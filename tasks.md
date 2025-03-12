@@ -1,9 +1,13 @@
 # Genetic Algorithm Task List (Prioritized)
 
 - Create concise console output with Rich formatting  
-- Implement LLM-based mutation per spec  
-- Add weighted parent selection using Pareto distribution  
 - Add sliding window for last 100 evaluation stats  
+- Tune Pareto distribution parameters  
+- Implement chromosome deduplication checks  
+
+## Recently Completed
+[x] Implement LLM-based mutation per spec  
+[x] Add weighted parent selection using Pareto distribution  
 
 ## Recently Completed
 [x] Add population statistics (mean/median/std)  

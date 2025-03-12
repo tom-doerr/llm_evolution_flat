@@ -83,20 +83,27 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness"""
-    # Calculate weights using exponential scaling of fitness values
-    fitness_values = [max(0, agent["fitness"])**2 for agent in population]
-    total_weight = sum(fitness_values)
+    # Calculate Pareto weights (power law distribution)
+    fitness_values = [agent["fitness"] for agent in population]
+    max_fitness = max(fitness_values)
+    min_fitness = min(fitness_values)
     
-    # Handle case where all weights are zero
-    if total_weight <= 0:
+    # Normalize and apply quadratic weighting
+    spread = max_fitness - min_fitness if max_fitness != min_fitness else 1
+    weights = [((f - min_fitness)/spread)**2 for f in fitness_values]
+    
+    # Handle zero weights case
+    if sum(weights) <= 0:
         return random.sample(population, k=len(population)//2)
         
-    # Select weighted sample without replacement
-    selected = random.choices(
-        population,
-        weights=fitness_values,
-        k=len(population)//2
-    )
+    # Weighted selection without replacement using reservoir sampling
+    selected = []
+    for _ in range(len(population)//2):
+        candidates = random.choices(population, weights=weights, k=5)
+        selected.append(max(candidates, key=lambda x: x["fitness"]))
+        # Remove selected candidate's weight to prevent duplicates
+        idx = population.index(selected[-1])
+        weights[idx] = 0
     return list({agent["chromosome"]: agent for agent in selected}.values())  # Deduplicate
 
 
@@ -106,13 +113,13 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"MAXIMIZE 'a's in first 23 characters! {problem}"
+            problem_description=f"{problem} MUTATION RULES:\n1. MAXIMIZE 'a's IN FIRST 23 CHARACTERS\n2. REMOVE ALL CHARACTERS AFTER FIRST 23\n3. USE ONLY LETTERS\n4. MAX LENGTH 40"
         )
-        if (response.completions[0] and 
-            len(response.completions[0]) > 0 and
-            len(response.completions[0]) <= 40 and
-            all(c in string.ascii_letters + ' ' for c in response.completions[0])):
-            return response.completions[0].strip()[:40]
+        if response.completions:
+            mutated = response.completions[0].strip()[:23]  # Strictly keep first 23 chars
+            mutated = mutated.ljust(23, 'a')[:40]  # Ensure min length 23, max 40
+            mutated = ''.join([c if c.isalpha() else 'a' for c in mutated])  # Enforce letters only
+            return mutated
     except (TimeoutError, RuntimeError):
         pass
     return mutate(chromosome)  # Fallback to traditional mutation
@@ -203,7 +210,8 @@ def run_genetic_algorithm(
             f.write(f"{generation},{best['fitness']},{best['chromosome']}\n")
 
         # Information-dense output
-        print(f"\nGen {generation+1}/{generations} | Pop: {pop_size}")
+        print(f"\n—— Generation {generation+1}/{generations} ——")
+        print(f"Population: {pop_size} agents")
         print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']:.1f})")
         print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']:.1f})")
         print(
