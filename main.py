@@ -134,10 +134,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate weights and sample in one flow
+    # Combined candidate selection and weighting
     candidates = population[-WINDOW_SIZE:]
     pareto_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates]) * np.random.pareto(2.0, len(candidates))
     
+    # Normalize and sample
     return [candidates[i] for i in np.random.choice(
         len(candidates),
         size=min(len(population), MAX_POPULATION//2),
