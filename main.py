@@ -148,19 +148,16 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Enforce population limit and get weights
+    # Optimized sampling with numpy and weight validation
     population = population[:MAX_POPULATION]
-    weights = calculate_parent_weights(population)
-    
-    # Optimized weighted sampling using numpy
-    sample_size = min(len(population), MAX_POPULATION//2)
-    indices = np.random.choice(
-        len(population),
-        size=sample_size,
-        replace=False,
-        p=weights
-    )
-    return [population[i] for i in indices]
+    return [
+        population[i] for i in np.random.choice(
+            len(population),
+            size=min(len(population), MAX_POPULATION//2),
+            replace=False,
+            p=calculate_parent_weights(population)
+        )
+    ]
 
 # Configuration constants from spec.md
 MUTATION_RATE = 0.1  # Base mutation probability 
