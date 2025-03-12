@@ -258,9 +258,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         random.choices(
             candidates,
             weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum(a['fitness']**2 + 1e-6 for a in candidates),
-            k=min(5, len(population)))
-    )
-    )
+            k=min(5, len(population))
+        )
+    ))
     
     return create_agent(''.join(
         m_char if (random.random() < 1/len(parent["chromosome"])) or (p_char in {'.', '!', '?', ' '})
