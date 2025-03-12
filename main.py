@@ -187,11 +187,12 @@ def select_parents(population: List[dict]) -> List[dict]:
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing"""
     mutate_prompt = dspy.Predict("original_chromosome, problem_description -> mutated_chromosome")
-    # Strict mutation with validation
     try:
+        # Add validation before even making the LLM call
+        validate_chromosome(chromosome)
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nMUTATION RULES:\n1. 23-40 LETTERS ONLY\n2. CHANGE 1-3 CHARACTERS\n3. KEEP CORE STRUCTURE\n4. OUTPUT ONLY THE MUTATED STRING",  # More specific rules
+            problem_description=f"{problem}\nMUTATION RULES:\n1. EXACTLY 23-40 LETTERS\n2. CHANGE 1-3 CHARACTERS\n3. KEEP FIRST 23 STRUCTURE\n4. OUTPUT ONLY 40-LETTER STRING",
         )
         mutated = str(response.get('mutated_chromosome', chromosome)).strip()[:40]  # Fallback to original
         # More rigorous validation and normalization
@@ -230,7 +231,10 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
     # Validate parent first with debugging
     parent_chrom = validate_chromosome(parent["chromosome"])
-    debug = False  # Set to True for validation troubleshooting
+    debug = False
+    
+    # Pre-validate all candidates before LLM call
+    candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     assert parent["fitness"] > 0, "Parent must have positive fitness"
     
     # Strict candidate validation with error handling
@@ -263,9 +267,14 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
         problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY",
     )
     
-    # Parse and validate selection
+    # Parse and validate selection with error handling
     raw_response = str(response.best_candidate_id).strip()
-    chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Use maxsplit
+    try:
+        chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Extract first number
+    except (ValueError, IndexError):
+        if debug:
+            print(f"Invalid LLM response format: {raw_response}")
+        return random.choice(candidates)
         
     # Validate selection is within range
     if 0 <= chosen_id < len(valid_candidates):
@@ -422,10 +431,10 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     """Rich-formatted display with essential stats"""
     console = Console()
     stats = calculate_window_statistics(fitness_window, 100)
-    diversity = calculate_diversity(population)  # Get diversity metric
+    diversity = calculate_diversity(population)
     
-    # Format population size with SI suffixes
-    pop_size = len(population)
+    # Track diversity in window stats
+    stats['diversity'] = diversity
     suffix = ''
     if pop_size >= 1_000_000:
         pop_size /= 1_000_000
