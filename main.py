@@ -221,14 +221,15 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     )
     selected = response.selected_mate.strip()[:40]
 
-    # Check validity or fallback
-    llm_match = next((c for c in valid if c["chromosome"] == selected), None)
-    if llm_match:
-        return llm_match
-        
-    # Fitness-weighted fallback with numerical stability
-    probs = [c["fitness"]**2 + 1e-6 for c in valid]
-    return random.choices(valid, weights=probs, k=1)[0]
+    # Check validity of LLM selection or fallback to weighted random
+    return next(
+        (c for c in valid if c["chromosome"] == selected),
+        random.choices(
+            valid,
+            weights=[c["fitness"]**2 + 1e-6 for c in valid],
+            k=1
+        )[0]
+    )
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
@@ -344,17 +345,12 @@ def calculate_diversity(population: List[dict]) -> float:
 def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
     div_ratio = calculate_diversity(generation)
-    rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
-    
-    # Use list comprehension to reduce locals
-    mutated = [
+    return [
         {**agent, "chromosome": mutate(agent["chromosome"])} 
-        if random.random() < rate else agent
+        if random.random() < (rate := np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8))
+        else agent
         for agent in generation
     ]
-    
-    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} U:{len({a['chromosome'] for a in mutated})}/{len(generation)}")
-    return mutated
 
 
 
