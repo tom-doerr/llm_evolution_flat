@@ -311,7 +311,7 @@ def run_genetic_algorithm(
     population = initialize_population(pop_size)
     fitness_window = []
 
-    # Clear log file at start per spec
+    # Initialize log file path and clear it per spec
     log_file = "evolution.log.gz"
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
         f.write("")  # Explicitly empty log file
