@@ -408,9 +408,15 @@ def run_genetic_algorithm(
         # Get population extremes
         best, worst = get_population_extremes(population)
 
+        # Calculate current fitness statistics
+        all_fitness = [agent["fitness"] for agent in population]
+        current_mean = np.mean(all_fitness) if all_fitness else 0.0
+        current_median = np.median(all_fitness) if all_fitness else 0.0
+        current_std = np.std(all_fitness) if all_fitness else 0.0
+        
         # Log population with generation stats and diversity
         current_diversity = calculate_diversity(population)
-        log_population(population, generation, stats['mean'], stats['median'], stats['std'], current_diversity, log_file)
+        log_population(population, generation, current_mean, current_median, current_std, current_diversity, log_file)
 
         # Display statistics from sliding window
         display_generation_stats(generation, generations, population, best, len(population), 
