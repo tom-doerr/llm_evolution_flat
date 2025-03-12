@@ -13,12 +13,11 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Completed:
 # 1. Implement generation-based scoring weights
 
-# TODO priority order:
-# 1. Fix invalid-name warning for 'debug' variable
-# 2. Implement complete sliding window statistics (mean/median/std)
-# 3. Reduce arguments in update_fitness_window, generate_children, run_genetic_algorithm
-# 4. Fix too-many-locals in score_chromosome, evaluate_agent
-# 5. Validate chromosome structure during crossover
+# TODO priority order: 
+# 1. Implement complete sliding window statistics (mean/median/std)
+# 2. Fix too-many-locals in score_chromosome
+# 3. Validate chromosome structure during crossover
+# 4. Fix remaining code quality warnings
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -61,8 +60,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
     assert isinstance(fitness_window, list), "Window must be list type"
-    # Fixed window size per spec.md
-    return (fitness_window + new_fitnesses)[-100:]  # Simple slicing for fixed size
+    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:] 
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
@@ -260,7 +258,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     except AssertionError:
         return False
 
-def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified signature
+def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using LLM prompt with validated candidate chromosomes"""
     parent_chrom = validate_chromosome(parent["chromosome"])
     
@@ -301,7 +299,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified
     response = prompt(
         parent_chromosome=validate_chromosome(parent["chromosome"]),
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nSELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY",
+        problem="SELECTION RULES:\n1. MAXIMIZE CORE SIMILARITY\n2. OPTIMIZE LENGTH 23\n3. ENSURE CHARACTER DIVERSITY",
     )
     
     # Parse and validate selection with error handling
@@ -337,7 +335,7 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
 
 
 
-def generate_children(parents: List[dict], population: List[dict], pop_size: int, problem: str) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], pop_size: int) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     pop_size = min(pop_size, 1_000_000)  # Hard cap
     next_gen = parents.copy()
@@ -347,7 +345,7 @@ def generate_children(parents: List[dict], population: List[dict], pop_size: int
     while len(next_gen) < max_children and len(next_gen) < pop_size:
         parent = random.choice(parents) if parents else create_agent("")
         try:
-            child = crossover(parent, population, problem)
+            child = crossover(parent, population)
         except ValueError as e:
             print(f"Crossover failed: {e}, using mutation instead")
             child = create_agent(mutate(parent["chromosome"]))
@@ -365,11 +363,10 @@ def get_population_extremes(population: List[dict]) -> tuple:
     return sorted_pop[0], sorted_pop[-1]
 
 def run_genetic_algorithm(
-    problem: str,
     generations: int = 10,
-    pop_size: int = 1_000_000,  # Default per spec
+    pop_size: int = 1_000_000,
     log_file: str = "evolution.log.gz",
-):
+) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
     # Enforce population limits with validation
     pop_size = min(pop_size, get_population_limit())
@@ -396,7 +393,7 @@ def run_genetic_algorithm(
         all_fitness = [agent["fitness"] for agent in population]
         window_size = 100
         fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
-        stats = calculate_window_statistics(fitness_window, window_size)
+        stats = calculate_window_statistics(fitness_window)
         
         # Get population extremes
         best, worst = get_population_extremes(population)
@@ -484,7 +481,7 @@ def display_generation_stats(generation: int, generations: int, population: list
 
 
 
-def create_next_generation(next_gen, mutation_rate):
+def create_next_generation(next_gen: List[dict], mutation_rate: float) -> List[dict]:
     """Handle mutation and periodic improvement of new generation"""
     next_gen = apply_mutations(next_gen, mutation_rate)
     return next_gen
@@ -518,7 +515,7 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     
     return generation
 
-def evaluate_population(population: List[dict], problem: str, generation: int) -> List[dict]:
+def evaluate_population(population: List[dict], problem: str) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
     for agent in population:
         evaluate_agent(agent, problem)
