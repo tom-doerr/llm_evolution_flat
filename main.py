@@ -250,8 +250,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     next_gen = parents.copy()
+    max_children = min(MAX_POPULATION, len(parents)*2)
     
-    for _ in range(min(MAX_POPULATION, len(parents)*2)):
+    for _ in range(max_children):
         parent = random.choice(parents)
         try:
             next_gen.append(crossover(parent, population))
