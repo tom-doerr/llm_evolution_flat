@@ -148,7 +148,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     selected_indices = np.random.choice(
         len(population),
         size=min(len(population), MAX_POPULATION//2),
-        p=weighted_weights,  # Fixed variable name
+        p=weighted_weights,
         replace=False
     )
     
