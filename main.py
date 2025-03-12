@@ -142,27 +142,26 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate weights with fitness^2 and small epsilon for entire population
-    weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
-    total_weight = weights.sum()
-    if total_weight <= 0:
-        return []
+    candidates = population[-WINDOW_SIZE:]
+    weights = [a['fitness']**2 + 1e-6 for a in candidates]
+    total_weight = sum(weights)
     
-    # Normalize weights to probabilities
-    probabilities = weights / total_weight
+    assert total_weight > 0, "All weights cannot be zero"
+    assert len(candidates) == len(weights), "Candidate/weight length mismatch"
     
-    # Determine sample size using entire population
-    sample_size = min(len(population), MAX_POPULATION // 2)
+    # Weighted sampling without replacement per spec.md
+    selected = []
+    for _ in range(min(len(population), MAX_POPULATION//2)):
+        idx = random.choices(range(len(candidates)), weights=weights, k=1)[0]
+        selected.append(candidates[idx])
+        # Remove selected candidate and its weight
+        del candidates[idx]
+        del weights[idx]
+        # Re-normalize if any candidates left
+        if candidates:
+            total_weight = sum(weights)
     
-    # Perform weighted sampling without replacement from entire population
-    selected_indices = np.random.choice(
-        len(population),
-        size=sample_size,
-        replace=False,
-        p=probabilities
-    )
-    
-    return [population[i] for i in selected_indices]
+    return selected
 
 
 
