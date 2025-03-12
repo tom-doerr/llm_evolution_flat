@@ -275,14 +275,8 @@ def run_genetic_algorithm(pop_size: int) -> None:
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
         stats = calculate_window_statistics(fitness_window)
-        stats.update({
-            'diversity': calculate_diversity(population),
-            'population_size': len(population),
-            'best': max(a['fitness'] for a in population),
-            'worst': min(a['fitness'] for a in population)
-        })
-        
-        stats.update({
+        stats = {
+            **stats,
             'diversity': calculate_diversity(population),
             'population_size': len(population),
             'best': max(a['fitness'] for a in population),
