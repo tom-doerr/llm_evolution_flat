@@ -233,15 +233,15 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         weights=weights/weights.sum(),
         k=min(5, len(population))
     ))
-
-    # Chromosome switching with list comprehension and inlined variables
-    switch_prob = 1/len(parent["chromosome"])
-    return create_agent(''.join(
-        (mate_chrom[i] if (random.random() < switch_prob or c in {'.', '!', '?', ' '}) else c)
-        for i, c in enumerate(parent["chromosome"])
-    )[:40]) if (mate_chrom := selected_mate["chromosome"]) else create_agent(parent["chromosome"])
     
-    return create_agent(''.join(new_chrom)[:40])
+    switch_prob = 1/len(parent["chromosome"])
+    mate_chrom = selected_mate["chromosome"]
+    hotspots = {'.', '!', '?', ' '}
+    
+    return create_agent(''.join(
+        mate_chrom[i] if (random.random() < switch_prob or c in hotspots) else c
+        for i, c in enumerate(parent["chromosome"])
+    )[:40])
 
 
 
