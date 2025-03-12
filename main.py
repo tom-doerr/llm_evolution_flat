@@ -210,9 +210,9 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 class MateSelectionSignature(dspy.Signature):
     """Select best mate candidate using agent's mating strategy chromosome."""
-    parent_chromosome = dspy.InputField(desc="Chromosome of parent agent choosing a mate")
-    candidate_chromosomes = dspy.InputField(desc="List of potential mate chromosomes")
-    selected_mate = dspy.OutputField(desc="Single selected mate chromosome from candidates list")
+    parent_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent")
+    candidate_chromosomes = dspy.InputField(desc="Potential mates filtered by validation")
+    selected_mate = dspy.OutputField(desc="Chromosome of selected mate from candidates list")
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
@@ -309,15 +309,11 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
 
     population = [create_agent("".join(random.choices(string.ascii_letters + " ", k=random.randint(20,40)))) 
                 for _ in range(pop_size)]
+
+    # Initialize log file and window
+    with gzip.open("evolution.log.gz", "wt", encoding="utf-8") as f:
+        pass  # Clear log file per spec
     fitness_window = []
-
-    # Initialize log file path and clear it per spec
-    log_file = "evolution.log.gz"
-    # Empty log file per spec.md requirement
-    with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        pass  # Opening in 'wt' mode truncates existing file
-
-    fitness_window = []  # Initialize window
     for generation in range(generations):
         # Evaluate population
         population = evaluate_population(population)
@@ -368,8 +364,6 @@ if __name__ == "__main__":
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
-    diversity = calculate_diversity(population)
-    log_file = "evolution.log.gz"
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
@@ -381,10 +375,7 @@ def log_population(population: List[dict], generation: int, stats: dict) -> None
 def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    diversity = calculate_diversity(population)
-    
-    # Track diversity in window stats
-    stats['diversity'] = diversity
+    stats['diversity'] = calculate_diversity(population)
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
