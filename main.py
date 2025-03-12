@@ -38,15 +38,15 @@ def calculate_window_statistics(fitness_window: list) -> dict:
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
 
     arr = np.array(window, dtype=np.float64)
-    return {
-        "mean": float(np.nanmean(arr)),
-        "median": float(np.nanmedian(arr)),
-        "std": float(np.nanstd(arr)),
-        "best": float(np.nanmax(arr)),
-        "worst": float(np.nanmin(arr)),
-        "q25": float(np.nanpercentile(arr, 25)),
-        "q75": float(np.nanpercentile(arr, 75))
-    }
+    return dict(
+        mean=float(np.nanmean(arr)),
+        median=float(np.nanmedian(arr)),
+        std=float(np.nanstd(arr)),
+        best=float(np.nanmax(arr)),
+        worst=float(np.nanmin(arr)),
+        q25=float(np.nanpercentile(arr, 25)),
+        q75=float(np.nanpercentile(arr, 75))
+    )
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
