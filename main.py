@@ -291,7 +291,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
                 
         except AssertionError as e:
             if debug:
-            # print(f"Invalid candidate rejected: {str(e)}")
+                # print(f"Invalid candidate rejected: {str(e)}")
     
     if not valid_candidates:
         raise ValueError(f"No valid mates among {len(candidates)} candidates")
