@@ -189,7 +189,7 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     response = prompt(
         parent_chromosome=parent["chromosome"],
         candidates="\n".join(candidate_list),
-        problem=f"{problem}\nRULES:\n1. OPTIMIZE INITIAL PORTION\n2. MAINTAIN LENGTH LIMIT\n3. SELECT COMPATIBLE PAIR",
+        problem=f"{problem}\nRULES:\n1. CONSERVE CORE STRUCTURE\n2. PRESERVE ESSENTIAL ELEMENTS\n3. SYNTHESIZE COMPLEMENTARY TRAITS",
     )
     
     # Validate and parse response
