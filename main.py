@@ -93,9 +93,9 @@ def select_parents(population: List[dict]) -> List[dict]:
     squared_fitness = [max(f, 0)**2 for f in fitness_values]  # Ensure non-negative weights
     total_weight = sum(squared_fitness)
     
-    # Fallback to random selection if all weights zero
+    # Strict Pareto selection per spec - no fallback to random
     if total_weight <= 0:
-        return random.sample(population, k=len(population)//2)
+        raise ValueError("All agents have zero fitness - cannot select parents")
     
     # Weighted selection without replacement with deduplication
     selected = []
@@ -161,8 +161,8 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
         return ''.join(random.choices(string.ascii_letters, k=random.randint(23,40)))
 
 def mutate(chromosome: str) -> str:
-    """Mutate a chromosome with 30% chance of LLM-based mutation"""
-    if random.random() < 0.3:  # 30% chance for LLM mutation
+    """Mutate a chromosome with LLM-based mutation as primary strategy"""
+    if random.random() < 0.8:  # 80% chance for LLM mutation per spec
         return mutate_with_llm(chromosome, PROBLEM)
     if not chromosome:
         raise ValueError("Cannot mutate empty chromosome")
