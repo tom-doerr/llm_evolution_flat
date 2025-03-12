@@ -66,13 +66,20 @@ def mutate(chromosome: str) -> str:
     if not chromosome:
         raise ValueError("Cannot mutate empty chromosome")
     
-    idx = random.randint(0, len(chromosome)-1)
-    new_char = random.choice(string.ascii_letters + ' ')
-    new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
+    # Try up to 5 times to get a valid mutation
+    for _ in range(5):
+        idx = random.randint(0, len(chromosome)-1)
+        original_char = chromosome[idx]
+        # Get a different random character
+        new_char = random.choice([c for c in string.ascii_letters + ' ' if c != original_char])
+        new_chromosome = chromosome[:idx] + new_char + chromosome[idx+1:]
+        
+        if new_chromosome != chromosome:
+            break
     
-    # Validate mutation result
-    assert len(new_chromosome) == len(chromosome), "Mutation changed chromosome length"
-    assert new_chromosome != chromosome, "Mutation had no effect"
+    # Validate mutation result with more debug info
+    assert len(new_chromosome) == len(chromosome), f"Length changed from {len(chromosome)} to {len(new_chromosome)}"
+    assert new_chromosome != chromosome, f"Mutation failed after 5 attempts: {chromosome}"
     
     return new_chromosome
 
