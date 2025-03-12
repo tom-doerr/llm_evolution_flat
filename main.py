@@ -42,10 +42,11 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Calculate fitness per spec: +1 per 'a' in first 23, -1 per char beyond 23
     fitness = 0.0
 
-    # First 23 characters: +1 for each 'a' (case-insensitive)
+    # First 23 characters: +1 for 'a's, -0.5 for other letters (case-insensitive)
     first_part = chromosome[:23].lower()
     a_count = first_part.count("a")
-    fitness += a_count
+    other_count = len(first_part) - a_count
+    fitness += a_count - (other_count * 0.5)
 
     # After 23: -1 per character
     remaining = chromosome[23:]
@@ -99,7 +100,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"Rephrase this while maintaining its core meaning. {problem}"
+            problem_description=f"Add more 'a's while keeping similar meaning. {problem}"
         )
         if (response.completions[0] and 
             len(response.completions[0]) > 0 and
@@ -124,10 +125,9 @@ def mutate(chromosome: str) -> str:
         # Get a different random character
         # Bias mutation towards adding 'a's
         new_char = random.choice(
-            ["a"] * 10
-            + [
-                c for c in string.ascii_letters + " " if c not in (original_char, "a")
-            ]  # Stronger a bias
+            ["a"] * 20  # Strong a bias
+            + [c for c in string.ascii_letters + " " if c not in (original_char, "a")]
+            + ["a"]  # Extra chance to add an a
         )
         new_chromosome = chromosome[:idx] + new_char + chromosome[idx + 1 :]
 
