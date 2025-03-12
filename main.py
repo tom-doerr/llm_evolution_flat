@@ -363,7 +363,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     
     # Empty log file per spec.md requirement
     with open("evolution.log", "w", encoding="utf-8") as _:
-        pass  # Clear existing log content
+        pass  # Opening in write mode automatically truncates the file
     
     evolution_loop(population, max_population)
 
