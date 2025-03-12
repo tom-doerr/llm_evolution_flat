@@ -196,7 +196,7 @@ def run_genetic_algorithm(
             for i in range(min(2, len(next_gen))):
                 # Use DSPy predictor for guided improvement
                 improve_prompt = dspy.Predict(
-                    "original_chromosome problem_description -> improved_chromosome"
+                    "original_chromosome, problem_description -> improved_chromosome"
                 )
                 try:
                     response = improve_prompt(
