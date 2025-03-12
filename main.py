@@ -135,7 +135,7 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     
     # Combined fitness^2 and Pareto weighting in single operation
     weights = (
-        np.array([a['fitness']**2 for a in population], dtype=np.float64) * 
+        np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) *  # Fix operator spacing
         (np.random.pareto(2.0, len(population)) + 1)  # Spec-compliant Pareto
     )
     
