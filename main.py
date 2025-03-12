@@ -282,6 +282,10 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)[:MAX_POPULATION]
     fitness_window = []
 
+    # Clear log using context manager
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        pass  # Truncate file
+
     # Main evolution loop
     for generation in range(1, generations+1):
         population = evaluate_population(population)[:MAX_POPULATION]
