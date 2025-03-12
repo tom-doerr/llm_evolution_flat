@@ -29,8 +29,10 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
-    """Calculate statistics for sliding window of last 100 evaluations"""    
+    """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""    
+    # Use exact window size from spec.md
     window = fitness_window[-WINDOW_SIZE:] if fitness_window else []
+    window = window[-WINDOW_SIZE:]  # Ensure exact window size
     
     if not window:
         return {
@@ -138,9 +140,10 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate fitness^2 weights with Pareto distribution
+    # Calculate fitness^2 weights with Pareto distribution (spec.md requirement)
     weighted_weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
-    weighted_weights /= weighted_weights.sum()  # Normalize
+    weighted_weights = np.nan_to_num(weighted_weights, nan=1e-6)  # Handle potential NaNs
+    weighted_weights /= weighted_weights.sum() + 1e-9  # Prevent division by zero
     
     # Weighted sampling without replacement
     selected_indices = np.random.choice(
@@ -257,7 +260,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
                 np.array([a['fitness']**2 + 1e-6 for a in candidates])
             )
         )]
-        )] if validate_mating_candidate(c, parent)])
+        ) if validate_mating_candidate(c, parent)])
     
     # Implement spec.md chromosome switching rules
     parent_chrom = parent["chromosome"]
