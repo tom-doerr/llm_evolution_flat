@@ -542,7 +542,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:  # pylint: disable=too-many-arguments
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
