@@ -471,13 +471,14 @@ def create_next_generation(next_gen, problem, mutation_rate, generation):
 
 def apply_mutations(generation, mutation_rate, problem):
     """Auto-adjust mutation rate based on population diversity"""
-    # Calculate population diversity
+    # Calculate normalized population diversity [0-1]
     unique_chromosomes = len({agent["chromosome"] for agent in generation})
     diversity_ratio = unique_chromosomes / len(generation)
     
-    # Simple linear adaptation based on diversity
-    mutation_rate = 0.8 - (0.7 * diversity_ratio)  # 80% at 0% diversity, 10% at 100% diversity
-    mutation_rate = np.clip(mutation_rate, 0.1, 0.8)
+    # Dynamically adapt mutation rate using diversity-based Pareto scaling
+    min_rate, max_rate = 0.1, 0.8
+    mutation_rate = min_rate + (max_rate - min_rate) * (1 - diversity_ratio)
+    mutation_rate = np.clip(mutation_rate, min_rate, max_rate)
     
     # Validate mutation parameters
     assert 0 <= diversity_ratio <= 1, f"Invalid diversity ratio: {diversity_ratio}"
@@ -489,7 +490,7 @@ def apply_mutations(generation, mutation_rate, problem):
             agent["chromosome"] = mutate(agent["chromosome"])
     
     # Simple logging without external dependencies
-    print(f"\n[Mutation] Diversity: {diversity_ratio:.1%} → Rate: {mutation_rate:.1%}")
+    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_chromosomes}/{len(generation)}")
     
     return generation
 
