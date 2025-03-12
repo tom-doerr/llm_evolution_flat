@@ -264,18 +264,25 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
-    hotspots = [
-        i for i, c in enumerate(chromosome) 
-        if (c in HOTSPOT_CHARS or  # Always include punctuation
-            (c == ' ' and random.random() < HOTSPOT_SPACE_PROB))  # Space with 10% chance
-    ]
+    hotspots = []
+    for i, c in enumerate(chromosome):
+        # Always include punctuation hotspots
+        if c in HOTSPOT_CHARS:
+            hotspots.append(i)
+        # Space characters have 10% chance to be hotspot
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
+            hotspots.append(i)
+        # All characters have base chance to be hotspot
+        if random.random() < HOTSPOT_ANYWHERE_PROB:
+            hotspots.append(i)
     
-    # Add random hotspots to reach avg 1 per chrom (spec.md requirement)
+    # Ensure at least one hotspot per chromosome and remove duplicates
+    hotspots = list(set(hotspots))
     target_hotspots = max(MIN_HOTSPOTS, len(chromosome) // 40)
     while len(hotspots) < target_hotspots:
-        hotspots.append(random.randint(0, len(chromosome)-1))
+        hotspots.append(random.randint(0, len(chromosome)-1)
     
-    return hotspots or [random.randint(0, len(chromosome)-1)]  # Fallback if empty
+    return hotspots if hotspots else [random.randint(0, len(chromosome)-1]
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
