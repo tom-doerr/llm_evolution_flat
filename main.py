@@ -209,19 +209,20 @@ def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size
     return combined[-window_size:]
 
 def calculate_window_statistics(fitness_window, window_size):
-    """Calculate statistics for current fitness window"""
+    """Calculate statistics for current fitness window including best/worst"""
     window_data = fitness_window[-window_size:]
-    mean = sum(window_data)/len(window_data) if window_data else 0
+    if not window_data:
+        return 0.0, 0.0, 0.0, 0.0, 0.0  # mean, median, std, best, worst
+    
+    mean = sum(window_data) / len(window_data)
     sorted_data = sorted(window_data)
     n = len(sorted_data)
     
-    median = 0.0
-    if n:
-        mid = n // 2
-        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
-    
-    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
-    return mean, median, std
+    median = (sorted_data[n//2] if n % 2 else (sorted_data[n//2 - 1] + sorted_data[n//2]) / 2)
+    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0.0
+    best = sorted_data[-1]
+    worst = sorted_data[0]
+    return mean, median, std, best, worst
 
 def generate_children(parents, population, pop_size, problem):
     """Generate new population through crossover/mutation"""
@@ -286,7 +287,7 @@ def run_genetic_algorithm(
         all_fitness = [agent["fitness"] for agent in population]
         window_size = 100
         fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
-        mean_fitness, median_fitness, std_fitness = calculate_window_statistics(fitness_window, window_size)
+        mean_fitness, median_fitness, std_fitness, best_window, worst_window = calculate_window_statistics(fitness_window, window_size)
 
         # Get population extremes
         best, worst = get_population_extremes(population)
@@ -309,27 +310,6 @@ def run_genetic_algorithm(
 
 
 # Helper functions needed by run_genetic_algorithm
-def update_fitness_window(fitness_window, new_fitnesses, window_size):
-    """Update sliding window of fitness values"""
-    if not fitness_window:
-        fitness_window = []
-    fitness_window.extend(new_fitnesses)
-    return fitness_window[-window_size:]
-
-def calculate_window_statistics(fitness_window, window_size):
-    """Calculate statistics for current fitness window"""
-    window_data = fitness_window[-window_size:]
-    mean = sum(window_data)/len(window_data) if window_data else 0
-    sorted_data = sorted(window_data)
-    n = len(sorted_data)
-    
-    median = 0.0
-    if n:
-        mid = n // 2
-        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
-    
-    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
-    return mean, median, std
 
 if __name__ == "__main__":
     main()
@@ -360,6 +340,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     table.add_row("Best Fitness", f"{best['fitness']:.0f}")
     table.add_row("Worst Fitness", f"{worst['fitness']:.0f}") 
     table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
+    table.add_row("Window Best/Worst", f"{best_window:.0f} / {worst_window:.0f}")
     table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
     
     console.print(table)
