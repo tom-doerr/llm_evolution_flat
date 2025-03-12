@@ -192,6 +192,7 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context"""
+    import re  # Fix missing import
     validation_pattern = r"^(?=.*a)[A-Za-z]{23,40}$"  # Lookahead for at least one 'a'
     
     def validate_mutation(response):
