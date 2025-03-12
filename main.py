@@ -215,9 +215,12 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict], pop_size: int, problem: str) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
+    assert pop_size <= 1_000_000, "Population exceeds maximum limit"
     next_gen = parents.copy()
     
-    while len(next_gen) < pop_size:
+    # Cap population growth while maintaining diversity
+    max_children = min(pop_size * 2, 1_000_000)
+    while len(next_gen) < max_children and len(next_gen) < pop_size:
         parent = random.choice(parents) if parents else create_agent("")
         try:
             child = crossover(parent, population, problem)
@@ -333,30 +336,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     )
     console.print(panel)
 
-def update_fitness_window(fitness_window, new_fitnesses, window_size):
-    """Update sliding window of fitness values"""
-    # Maintain sliding window of last 100 evaluations
-    fitness_window.extend(new_fitnesses)
-    if len(fitness_window) > window_size:
-        fitness_window = fitness_window[-window_size:]
-    return fitness_window
-
-def calculate_window_statistics(fitness_window, window_size):
-    """Calculate statistics for current fitness window"""
-    # Use last 100 evaluations for statistics
-    window = fitness_window[-window_size:]
-    if not window:
-        return 0.0, 0.0, 0.0, 0.0, 0.0
-    
-    mean = np.mean(window)
-    median = np.median(window)
-    std = np.std(window)
-    
-    # Track best/worst in current population
-    best = max(window) if len(window) >= 100 else 0.0
-    worst = min(window) if len(window) >= 100 else 0.0
-    
-    return mean, median, std, best, worst
+from helpers import calculate_window_statistics, update_fitness_window
 
 def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
