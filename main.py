@@ -476,7 +476,6 @@ def display_generation_stats(generation: int, generations: int, population: list
     
     # Track diversity in window stats
     stats['diversity'] = diversity
-    current_pop_size = len(population)
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
