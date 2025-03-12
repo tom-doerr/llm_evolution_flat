@@ -25,6 +25,7 @@ dspy.configure(lm=lm)
 
 # Validate configuration
 assert isinstance(lm, dspy.LM), "LM configuration failed"
+assert lm.model == "openrouter/google/gemini-2.0-flash-001", "Model must match spec.md"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
@@ -121,10 +122,10 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Combined weights calculation and sampling in one vectorized operation
+    # Weighted sampling per spec.md: fitness² * Pareto distribution
     weights = np.nan_to_num(
-        np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) * 
-        (np.random.pareto(3.0, len(population)) + 1),
+        np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) *
+        (np.random.pareto(3.0, len(population)) + 1),  # Pareto shape=3.0
         nan=1e-6
     ).clip(1e-6)
     
