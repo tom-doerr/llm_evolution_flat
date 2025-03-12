@@ -13,7 +13,7 @@ import dspy
 
 # TODO List (sorted by priority):
 # 1. Optimize LLM prompt validation
-# 2. Implement Pareto distribution for parent selection
+# 2. Implement sliding window statistics
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -160,26 +160,22 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
-    # Calculate population diversity
-    diversity = calculate_diversity(population)
+    # Sort population by fitness descending
+    sorted_pop = sorted(population, key=lambda x: -x['fitness'])
     
-    # Calculate weights using fitness squared (Pareto distribution weighting)
-    min_fitness = min(agent['fitness'] for agent in population)
-    weights = np.array([(agent['fitness'] - min_fitness + 1e-8)**2 for agent in population])
+    # Calculate Pareto weights (rank^2 weighting)
+    ranks = np.arange(1, len(sorted_pop)+1)
+    weights = 1.0 / (ranks**2)
     weights /= weights.sum()  # Normalize
     
-    # Validate weights before selection
-    assert np.all(weights >= 0), "Negative weights detected in parent selection"
-    assert len(weights) == len(population), "Weight/population size mismatch"
-    
-    # Select half population using weighted sampling without replacement
+    # Select half population using Pareto distribution sampling
     selected_indices = np.random.choice(
-        len(population),
-        size=len(population)//2,
+        len(sorted_pop),
+        size=len(sorted_pop)//2,
         replace=False,
         p=weights
     )
-    return [population[i] for i in selected_indices]
+    return [sorted_pop[i] for i in selected_indices]
 
 
 
