@@ -110,18 +110,20 @@ def select_parents(population: List[dict]) -> List[dict]:
     probs += 1e-8  # Add small epsilon to avoid zero probabilities
     probs /= probs.sum()  # Renormalize
     
-    # Gumbel-max trick for weighted sampling without replacement
-    population_size = len(population)
+    # Weighted sampling without replacement using numpy choice
     sample_size = len(population) // 2
-    gumbel_noise = np.random.gumbel(0, 1, population_size)
-    scores = np.log(probs) + gumbel_noise
-    selected_indices = np.argpartition(-scores, sample_size)[:sample_size]
+    selected_indices = np.random.choice(
+        len(sorted_pop),
+        size=sample_size,
+        replace=False,
+        p=probs
+    )
     
     # Validate unique selection
     unique_indices = set(selected_indices)
     assert len(unique_indices) == sample_size, f"Duplicate selections {len(unique_indices)} != {sample_size}"
     
-    return [population[i] for i in selected_indices]
+    return [sorted_pop[i] for i in selected_indices]
 
 
 
