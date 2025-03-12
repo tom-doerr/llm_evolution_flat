@@ -181,6 +181,7 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context"""
+    import re  # Added missing import for regex validation
     # Allow spaces in validation per spec while preserving core rules
     validation_pattern = r"^[A-Za-z ]{23,40}$"
     mutate_prompt = dspy.structured.StructuredPrompt(
