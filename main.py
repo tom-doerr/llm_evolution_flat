@@ -19,8 +19,8 @@ def create_agent(chromosome: str) -> dict:
 
 def evaluate_agent(agent: dict, _problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
-    # Ensure chromosome is a string and limit length to 40 characters
-    chromosome = str(agent['chromosome'])[:40]
+    # Ensure chromosome is a string
+    chromosome = str(agent['chromosome'])
     
     # Calculate fitness based on the target rules
     fitness = 0.0
@@ -96,7 +96,7 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         for i in range(min(2, len(next_gen))):
             prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
             response = lm(prompt)
-            next_gen[i]['chromosome'] = response[:40]  # Limit to 40 chars
+            next_gen[i]['chromosome'] = response
         
         population = next_gen
 
