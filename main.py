@@ -29,8 +29,7 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
-    """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""    
-    # Use exact window size from spec.md
+    """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
     window = fitness_window[-WINDOW_SIZE:] if fitness_window else []
     window = window[-WINDOW_SIZE:]  # Ensure exact window size
     
@@ -42,8 +41,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         }
 
     arr = np.array(window, dtype=np.float64)
-    current_best_worst = (arr[-1], arr[-1]) if len(arr) > 0 else (0.0, 0.0)
-    current_best, current_worst = current_best_worst
+    current_best = arr[-1] if len(arr) > 0 else 0.0
     
     return {
         'mean': float(np.nanmean(arr)),
@@ -148,12 +146,13 @@ def select_parents(population: List[dict]) -> List[dict]:
     population = population[:MAX_POPULATION]
     assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
     
-    # Weighted sampling without replacement
+    # Weighted sampling without replacement with simplified probability calculation
     sample_size = min(len(population), MAX_POPULATION//2)
+    probabilities = weights / weights.sum() if weights.sum() > 0 else None
     selected_indices = np.random.choice(
         len(population),
         size=sample_size,
-        p=weights,
+        p=probabilities,
         replace=False
     )
     
