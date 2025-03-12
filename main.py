@@ -17,8 +17,11 @@ def create_agent(chromosome: str) -> dict:
     if isinstance(chromosome, list):
         chromosome = ''.join(chromosome)
     chromosome = str(chromosome).strip()[:40]  # Enforce max length
-    if len(chromosome) < 1:
-        raise ValueError("Chromosome cannot be empty")
+    
+    # Boundary condition assertions
+    assert len(chromosome) >= 1, "Agent chromosome cannot be empty"
+    assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds max"
+    assert all(c in string.ascii_letters + ' ' for c in chromosome), "Invalid characters in chromosome"
     if not chromosome:
         # Fallback to random chromosome if empty
         length = random.randint(20, 40)
@@ -100,8 +103,8 @@ def crossover(parent1: dict, parent2: dict) -> dict:
     new_chromosome = parent1['chromosome'][:split] + parent2['chromosome'][split:]
     return create_agent(new_chromosome)
 
-def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5, 
-                         log_file: str = 'evolution.log.gz'):
+def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5,
+                         mutation_rate: float = 0.5, log_file: str = 'evolution.log.gz'):
     """Run genetic algorithm with optimized logging and scaling"""
     assert pop_size > 1, "Population size must be greater than 1"
     assert generations > 0, "Number of generations must be positive"
@@ -155,16 +158,23 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
             child = crossover(parent1, parent2)
             next_gen.append(child)
         
-        # Mutate some children
-        for i in range(len(next_gen)//2):
-            next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
+        # Mutate children based on rate
+        for i in range(len(next_gen)):
+            if random.random() < mutation_rate:
+                next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
         
         # Use LLM to improve top candidates (only every 5 generations)
         if generation % 5 == 0:
             for i in range(min(2, len(next_gen))):
                 prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
-                try:
-                    response = lm(prompt)
+                # Retry up to 3 times on timeout
+                for attempt in range(3):
+                    try:
+                        response = lm(prompt)
+                        break  # Success - exit retry loop
+                    except TimeoutError:
+                        if attempt == 2:
+                            raise
                     # Ensure response is valid
                     # Validate response meets requirements
                     if (isinstance(response, str) and 

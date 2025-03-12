@@ -8,10 +8,10 @@
 4. Fitness function design dominates evolution direction
 
 ## Current Challenges
-- Balancing exploration vs exploitation in large populations
 - LLM response consistency for improvement prompts
-- Efficient logging at scale (1M+ agents)
-- Visualizing high-dimensional fitness landscapes
+- Tuning mutation/crossover rates for optimal exploration
+- Debugging rare chromosome validation failures
+- Balancing performance with extensive logging
 
 ## Optimization Opportunities
 - Vectorized fitness calculations

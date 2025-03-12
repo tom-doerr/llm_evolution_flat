@@ -7,13 +7,13 @@
 5. Need better error handling for LM timeouts
 
 ## Recently Completed
+[x] Add population statistics (mean/median/std)  
+[x] Harden LM response validation  
+[x] Implement mutation rate configuration  
+[x] Add boundary condition assertions  
+[x] Improve LM timeout handling with retries  
 [x] Implement vectorized population initialization  
 [x] Add compressed binary logging  
-[x] Enable million-agent population support  
-[x] Implement chromosome validation system  
-[x] Add negative reward handling in fitness calculation  
-[x] Create chromosome length limit (40 chars) enforcement  
-[x] Implement file logging cleanup on startup
 
 ## Current Issues/Notes
 - Need to harden LM response validation
