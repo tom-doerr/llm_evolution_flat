@@ -158,6 +158,7 @@ MUTATION_RATE = 0.1  # Base mutation probability
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
 HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
+HOTSPOT_ANYWHERE_PROB = 0.023  # ~1 hotspot per 40 char chromosome on average (spec.md requirement)
 # Probability tuned to achieve average 1 switch per chrom combined with punctuation
 HOTSPOT_ANYWHERE_PROB = 0.02  # Reduced from 0.02 to 0.015 to better match spec.md requirement
 
@@ -387,21 +388,20 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     """Calculate and return updated statistics for current generation"""
     fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
+    new_fitnesses = [a["fitness"] for a in evaluated_pop]
     
-    # Get all fitness scores first
-    fitness_scores = [a["fitness"] for a in evaluated_pop]
-    
-    # Combine stats calculation
-    return {
-        **calculate_window_statistics(
-            update_fitness_window(fitness_window, fitness_scores)),
+    # Consolidated stats calculation
+    stats = {
+        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitnesses)),
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        'best': max(fitness_scores),
+        'best': max(new_fitnesses),
         'best_core': max(evaluated_pop, key=lambda x: x["fitness"])["metrics"]["core_segment"],
-        'worst': min(fitness_scores)
-    }, fitness_window[-WINDOW_SIZE:]
+        'worst': min(new_fitnesses)
+    }
+    
+    return stats, fitness_window[-WINDOW_SIZE:]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
