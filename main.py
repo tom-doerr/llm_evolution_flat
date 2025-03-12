@@ -9,8 +9,8 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Implement chromosome structure scoring metrics
-# 2. Add mutation rate adaptation based on diversity
+# 1. Add mutation rate adaptation based on diversity
+# 2. Implement generation-based scoring weights
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -43,16 +43,31 @@ def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size
     return combined[-window_size:]
 
 def score_chromosome(chromosome: str) -> dict:
-    """Calculate structural scoring metrics"""
+    """Calculate comprehensive structural scoring metrics with validation"""
+    # Core segment analysis
     core = chromosome[:23].lower()
+    assert len(core) == 23, "Core segment must be exactly 23 characters"
+    
+    # Character type analysis
     vowels = sum(1 for c in core if c in 'aeiou')
     consonants = len(core) - vowels
     unique_chars = len(set(core))
+    
+    # Sequence pattern analysis
+    a_density = core.count('a') / 23
+    repeating_chars = sum(1 for i in range(1, len(core)) if core[i] == core[i-1] else 0)
+    
+    # Structural validation
+    assert 0 <= vowels <= 23, "Invalid vowel count"
+    assert 0 <= consonants <= 23, "Invalid consonant count"
+    assert 1 <= unique_chars <= 23, "Invalid uniqueness calculation"
     
     return {
         'vowel_ratio': vowels / 23,
         'consonant_ratio': consonants / 23,
         'uniqueness': unique_chars / 23,
+        'a_density': a_density,
+        'repeating_pairs': repeating_chars / 22,  # Possible pairs in 23 chars
         'core_segment': core
     }
 
@@ -85,9 +100,13 @@ def create_agent(chromosome: str) -> dict:
 
 def evaluate_agent(agent: dict, _problem_description: str) -> float:
     """Evaluate the agent based on the optimization target"""
-    # Ensure chromosome is a string
+    # Validate input before scoring
     chromosome = str(agent["chromosome"])
+    assert 23 <= len(chromosome) <= 40, f"Invalid chromosome length: {len(chromosome)}"
+    
     metrics = score_chromosome(chromosome)
+    assert 0 <= metrics['a_density'] <= 1, "Invalid a_density score"
+    assert 0 <= metrics['repeating_pairs'] <= 1, "Invalid repeating_pairs score"
 
     # Fitness calculation per hidden spec: +1 per 'a' in first 23, -1 after
     fitness = 0.0
