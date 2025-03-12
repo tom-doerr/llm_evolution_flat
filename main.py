@@ -132,14 +132,14 @@ def initialize_population(pop_size: int) -> List[dict]:
 def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     """Calculate parent selection weights with Pareto distribution and fitness^2"""
     assert len(population) > 0, "Cannot calculate weights for empty population"
-    # Spec.md requires Pareto distribution weighted by fitness^2
-    # Combined fitness and Pareto weights with numeric stability
-    weights = np.array([a['fitness']**2 for a in population], dtype=np.float64) * \
-             (np.random.pareto(2.0, len(population)) + 1)
-    weights = np.nan_to_num(weights, nan=1e-6)
-    weights = np.clip(weights, 1e-6, np.finfo(np.float64).max)
+    # Calculate fitness scores and pareto weights in one step
+    weights = (
+        np.array([a['fitness']**2 for a in population], dtype=np.float64) * 
+        (np.random.pareto(2.0, len(population)) + 1)
+    )
     
-    # Normalize using L1 norm for probability distribution
+    # Stabilize and normalize weights
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max)
     total = weights.sum()
     return weights / total if total > 0 else np.ones_like(weights)/len(weights)
 
@@ -280,18 +280,16 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         hotspots = random.sample(range(len(parent["chromosome"])), k=1)
     
     # Perform switches at hotspots with vectorized operations
-    mate_chrom = selected_mate["chromosome"]
-    switch_points = sorted(random.sample(hotspots, min(len(hotspots), 1)))
-    
-    # Build child chromosome using slicing
     parent_chrom = parent["chromosome"]
-    child_chrom = []
-    prev = 0
-    for point in switch_points:
-        child_chrom.append(parent_chrom[prev:point])
-        child_chrom.append(mate_chrom[point])
-        prev = point + 1
-    child_chrom.append(parent_chrom[prev:])
+    mate_chrom = selected_mate["chromosome"]
+    
+    # Build child chromosome using slicing with single switch point
+    switch_point = random.choice(hotspots) if hotspots else 0
+    child_chrom = (
+        parent_chrom[:switch_point] + 
+        mate_chrom[switch_point:switch_point+1] + 
+        parent_chrom[switch_point+1:]
+    )
     
     return create_agent(''.join(child_chrom)[:40])
 
