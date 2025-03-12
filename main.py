@@ -350,7 +350,7 @@ if __name__ == "__main__":
                        help='Maximum population size (per spec.md)')
     args = parser.parse_args()
     
-    run_genetic_algorithm(pop_size=args.pop_size)
+    run_genetic_algorithm(initial_pop_size=args.pop_size)
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format"""
