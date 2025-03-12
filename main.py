@@ -23,6 +23,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
 DEBUG = False  # Control debug output
+WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -71,14 +72,17 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be exactly 23 characters"
     
-    # Character type analysis
-    vowels = sum(1 for c in core if c in 'aeiou')
-    consonants = len(core) - vowels
-    unique_chars = len(set(core))
+    # Combined analysis for reduced variables
+    vowel_count = sum(1 for c in core if c in 'aeiou')
+    a_count = core.count('a')
     
-    # Sequence pattern analysis
-    a_density = core.count('a') / 23
-    repeating_chars = sum(1 if core[i] == core[i-1] else 0 for i in range(1, len(core)))
+    metrics = {
+        'vowel_ratio': vowel_count / 23,
+        'consonant_ratio': (23 - vowel_count) / 23,
+        'uniqueness': len(set(core)) / 23,
+        'a_density': a_count / 23,
+        'core_segment': core
+    }
     
     # Structural validation
     assert 0 <= vowels <= 23, "Invalid vowel count"
@@ -326,7 +330,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:  # Simplified
     try:
         chosen_id = int(raw_response.split(":", maxsplit=1)[0])  # Extract first number
     except (ValueError, IndexError):
-        if debug:
+        if DEBUG:
             print(f"Invalid LLM response format: {raw_response}")
         return random.choice(candidates)
         
