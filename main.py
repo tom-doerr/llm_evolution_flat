@@ -307,8 +307,9 @@ if __name__ == "__main__":
 def log_population(generation: int, stats: dict) -> None:
     """Log population data with rotation"""
     with open("evolution.log", "a" if generation else "w", encoding='utf-8') as f:
-        f.write(f"Gen{generation} | μ:{stats['mean']:.1f} | σ:{stats['std']:.1f} | "
-                f"Q1:{stats['q25']:.1f} | Q3:{stats['q75']:.1f}\n")
+        f.write(f"Generation {generation} | "
+                f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f} | "
+                f"Worst: {stats['worst']:.2f} | σ:{stats['std']:.1f}\n")
 
 def display_generation_stats(generation: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats"""
@@ -336,12 +337,13 @@ def calculate_diversity(population: List[dict]) -> float:
 
 def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[dict]:
     """Auto-adjust mutation rate based on population diversity"""
-    diversity_ratio = calculate_diversity(generation)
-    mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
+    div_ratio = calculate_diversity(generation)
+    mut_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     
-    # Apply mutations with list comprehension
+    # Apply mutations and track count
+    mut_count = 0
     mutated = [
-        mutate(agent["chromosome"]) if random.random() < mutation_rate else agent["chromosome"]
+        mutate(agent["chromosome"]) if random.random() < mut_rate else (agent["chromosome"], mut_count := mut_count + 1)[0]
         for agent in generation
     ]
     
@@ -349,9 +351,9 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     for agent, new_chrom in zip(generation, mutated):
         agent["chromosome"] = new_chrom
     
-    # Compact logging with unique count
+    # Enhanced logging
     unique_count = len({a["chromosome"] for a in generation})
-    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_count}/{len(generation)}")
+    print(f"🧬 D:{div_ratio:.0%} M:{mut_rate:.0%} U:{unique_count}/{len(generation)} Mut:{mut_count}")
     return generation
 
 def evaluate_population(population: List[dict]) -> List[dict]:
