@@ -184,8 +184,8 @@ def mutate_with_llm(agent: dict) -> str:
     mutation_chrom = agent["mutation_chromosome"]
     
     # Combined parameter extraction and validation
-    temperature = max(0.0, min(1.0, float(mutation_chrom[:3] or '0.7'))
-    top_p = max(0.0, min(1.0, float(mutation_chrom[3:7] or '0.9'))
+    temperature = max(0.0, min(1.0, float(mutation_chrom[:3] or '0.7')))
+    top_p = max(0.0, min(1.0, float(mutation_chrom[3:7] or '0.9')))
     
     response = dspy.Predict(MutateSignature)(
         chromosome=chromosome,
