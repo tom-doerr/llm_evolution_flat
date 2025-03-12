@@ -134,8 +134,8 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
 
 def mutate(chromosome: str) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    # Pure LLM-based mutation per spec - no fallbacks allowed
-    return mutate_with_llm(chromosome, PROBLEM)
+    # Get problem from DSPy configuration instead of global
+    return mutate_with_llm(chromosome, dspy.settings.get("problem"))
 
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
