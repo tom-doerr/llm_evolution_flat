@@ -191,14 +191,22 @@ def run_genetic_algorithm(
         for agent in population:
             evaluate_agent(agent, problem)
 
-        # Calculate population statistics
-        fitness_scores = [agent["fitness"] for agent in population]
-        mean_fitness = sum(fitness_scores) / len(fitness_scores)
-        sorted_fitness = sorted(fitness_scores)
-        median_fitness = sorted_fitness[len(fitness_scores) // 2]
-        std_fitness = (
-            sum((x - mean_fitness) ** 2 for x in fitness_scores) / len(fitness_scores)
-        ) ** 0.5
+        # Calculate sliding window statistics (last 100 evaluations)
+        window_size = 100
+        all_fitness = [agent["fitness"] for agent in population]
+        
+        # Maintain sliding window in memory
+        if not hasattr(run_genetic_algorithm, "fitness_window"):
+            run_genetic_algorithm.fitness_window = []
+        run_genetic_algorithm.fitness_window.extend(all_fitness)
+        run_genetic_algorithm.fitness_window = run_genetic_algorithm.fitness_window[-window_size:]
+        
+        # Calculate stats on window
+        window_fitness = run_genetic_algorithm.fitness_window
+        mean_fitness = sum(window_fitness) / len(window_fitness) if window_fitness else 0
+        sorted_fitness = sorted(window_fitness)
+        median_fitness = sorted_fitness[len(sorted_fitness)//2] if sorted_fitness else 0
+        std_fitness = (sum((x-mean_fitness)**2 for x in window_fitness)/len(window_fitness))**0.5 if window_fitness else 0
 
         # Get best/worst before logging
         sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)

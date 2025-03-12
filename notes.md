@@ -11,7 +11,7 @@
 - Tuning Pareto distribution parameters for optimal selection
 - Balancing LLM mutation rate with performance
 - Debugging weighted selection edge cases
-- Implementing sliding window statistics efficiently
+- Visualizing fitness history effectively
 
 ## Optimization Opportunities
 - Vectorized fitness calculations
