@@ -207,126 +207,141 @@ def run_genetic_algorithm(
         for agent in population:
             evaluate_agent(agent, problem)
 
-        # Track sliding window of last 100 evaluations as per spec
+        # Update and calculate sliding window statistics
         all_fitness = [agent["fitness"] for agent in population]
-        
-        # Initialize or update sliding window - only keep last 100 unique evaluations
         window_size = 100
-        if "fitness_window" not in locals():
-            fitness_window = []
-            
-        # Add current population fitnesses and enforce window size
-        fitness_window.extend(all_fitness)
-        fitness_window = fitness_window[-window_size:]
-        
-        # Calculate sliding window statistics
-        window_data = fitness_window[-window_size:]
-        mean_fitness = sum(window_data)/len(window_data) if window_data else 0
-        sorted_data = sorted(window_data)
-        n = len(sorted_data)
-        
-        # Median calculation
-        median_fitness = 0.0
-        if n:
-            mid = n // 2
-            median_fitness = (sorted_data[mid] if n % 2 else 
-                            (sorted_data[mid-1] + sorted_data[mid]) / 2)
-            
-        # Std deviation with Bessel's correction
-        std_fitness = (sum((x-mean_fitness)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
+        fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
+        mean_fitness, median_fitness, std_fitness = calculate_window_statistics(fitness_window, window_size)
 
         # Get best/worst before logging
         sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
         best = sorted_pop[0]
         worst = sorted_pop[-1]
 
-        # Detailed compressed logging per spec
-        with gzip.open(log_file, "at", encoding="utf-8") as f:
-            # Compressed JSON format with stats
-            for agent in population:
-                log_entry = {
-                    "gen": generation,
-                    "fitness": round(agent['fitness'], 1),
-                    "chromosome": agent['chromosome'],
-                    "mean": round(mean_fitness, 1),
-                    "median": round(median_fitness, 1),
-                    "std": round(std_fitness, 1)
-                }
-                f.write(json.dumps(log_entry) + "\n")
+        # Log population with generation stats
+        log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file)
 
-        # Rich formatted output with spec-compliant stats
-        console = Console()
-        table = Table(show_header=False, box=None, padding=0)
-        table.add_column(style="cyan")
-        table.add_column(style="yellow")
-        
-        table.add_row("Generation", f"{generation+1}/{generations}")
-        table.add_row("Population", f"{len(population)}")
-        table.add_row("Best Fitness", f"{best['fitness']:.0f}")
-        table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
-        table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
-        
-        console.print(table)
+        # Display generation statistics
+        display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness)
 
         # Validate population state
         assert best["fitness"] >= worst["fitness"], "Fitness ordering invalid"
         assert len(best["chromosome"]) <= 40, "Chromosome exceeded max length"
         assert len(worst["chromosome"]) <= 40, "Chromosome exceeded max length"
 
-        # Select parents and create next generation
+        # Generate next generation
         parents = select_parents(population)
-        next_gen = parents.copy()
-
-        # Create children through crossover with parent validation
-        while len(next_gen) < pop_size:
-            if parents:
-                parent = random.choice(parents)
-                child = crossover(parent, population, problem)
-            else:
-                # Handle insufficient parents by mutating existing members
-                parent = random.choice(parents) if parents else create_agent("")
-                child = create_agent(mutate(parent["chromosome"]))
-            next_gen.append(child)
+        next_gen = generate_children(parents, population, pop_size, problem)
 
         # Mutate children based on rate
         for i in range(len(next_gen)):
             if random.random() < mutation_rate:
                 next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
 
-        # Use LLM to improve top candidates (only every 5 generations)
+        # Improve top candidates periodically
         if generation % 5 == 0:
-            for i in range(min(2, len(next_gen))):
-                # LLM-based improvement with strict rules per spec
-                improve_prompt = dspy.Predict(
-                    "original_chromosome, problem_description -> improved_chromosome"
-                )
-                try:
-                    response = improve_prompt(
-                        original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE VOWEL DENSITY IN FIRST 23\n2. TRUNCATE BEYOND 23 CHARACTERS\n3. LETTERS ONLY\n4. MAX LENGTH 40\n5. ENHANCE STRUCTURAL INTEGRITY",
-                    )
-                    # Validate and apply response
-                    if (
-                        response.completions[0]
-                        and len(response.completions[0]) > 0
-                        and len(response.completions[0]) <= 40
-                        and all(
-                            c in string.ascii_letters + " " for c in response.completions[0]
-                        )
-                    ):
-                        next_gen[i]["chromosome"] = response.completions[0].strip()[:40]
-                    else:
-                        # If invalid response, mutate instead
-                        next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
-                except (TimeoutError, RuntimeError) as e:
-                    print(f"LLM improvement failed: {str(e)}")
-                    # If LLM fails, mutate instead
-                    next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
+            next_gen = improve_top_candidates(next_gen, problem)
 
         population = next_gen
 
 
 if __name__ == "__main__":
-    # TODO: Finalize problem description after testing
-    PROBLEM = "Optimize string patterns through evolutionary processes"  # Obfuscated description
-    run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)  # More meaningful test population
+    main()
+    
+# New helper functions below
+def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
+    """Log population data with generation statistics"""
+    with gzip.open(log_file, "at", encoding="utf-8") as f:
+        for agent in population:
+            log_entry = {
+                "gen": generation,
+                "fitness": round(agent['fitness'], 1),
+                "chromosome": agent['chromosome'],
+                "mean": round(mean_fitness, 1),
+                "median": round(median_fitness, 1),
+                "std": round(std_fitness, 1)
+            }
+            f.write(json.dumps(log_entry) + "\n")
+
+def display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness):
+    """Display generation statistics using rich table"""
+    console = Console()
+    table = Table(show_header=False, box=None, padding=0)
+    table.add_column(style="cyan")
+    table.add_column(style="yellow")
+    
+    table.add_row("Generation", f"{generation+1}/{generations}")
+    table.add_row("Population", f"{len(population)}")
+    table.add_row("Best Fitness", f"{best['fitness']:.0f}")
+    table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
+    table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
+    
+    console.print(table)
+
+def update_fitness_window(fitness_window, new_fitnesses, window_size):
+    """Update sliding window of fitness values"""
+    if not fitness_window:
+        fitness_window = []
+    fitness_window.extend(new_fitnesses)
+    return fitness_window[-window_size:]
+
+def calculate_window_statistics(fitness_window, window_size):
+    """Calculate statistics for current fitness window"""
+    window_data = fitness_window[-window_size:]
+    mean = sum(window_data)/len(window_data) if window_data else 0
+    sorted_data = sorted(window_data)
+    n = len(sorted_data)
+    
+    median = 0.0
+    if n:
+        mid = n // 2
+        median = (sorted_data[mid] if n % 2 else (sorted_data[mid-1] + sorted_data[mid]) / 2)
+    
+    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
+    return mean, median, std
+
+def generate_children(parents, population, pop_size, problem):
+    """Generate new population through crossover/mutation"""
+    next_gen = parents.copy()
+    
+    while len(next_gen) < pop_size:
+        if parents:
+            parent = random.choice(parents)
+            child = crossover(parent, population, problem)
+        else:
+            parent = random.choice(parents) if parents else create_agent("")
+            child = create_agent(mutate(parent["chromosome"]))
+        next_gen.append(child)
+    return next_gen
+
+def improve_top_candidates(next_gen, problem):
+    """Improve top candidates using LLM optimization"""
+    for i in range(min(2, len(next_gen))):
+        improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
+        try:
+            response = improve_prompt(
+                original_chromosome=next_gen[i]["chromosome"],
+                problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE VOWEL DENSITY IN FIRST 23\n2. TRUNCATE BEYOND 23 CHARACTERS\n3. LETTERS ONLY\n4. MAX LENGTH 40\n5. ENHANCE STRUCTURAL INTEGRITY",
+            )
+            if validate_improvement(response):
+                next_gen[i]["chromosome"] = response.completions[0].strip()[:40]
+            else:
+                next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
+        except (TimeoutError, RuntimeError) as e:
+            print(f"LLM improvement failed: {str(e)}")
+            next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
+    return next_gen
+
+def validate_improvement(response):
+    """Validate LLM improvement response meets criteria"""
+    return (
+        response.completions[0]
+        and len(response.completions[0]) > 0
+        and len(response.completions[0]) <= 40
+        and all(c in string.ascii_letters + " " for c in response.completions[0])
+    )
+
+def main():
+    """Main entry point"""
+    PROBLEM = "Optimize string patterns through evolutionary processes"
+    run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)
