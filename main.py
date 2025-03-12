@@ -137,7 +137,7 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     fitness_scores = np.array([a['fitness'] ** 2 for a in population], dtype=np.float64)
     assert not np.isnan(fitness_scores).any(), "NaN values detected in fitness scores"
     
-    # TODO: Consider making Pareto shape parameter configurable
+    # Pareto distribution weighting by fitness^2 per spec.md
     weights = fitness_scores * (np.random.pareto(2.0, len(population)) + 1)
     
     # Numeric stability with vectorized operations
@@ -256,10 +256,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         top_p=0.9
     )
 
-    return next(
-        (c for c in valid if c["chromosome"] == response.selected_mate.strip()[:40]),
-        random.choices(valid, weights=[c["fitness"]**2 + 1e-6 for c in valid])[0]
-    )
+    # Weighted sampling without replacement per spec.md
+    return random.choices(
+        valid, 
+        weights=[c["fitness"]**2 + 1e-6 for c in valid],
+        k=1
+    )[0]
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
@@ -291,7 +293,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         parent["chromosome"],
         mate["chromosome"],
         get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
-    )
+    ))
 
 
 
