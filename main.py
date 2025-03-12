@@ -36,21 +36,19 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     # Ensure chromosome is a string
     chromosome = str(agent['chromosome'])
     
-    # Calculate fitness with stronger incentives for 'a's and harsher penalties for length
+    # Calculate fitness per spec: +1 per 'a' in first 23, -1 per char beyond 23
     fitness = 0.0
     
-    # First 23 characters: +4 for 'a' (any case), -1 for others to strongly prioritize a's
+    # First 23 characters: +1 for each 'a' (case-insensitive)
     first_part = chromosome[:23].lower()
     a_count = first_part.count('a')
-    fitness += 4 * a_count  # Stronger reward for a's
-    fitness -= 1.0 * (len(first_part) - a_count)  # Increased penalty for non-a's
+    fitness += a_count
     
-    # After 23: -1 per character but allow some length for exploration
+    # After 23: -1 per character
     remaining = chromosome[23:]
-    fitness -= 1 * len(remaining)
+    fitness -= len(remaining)
     
-    # Extra penalty for exceeding 40 characters (should never happen due to truncation)
-    fitness -= 10 * max(0, len(chromosome) - 40)
+    # Length enforced by truncation in create_agent
     assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds maximum allowed"
     
     # Allow negative fitness as per spec
@@ -194,6 +192,6 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         population = next_gen
 
 if __name__ == "__main__":
-    PROBLEM = ("Generate a string with MAXIMUM lowercase 'a's in first 23 characters, "
+    PROBLEM = ("Generate a string with MAXIMUM 'a's in first 23 characters, "
                "then keep it short. STRICTLY prioritize 'a's over all other considerations!")
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=10)
