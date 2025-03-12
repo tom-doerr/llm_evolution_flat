@@ -393,7 +393,8 @@ def log_population(population: List[dict], generation: int, stats: dict, log_fil
 def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    best = get_population_extremes(population)[0]
+    best = stats['best']
+    worst = stats['worst']
     diversity = calculate_diversity(population)
     
     # Track diversity in window stats
