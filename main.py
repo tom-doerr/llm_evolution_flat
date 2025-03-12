@@ -261,10 +261,8 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     for candidate in valid_candidates:
         if candidate["chromosome"].lower().startswith(result):
             return candidate
-    return random.choice(
-        [c for c in valid_candidates if result.lower() in c["chromosome"].lower()],
-        default=random.choice(valid_candidates)
-    )
+    candidates = [c for c in valid_candidates if result.lower() in c["chromosome"].lower()]
+    return random.choice(candidates) if candidates else random.choice(valid_candidates)
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
@@ -550,6 +548,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     }
     handle_generation_output(stats, population)
     
+    updated_window = update_fitness_window(fitness_window, new_fitness)
     return population, updated_window
 
 def validate_population_state(best, worst) -> None:
