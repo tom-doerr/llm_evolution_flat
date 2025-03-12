@@ -287,12 +287,11 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         pass  # Truncate log
 
     for generation in range(1, generations+1):
-        population = evaluate_population(population)
+        population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        stats = calculate_window_statistics(fitness_window)
         
-        log_population(generation, stats)
-        display_generation_stats(generation, stats)
+        log_population(generation, calculate_window_statistics(fitness_window))
+        display_generation_stats(generation, calculate_window_statistics(fitness_window))
         
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
