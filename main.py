@@ -7,6 +7,12 @@ from rich.console import Console
 from rich.table import Table
 import dspy
 
+# TODO List (sorted by priority):
+# 1. Implement proper weighted sampling without replacement in parent selection
+# 2. Add chromosome validation before LLM mating selection
+# 3. Optimize fitness window statistics calculations
+# 4. Add population size monitoring/limiting
+
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
@@ -93,17 +99,19 @@ def select_parents(population: List[dict]) -> List[dict]:
     fitness_values = [max(a["fitness"], 0)**2 for a in sorted_pop]
     ranks = range(1, len(sorted_pop)+1)
     pareto_weights = [f * (1/(r**2)) for f, r in zip(fitness_values, ranks)]  # Alpha=2 Pareto distribution
+    total_weight = sum(pareto_weights)
     
-    if total_weight <= 0:
+    assert total_weight > 0, "Total parent selection weight must be positive"
         raise ValueError("All agents have zero fitness - cannot select parents")
     
     # Select without replacement using Pareto-weighted probabilities
     probabilities = [w/total_weight for w in pareto_weights]
-    selected_indices = random.choices(
-        range(len(sorted_pop)), 
-        weights=probabilities, 
-        k=len(population)//2
-    )
+    # Weighted sampling without replacement using reservoir sampling
+    selected_indices = []
+    population_size = len(population)
+    sample_size = len(population) // 2
+    for i in range(sample_size):
+        selected_indices.append(random.choices(range(population_size), weights=probabilities, k=1)[0])
     
     # Deduplicate while preserving order using dictionary (insertion ordered in Python 3.7+)
     return list({agent["chromosome"]: population[i] for i in selected_indices}.values())
@@ -348,6 +356,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
     table.add_row("Generation", f"{generation+1}/{generations}")
     table.add_row("Population", f"{len(population):,}")  # Format with commas
     table.add_row("Best Fitness", f"{best['fitness']:.0f}")
+    table.add_row("Worst Fitness", f"{worst['fitness']:.0f}") 
     table.add_row("Window μ/σ/med", f"{mean_fitness:.0f} ±{std_fitness:.0f} | {median_fitness:.0f}")
     table.add_row("Best Chromosome", f"{best['chromosome'][:23]}...")
     
