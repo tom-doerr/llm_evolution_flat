@@ -451,10 +451,9 @@ if __name__ == "__main__":
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
-    assert MAX_CORE == 23, "MAX_CORE constant modified"
-    assert MAX_CHARS == 40, "MAX_CHARS constant modified"
-    assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
-    # Validate population invariants
+    # Validate constants and population invariants
+    assert MAX_CORE == 23 and MAX_CHARS == 40 and MAX_POPULATION == 1_000_000, \
+        "Core constants modified"
     assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst fitness"
     assert 0 <= best['fitness'] <= 1e6, "Fitness out of reasonable bounds"
     assert 0 <= worst['fitness'] <= 1e6, "Fitness out of reasonable bounds"
