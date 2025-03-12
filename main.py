@@ -162,7 +162,8 @@ def mutate_with_llm(agent: dict) -> str:
     top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))       # Next 4 chars for top_p
     assert 0 <= temperature <= 2.0, "Temperature out of range"
     assert 0 <= top_p <= 1.0, "Top_p out of range"
-    assert all(0.0 <= x <= (2.0 if i == 0 else 1.0) for i, x in enumerate(temp_top_p)), "Invalid mutation params"
+    assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
+    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
@@ -180,18 +181,18 @@ def mutate_with_llm(agent: dict) -> str:
             and str(r).strip()[:23].count('a') >= core_a_count
         )
     )
-    return next(
-        (str(r).strip()[:40].lower()
-         for r in response.completions
-         if (len(str(r).strip()) >= 23 
-            and str(r).strip().startswith(agent["chromosome"][:23].lower())
-            and str(r).strip()[:23].count('a') >= core_a_count
-        )),
-        # Fallback mutation if no valid responses
-        agent["chromosome"][:23] + ''.join(
-            random.choices(string.ascii_letters.lower(),
-                           k=random.randint(0, max(0, len(agent["chromosome"])-23))))
-    )
+    # Look for first valid mutation response
+    for r in response.completions:
+        candidate = str(r).strip()[:40].lower()
+        if (len(candidate) >= 23 and
+            candidate.startswith(agent["chromosome"][:23].lower()) and
+            candidate[:23].count('a') >= core_a_count):
+            return candidate
+    
+    # Fallback mutation if no valid responses - preserve core and randomize rest
+    return agent["chromosome"][:23].lower() + ''.join(
+        random.choices(string.ascii_letters.lower(), 
+                      k=random.randint(0, 17)))
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
