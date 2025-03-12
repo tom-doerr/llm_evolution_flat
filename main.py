@@ -267,11 +267,15 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             len(candidates),
             size=min(5, len(candidates)),
             replace=False,
-            p=(weights := np.array([
-                (a['fitness']**2 * (np.random.pareto(2) + 1e-6)
-                for a in candidates
-                if validate_mating_candidate(a, parent)
-            ])) / np.sum(weights) if np.sum(weights) > 0 else None
+            p=np.where(
+                (weights := np.array([
+                    a['fitness']**2 * np.random.pareto(2) + 1e-6 
+                    for a in candidates 
+                    if validate_mating_candidate(a, parent)
+                ])).sum() > 0,
+                weights/weights.sum(),
+                np.ones(len(weights))/len(weights)
+            )
         )]
     )
     
