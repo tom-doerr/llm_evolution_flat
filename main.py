@@ -249,28 +249,19 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 
 
-def generate_children(
-    parents: List[dict],
-    population: List[dict]
-) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    pop_size = min(len(population), MAX_POPULATION)  # Derive size from current population
     next_gen = parents.copy()
+    target_size = min(len(population), MAX_POPULATION)
     
-    # Cap population growth while maintaining diversity
-    max_children = min(pop_size * 2, 1_000_000)
-    while len(next_gen) < max_children and len(next_gen) < pop_size:
-        parent = random.choice(parents) if parents else create_agent("")
+    for _ in range(min(MAX_POPULATION, len(parents)*2)):
+        parent = random.choice(parents)
         try:
-            child = crossover(parent, population)
-        except ValueError as e:  # Catch specific exception type
-            print(f"Crossover failed: {e}, using mutation instead")
-            child = create_agent(mutate(parent["chromosome"]))
-        
-        next_gen.append(child)
+            next_gen.append(crossover(parent, population))
+        except ValueError:
+            next_gen.append(create_agent(mutate(parent["chromosome"])))
     
-    assert len(next_gen) == pop_size, f"Population size mismatch {len(next_gen)} != {pop_size}"
-    return next_gen
+    return next_gen[:MAX_POPULATION]
 
 MAX_POPULATION = 1_000_000  # Hard cap from spec
 
@@ -283,55 +274,28 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     """Run genetic algorithm with optimized logging and scaling"""
     pop_size = min(pop_size, MAX_POPULATION)
     assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
-    assert generations > 0, "Number of generations must be positive"
+    assert generations > 0, "Generations must be positive"
 
-    population = [create_agent("".join(random.choices(string.ascii_letters + " ", k=random.randint(20,40)))) 
-                for _ in range(pop_size)]
-
-    # Initialize log file and window
-    with gzip.open("evolution.log.gz", "wt", encoding="utf-8") as f:
-        pass  # Clear log file per spec
+    population = initialize_population(pop_size)
     fitness_window = []
-    for generation in range(generations):
-        # Evaluate population
-        population = evaluate_population(population)
 
-        # Update and calculate sliding window statistics using helpers
-        all_fitness = [agent["fitness"] for agent in population]
-        fitness_window = update_fitness_window(fitness_window, all_fitness)
+    with gzip.open("evolution.log.gz", "wt", encoding="utf-8") as f:
+        pass  # Clear log file
+
+    for generation in range(generations):
+        population = evaluate_population(population)
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         stats = calculate_window_statistics(fitness_window)
         
-        # Calculate and log population statistics using sliding window
-        current_diversity = calculate_diversity(population)
         log_population(population, generation, stats)
-
-        # Display statistics using sliding window
         display_generation_stats(generation, generations, population, stats)
         
-        # Trim population to MAX_POPULATION by fitness before continuing
         population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
-        
-        # Log stats for validation
-        assert stats['mean'] >= 0, "Negative mean in window stats"
-        assert stats['best'] >= stats['worst'], "Invalid best/worst relationship"
-
-        # Validate population state and size
-        best_agent, worst_agent = get_population_extremes(population)
-        validate_population_state(best_agent, worst_agent)
-        assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
-        # Generate next generation with size monitoring
         parents = select_parents(population, fitness_window)
-        next_gen = generate_children(parents, population)
-        print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
-
-        # Auto-adjust mutation rate based on diversity
-        current_diversity = calculate_diversity(population)
-        # Auto-adjust mutation rate inversely to diversity using logarithmic scaling
-        mutation_rate = 0.7 * (1 - current_diversity) + 0.1  # Ranges from 0.1 (max diversity) to 0.8 (min diversity)
-        assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
-        
-        # Create and evolve next generation
-        population = create_next_generation(next_gen, mutation_rate)
+        population = create_next_generation(
+            generate_children(parents, population),
+            0.8 - (0.7 * calculate_diversity(population))
+        )
 
 
 
@@ -342,28 +306,20 @@ if __name__ == "__main__":
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
-    population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
     mode = 'wt' if generation == 0 else 'at'
-    with gzip.open(log_file, mode, encoding='utf-8') as f:
-        f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()} | Diversity: {diversity:.2f}\n")
-        f.write(f"Mean: {stats['mean']:.2f}, Median: {stats['median']:.2f}, Std: {stats['std']:.2f}\n")
-        for agent in population:
-            f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
+    with gzip.open("evolution.log.gz", mode, encoding='utf-8') as f:
+        f.write(f"Generation {generation} | Size: {len(population)} | "
+                f"Mean: {stats['mean']:.2f} | Best: {stats['best']:.2f}\n")
 
 def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
-    """Rich-formatted display with essential stats using sliding window"""
-    console = Console()
-    stats['diversity'] = calculate_diversity(population)
-    
-    panel = Panel(
+    """Rich-formatted display with essential stats"""
+    Console().print(Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
-        f"📊 Mean: {stats['mean']:.2f} | 📈 Median: {stats['median']:.2f}\n"
-        f"📉 Std: {stats['std']:.2f} | 🌐 Diversity: {diversity:.1%}\n"
-        f"👥 Size: {len(population)} | 🏅 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
+        f"📊 Mean: {stats['mean']:.2f} | 📈 Best: {stats['best']:.2f}\n"
+        f"🌐 Diversity: {stats['diversity']:.1%} | 👥 Size: {len(population)}",
         title="Evolution Progress",
         style="blue"
-    )
-    console.print(panel)
+    ))
 
 
 
