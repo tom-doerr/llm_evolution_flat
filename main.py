@@ -172,6 +172,7 @@ def mutate_with_llm(agent: dict) -> str:
         top_p=top_p,
     )
 
+    # Remove unused agent_chrom variable
     valid_mutations = (
         str(r).strip()[:40].lower()
         for r in response.completions
@@ -365,7 +366,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8") as _:  # Use _ for unused var
         pass  # Opening in write mode automatically truncates the file
     
     evolution_loop(population, max_population)
