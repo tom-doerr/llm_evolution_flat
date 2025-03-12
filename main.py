@@ -376,10 +376,9 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population: List[dict], generation: int, log_file: str) -> None:
+def log_population(population: List[dict], generation: int, stats: dict, log_file: str) -> None:
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
-    stats = calculate_window_statistics([a["fitness"] for a in population])
     
     # Trim population to MAX_POPULATION by fitness before logging
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
