@@ -9,11 +9,16 @@ dspy.configure(lm=lm)
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
-    # Ensure chromosome is a string
+    # Ensure chromosome is a non-empty string
     if isinstance(chromosome, list):
         chromosome = ''.join(chromosome)
+    chromosome = str(chromosome).strip()
+    if not chromosome:
+        # Fallback to random chromosome if empty
+        length = random.randint(20, 40)
+        chromosome = ''.join(random.choices(string.ascii_letters + ' ', k=length))
     return {
-        'chromosome': str(chromosome),
+        'chromosome': chromosome,
         'fitness': 0.0
     }
 
@@ -95,8 +100,17 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         # Use LLM to improve top candidates
         for i in range(min(2, len(next_gen))):
             prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
-            response = lm(prompt)
-            next_gen[i]['chromosome'] = response
+            try:
+                response = lm(prompt)
+                # Ensure response is valid
+                if response and isinstance(response, str) and len(response) > 0:
+                    next_gen[i]['chromosome'] = response
+                else:
+                    # If invalid response, keep original chromosome
+                    next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
+            except Exception:
+                # If LLM fails, mutate instead
+                next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
         
         population = next_gen
 
