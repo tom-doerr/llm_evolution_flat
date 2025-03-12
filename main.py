@@ -64,23 +64,28 @@ def score_chromosome(chromosome: str) -> dict:
     core = chromosome[:23].lower()
     assert len(core) == 23, "Core segment must be 23 characters"
     
-    vowels = a_count = repeats = 0
+    vowels = 0
+    a_count = 0
+    repeats = 0
     prev_char = None
     unique_chars = set()
     
     for c in core:
         unique_chars.add(c)
-        vowels += c in 'aeiou'
-        a_count += c == 'a'
-        repeats += c == prev_char
+        if c in 'aeiou':
+            vowels += 1
+        if c == 'a':
+            a_count += 1
+        if c == prev_char:
+            repeats += 1
         prev_char = c
     
     return {
-        'vowel_ratio': counts['vowels'] / 23,
-        'consonant_ratio': (23 - counts['vowels']) / 23,
+        'vowel_ratio': vowels / 23,
+        'consonant_ratio': (23 - vowels) / 23,
         'uniqueness': len(unique_chars) / 23,
-        'a_density': counts['a_count'] / 23,
-        'repeating_pairs': counts['repeats'] / 22,
+        'a_density': a_count / 23,
+        'repeating_pairs': repeats / 22,
         'core_segment': core
     }
 
