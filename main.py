@@ -134,21 +134,16 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Get candidates and calculate Pareto weights
+    # Calculate weights and sample in one flow
     candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
-    pareto_weights = weights * np.random.pareto(2.0, len(weights))
+    pareto_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates]) * np.random.pareto(2.0, len(candidates))
     
-    # Normalize and sample without replacement
-    sample_size = min(len(population), MAX_POPULATION//2)
-    selected_indices = np.random.choice(
+    return [candidates[i] for i in np.random.choice(
         len(candidates),
-        size=sample_size,
+        size=min(len(population), MAX_POPULATION//2),
         p=pareto_weights/pareto_weights.sum(),
         replace=False
-    )
-    
-    return [candidates[i] for i in selected_indices]
+    )]
 
 
 
@@ -307,12 +302,12 @@ def evolution_loop(population: List[dict]) -> None:
     fitness_window = []
     
     for generation in itertools.count(0):
-        # Evaluate and update population
+        # Evaluate, update and process in combined steps
         population = evaluate_population(population)[:MAX_POPULATION]
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        
-        # Generate stats and evolve
         stats = calculate_window_statistics(fitness_window)
+        
+        # Combined stats update
         stats.update({
             'generation': generation,
             'population_size': len(population),
