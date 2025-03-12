@@ -282,6 +282,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         if validate_mating_candidate(a, parent)
     ]
     
+    mates = []  # Initialize mates list to prevent possible-used-before-assign
     # Weighted selection using numpy
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-6 for a in valid_candidates], dtype=np.float64)
