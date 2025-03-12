@@ -337,11 +337,19 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     diversity_ratio = calculate_diversity(generation)
     mutation_rate = np.clip(base_mutation_rate * (1.0 - np.log1p(diversity_ratio)), 0.1, 0.8)
     
-    for agent in generation:
-        if random.random() < mutation_rate:
-            agent["chromosome"] = mutate(agent["chromosome"])
+    # Apply mutations with list comprehension
+    mutated = [
+        mutate(agent["chromosome"]) if random.random() < mutation_rate else agent["chromosome"]
+        for agent in generation
+    ]
     
-    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%}")
+    # Update chromosomes in place
+    for agent, new_chrom in zip(generation, mutated):
+        agent["chromosome"] = new_chrom
+    
+    # Compact logging with unique count
+    unique_count = len({a["chromosome"] for a in generation})
+    print(f"🧬 D:{diversity_ratio:.0%} M:{mutation_rate:.0%} U:{unique_count}/{len(generation)}")
     return generation
 
 def evaluate_population(population: List[dict]) -> List[dict]:
