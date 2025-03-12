@@ -86,20 +86,26 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using fitness^2 weighted sampling without replacement"""
-    # Calculate raw fitness values and handle zero-sum case
     fitness_values = [agent["fitness"] for agent in population]
-    
-    # Square fitness values for weighting as per spec
-    squared_fitness = [max(f, 0)**2 for f in fitness_values]  # Ensure non-negative weights
+    squared_fitness = [max(f, 0)**2 for f in fitness_values]
     total_weight = sum(squared_fitness)
     
-    # Strict Pareto selection per spec - no fallback to random
     if total_weight <= 0:
         raise ValueError("All agents have zero fitness - cannot select parents")
     
-    # Weighted selection without replacement with deduplication
-    selected = []
-    unique_chromosomes = set()
+    # Normalize weights and select without replacement
+    probabilities = [w/total_weight for w in squared_fitness]
+    selected_indices = random.choices(
+        range(len(population)), 
+        weights=probabilities, 
+        k=len(population)//2
+    )
+    
+    # Deduplicate while preserving order
+    seen = set()
+    return [agent for i in selected_indices 
+            if not (agent := population[i])["chromosome"] in seen 
+            and not seen.add(agent["chromosome"])]
     
     # Create candidate pool with deduplication
     candidates = [agent for agent in population if agent["chromosome"] not in unique_chromosomes]
