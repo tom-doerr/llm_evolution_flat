@@ -266,11 +266,11 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     )
 
     # Weighted sampling without replacement per spec.md
-    return random.choices(
-        valid, 
-        weights=[c["fitness"]**2 + 1e-6 for c in valid],
-        k=1
-    )[0]
+    # Weighted sampling without replacement using Pareto distribution (spec.md requirements)
+    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
+    pareto = np.random.pareto(3.0, len(valid)) + 1
+    probs = (weights * pareto) / (weights * pareto).sum()
+    return valid[np.random.choice(len(valid), p=probs)]
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
@@ -303,8 +303,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     ))
     
     return create_agent(build_child_chromosome(parent, mate))
-    ))
-
 
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
@@ -384,11 +382,11 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
-    population = population[:max_population]  # Simple truncation instead of sorted
-    
     fitness_window = []
     
     for generation in itertools.count(0):
+        # Trim population before each iteration (spec.md population limit)
+        population = sorted(population, key=lambda x: x["fitness"], reverse=True)[:max_population]
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         
