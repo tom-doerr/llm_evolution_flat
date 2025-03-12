@@ -234,10 +234,8 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     mate = llm_select_mate(parent, candidates)
     split_point = random.randint(12, 34)
-    child_chromosome = parent["chromosome"][:split_point] + mate["chromosome"][split_point:]
     return create_agent(
-        child_chromosome[:40] if validate_chromosome(child_chromosome) 
-        else mutate(parent["chromosome"]))
+        (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
     )
 
 
@@ -282,7 +280,7 @@ def run_genetic_algorithm(pop_size: int = 1_000_000) -> None:
         })
         
         log_population(iteration, stats)
-        display_generation_stats(stats)
+        display_generation_stats(iteration, stats, population)
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
         iteration += 1
 
