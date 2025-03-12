@@ -1,11 +1,11 @@
-chromosomes to seperate functionality to make sure each agent has info for every area
+chromosomes to separate functionality to make sure each agent has info for every area
 as much evolution as possible, even for combination and mate selection
 easy way to run it on problems
 would be great if this would work as a dspy optimizer
 easy to understand output when running the program
 display population size
 rewards can be negative
-there should be little, but information dense otput so we don't fill up context
+there should be little, but information dense output so we don't fill up context
 the program should log more detailed information to a file
 the log file should be emptied when we start the program
 keep it simple
@@ -14,12 +14,12 @@ include mean, median, std deviation for population reward
 set the default population size limit to one million
 mutation should be llm based, maybe by prompting the llm to rephrase the text
 mating should work by loading the dna of agents into the prompt and then using the mating chromosome/prompt of the agent allowed to mate to select one of the candidates
-the canidates list should be created by weighted sampling based on score without replacement
+the candidates list should be created by weighted sampling based on score without replacement
 statistics shown should be shown for the last 100 evaluations
 
 
 as a task i want to optimize this hidden goal for testing: reward increases for every a for the first 23 characters and decreases for every character after 23 characters. limit token output to 40 for the dspy lm
-don't do reward shapping
+don't do reward shaping
 this is supposed to be hard, I don't expect good results
 
 
@@ -45,7 +45,3 @@ don't enumerate the task list
 don't use caching for the llm requests
 don't work on error handling, the code doesn't need to be reliable right now
 do use TODO comments a lot
-
-
-
-
