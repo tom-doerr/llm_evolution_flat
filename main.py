@@ -261,8 +261,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             replace=False,
             p=[
                 a['fitness']**2 * (np.random.pareto(2) + 1e-6)
-                for a in candidates
-                if validate_mating_candidate(a, parent)
+                for a in [a for a in candidates if validate_mating_candidate(a, parent)]
             ]
             )
         )]
