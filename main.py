@@ -17,6 +17,7 @@ import dspy
 # 5. Validate chromosome structure in crossover
 
 # Configure DSPy with OpenRouter and timeout
+MAX_POPULATION = 1_000_000  # From spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -349,8 +350,10 @@ def generate_children(parents: List[dict], population: List[dict], pop_size: int
     assert len(next_gen) == pop_size, f"Population size mismatch {len(next_gen)} != {pop_size}"
     return next_gen
 
-def improve_top_candidates(next_gen, problem):
+def improve_top_candidates(next_gen: List[dict], problem: str) -> List[dict]:
     """Improve top candidates using LLM optimization"""
+    assert len(next_gen) >= 2, "Need at least 2 candidates for improvement"
+    assert isinstance(problem, str), "Problem description must be a string"
     for i in range(min(2, len(next_gen))):
         improve_prompt = dspy.Predict("original_chromosome, problem_description -> improved_chromosome")
         try:
@@ -416,7 +419,7 @@ def run_genetic_algorithm(
 
         # Validate population state and size
         validate_population_state(best, worst)
-        assert len(population) <= MAX_POPULATION, f"Population overflow {len(population)} > {MAX_POPULATION}"
+        assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
         pop_size = len(population)  # Get current population size
         pop_size = len(population)  # Track current population size
         
@@ -534,6 +537,9 @@ def apply_mutations(generation, base_mutation_rate):
     # Apply mutations with rate clamping
     mutation_rate = np.clip(mutation_rate, 0.1, 0.8)
     assert 0.1 <= mutation_rate <= 0.8, f"Mutation rate {mutation_rate} out of bounds"
+    
+    # Track unique chromosomes before mutations
+    unique_chromosomes = len({agent["chromosome"] for agent in generation})
     
     # Vectorized mutation application
     for agent in generation:
