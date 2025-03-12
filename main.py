@@ -386,10 +386,15 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     
     for generation in itertools.count(0):
         # Continuous population trimming with combined operations
-        population = (random.choices(population, 
-                      weights=[a['fitness']**2 + 1e-6 for a in population], 
-                      k=max_population) 
-                      if len(population) > max_population else population)
+        # Weighted sampling without replacement using fitness² weighting
+        pop_weights = [a['fitness']**2 + 1e-6 for a in population]
+        population = population if len(population) <= max_population else [
+            population[i] for i in np.random.choice(
+                len(population),
+                size=max_population,
+                replace=False,
+                p=np.array(pop_weights)/sum(pop_weights)
+        ]
         
         population = evaluate_population(population)
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
