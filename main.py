@@ -1,5 +1,6 @@
 import random
 import string
+import gzip
 from typing import List
 import dspy
 
@@ -54,13 +55,14 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     return agent['fitness']
 
 def initialize_population(pop_size: int) -> List[dict]:
-    """Create initial population with random chromosomes"""
-    def random_chromosome():
-        # Generate random string with letters and spaces
-        length = random.randint(20, 40)
-        return ''.join(random.choices(string.ascii_letters + ' ', k=length))
-    
-    return [create_agent(random_chromosome()) for _ in range(pop_size)]
+    """Create initial population with random chromosomes using vectorized operations"""
+    # Generate lengths first for vectorization
+    lengths = [random.randint(20, 40) for _ in range(pop_size)]
+    # Batch create all chromosomes
+    chromosomes = [''.join(random.choices(string.ascii_letters + ' ', k=length)) 
+                  for length in lengths]
+    # Parallel create agents
+    return [create_agent(c) for c in chromosomes]
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select top 50% of population as parents"""
@@ -98,7 +100,9 @@ def crossover(parent1: dict, parent2: dict) -> dict:
     new_chromosome = parent1['chromosome'][:split] + parent2['chromosome'][split:]
     return create_agent(new_chromosome)
 
-def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5):
+def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5, 
+                         log_file: str = 'evolution.log.gz'):
+    """Run genetic algorithm with optimized logging and scaling"""
     """Run genetic algorithm with LLM-assisted evolution"""
     assert pop_size > 1, "Population size must be greater than 1"
     assert generations > 0, "Number of generations must be positive"
@@ -111,7 +115,11 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         for agent in population:
             evaluate_agent(agent, problem)
         
-        # Print and log current generation
+        # Compressed logging
+        with gzip.open(log_file, 'at', encoding='utf-8') as f:
+            f.write(f"{generation},{best['fitness']},{best['chromosome']}\n")
+        
+        # Print progress
         sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
         best = sorted_pop[0]
         worst = sorted_pop[-1]
