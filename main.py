@@ -1,16 +1,7 @@
 import random
 import string
-import logging
 from typing import List
 import dspy
-
-# Configure logging
-logging.basicConfig(
-    filename='evolution.log',
-    filemode='w',  # Empty file on start
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
-)
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40, timeout=10)
@@ -97,7 +88,7 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
     assert generations > 0, "Number of generations must be positive"
     
     population = initialize_population(pop_size)
-    logging.info("Starting evolution with population size %s", pop_size)
+    assert len(population) == pop_size, f"Population size mismatch {len(population)} != {pop_size}"
     
     for generation in range(generations):
         # Evaluate all agents
@@ -114,10 +105,10 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']})")
         print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']})")
         
-        # Log detailed info
-        logging.info("Generation %s", generation+1)
-        logging.info("Best: %s (fitness: %s)", best['chromosome'], best['fitness'])
-        logging.info("Worst: %s (fitness: %s)", worst['chromosome'], worst['fitness'])
+        # Validate population state
+        assert best['fitness'] >= worst['fitness'], "Fitness ordering invalid"
+        assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
+        assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
         
         # Select parents and create next generation
         parents = select_parents(population)
