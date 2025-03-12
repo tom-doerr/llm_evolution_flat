@@ -249,12 +249,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         k=min(5, len(population))
     ))
     
-    parent_chrom = parent["chromosome"]
-    return create_agent(''.join([
+    return create_agent(''.join(
         selected_mate["chromosome"][i] if (random.random() < 1/len(parent["chromosome"]) or c in {'.', '!', '?', ' '})
         else c
         for i, c in enumerate(parent["chromosome"])
-    ][:40]))
+    )[:40])
 
 
 
