@@ -367,8 +367,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
         'diversity': calculate_diversity(population),
         'population_size': len(population),
         'best': max(a['fitness'] for a in population),
-        'worst': min(a['fitness'] for a in population),
-        'generation': stats.get('generation', 0) + 1
+        'worst': min(a['fitness'] for a in population)
     })
     return stats
 
