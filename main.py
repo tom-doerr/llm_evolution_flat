@@ -44,9 +44,8 @@ def calculate_window_statistics(fitness_window: list, window_size: int = 100) ->
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
-    """Update sliding window efficiently using deque-like behavior"""
-    combined = (fitness_window[-window_size:] if fitness_window else []) + new_fitnesses
-    return combined[-window_size:]
+    """Maintain sliding window of last 100 evaluations"""
+    return (fitness_window + new_fitnesses)[-window_size:]
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate comprehensive structural scoring metrics with validation"""
