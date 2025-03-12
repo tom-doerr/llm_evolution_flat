@@ -275,8 +275,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)
     fitness_window = []
 
+    # Initialize log file safely
     with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Truncate file immediately
+        pass  # Just truncate without separate write call
 
     for generation in range(generations):
         population = evaluate_population(population)
