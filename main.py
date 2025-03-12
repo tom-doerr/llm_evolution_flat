@@ -161,12 +161,12 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
-    # Calculate population diversity using evolution module
-    diversity = evolution.calculate_diversity(population)
+    # Calculate population diversity
+    diversity = calculate_diversity(population)
     
-    # Use Pareto distribution weighting by fitness^2 per spec
-    weights = np.array([(agent['fitness'] ** 2 + 1e-8) for agent in population])
-    weights += 1e-8  # Add epsilon to avoid zero weights
+    # Calculate weights using fitness squared (Pareto distribution weighting)
+    min_fitness = min(agent['fitness'] for agent in population)
+    weights = np.array([(agent['fitness'] - min_fitness + 1e-8)**2 for agent in population])
     weights /= weights.sum()  # Normalize
     
     # Validate weights before selection
