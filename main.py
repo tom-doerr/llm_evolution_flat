@@ -395,7 +395,7 @@ def log_population(population: List[dict], generation: int, log_file: str) -> No
 def display_generation_stats(generation: int, generations: int, population: list, stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    best, worst = get_population_extremes(population)
+    best = get_population_extremes(population)[0]
     diversity = calculate_diversity(population)
     
     # Track diversity in window stats
