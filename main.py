@@ -168,28 +168,37 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Combined extraction, prediction and validation in streamlined operations
     mc = agent["mutation_chromosome"]
-    temp, top_p = (max(0.0, min(1.0, float(mc[i:i+3] or d)) for i, d in ((0, '0.7'), (3, '0.9'))
+    agent_chrom = agent["chromosome"]
     
-    return next((
-        str(r).strip()[:40].lower()
-        for r in dspy.Predict(MutateSignature)(
-            chromosome=chromosome,
-            instructions=mc,
-            temperature=temp,
-            top_p=top_p,
-        ).completions
-        if (len(str(r).strip()) >= 23 
-            and str(r).strip().startswith(chromosome[:23].lower())
-            and str(r).strip()[:23].count('a') >= chromosome[:23].count('a'))
-    ), chromosome[:23] + ''.join(random.choices(string.ascii_letters.lower(), k=max(0, len(chromosome)-23)))
+    # Extract and validate parameters
+    temp_str = mc[0:3] or '0.7'
+    top_p_str = mc[3:7] or '0.9'
+    temperature = max(0.0, min(2.0, float(temp_str)))
+    top_p = max(0.0, min(1.0, float(top_p_str)))
+    
+    assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
+    assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
 
-    # Return first valid mutation or fallback
-    return next(valid_mutations, 
-        chromosome[:23] + ''.join(random.choices(
-            string.ascii_letters.lower(), 
-            k=max(0, len(chromosome)-23)
+    response = dspy.Predict(MutateSignature)(
+        chromosome=agent_chrom,
+        instructions=mc,
+        temperature=temperature,
+        top_p=top_p,
+    )
+
+    valid_mutations = (
+        str(r).strip()[:40].lower()
+        for r in response.completions
+        if (len(str(r).strip()) >= 23 
+            and str(r).strip().startswith(agent_chrom[:23].lower())
+            and str(r).strip()[:23].count('a') >= agent_chrom[:23].count('a'))
+    )
+
+    return next(valid_mutations,
+        agent_chrom[:23] + ''.join(random.choices(
+            string.ascii_letters.lower(),
+            k=max(0, len(agent_chrom)-23)
         ))
     )
 
