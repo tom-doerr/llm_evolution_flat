@@ -141,8 +141,8 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     # Calculate fitness^2 weights with Pareto distribution
-    weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
-    weights /= weights.sum()  # Normalize
+    weighted_weights = np.array([(a['fitness'] ** 2) * np.random.pareto(2) + 1e-6 for a in population])
+    weighted_weights /= weighted_weights.sum()  # Normalize
     
     # Weighted sampling without replacement
     selected_indices = np.random.choice(
