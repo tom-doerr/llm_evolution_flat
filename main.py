@@ -225,19 +225,19 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
+    window_pop = population[-WINDOW_SIZE:]
     candidates = random.choices(
-        population[-WINDOW_SIZE:],
-        weights=np.array([a["fitness"]**2 + 1e-6 for a in population[-WINDOW_SIZE:]]),
+        window_pop,
+        weights=np.array([a["fitness"]**2 + 1e-6 for a in window_pop]),
         k=min(5, len(population))
     )
     
     mate = llm_select_mate(parent, candidates)
-    split_point = random.randint(12, 34)
-    child_chromosome = (parent["chromosome"][:split_point] + mate["chromosome"][split_point:])[:40]
-    
     return create_agent(
-        child_chromosome if validate_chromosome(child_chromosome) 
-        else mutate(parent["chromosome"])
+        (parent["chromosome"][:(split_point := random.randint(12, 34))] + 
+         mate["chromosome"][split_point:])[:40] if validate_chromosome(
+             (child := parent["chromosome"][:split_point] + mate["chromosome"][split_point:])
+         ) else mutate(parent["chromosome"])
     )
 
 
