@@ -13,7 +13,6 @@ import dspy
 
 # TODO List (sorted by priority):
 # 1. Optimize LLM prompt validation
-# 2. Implement sliding window statistics
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -160,22 +159,30 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
-    # Sort population by fitness descending
-    sorted_pop = sorted(population, key=lambda x: -x['fitness'])
+    # Sort population by descending fitness
+    sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
+    ranks = np.arange(1, len(sorted_pop) + 1)
     
-    # Calculate Pareto weights (rank^2 weighting)
-    ranks = np.arange(1, len(sorted_pop)+1)
-    weights = 1.0 / (ranks**2)
+    # Calculate Pareto weights (1/rank^2)
+    weights = 1.0 / (ranks ** 2)
     weights /= weights.sum()  # Normalize
     
-    # Select half population using Pareto distribution sampling
+    # Validate weights before selection
+    assert np.all(weights >= 0), "Negative weights detected in parent selection"
+    assert len(weights) == len(sorted_pop), "Weight/population size mismatch"
+    
+    # Select half population using weighted sampling without replacement
     selected_indices = np.random.choice(
         len(sorted_pop),
         size=len(sorted_pop)//2,
         replace=False,
         p=weights
     )
-    return [sorted_pop[i] for i in selected_indices]
+    selected_parents = [sorted_pop[i] for i in selected_indices]
+    
+    # Validate selection size
+    assert len(selected_parents) == len(population)//2, "Parent selection size mismatch"
+    return selected_parents
 
 
 
@@ -287,11 +294,9 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
         return random.choice(candidates)
         
     # Validate selection is within range
-    try:
-        if 0 <= chosen_id < len(valid_candidates):
-            return valid_candidates[chosen_id]
-    except (ValueError, IndexError, AttributeError):
-        return random.choice(candidates)
+    if 0 <= chosen_id < len(valid_candidates):
+        return valid_candidates[chosen_id]
+    return random.choice(candidates)
 
 def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     """Create child through LLM-assisted mate selection"""
