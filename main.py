@@ -175,7 +175,7 @@ def mutate_with_llm(agent: dict) -> str:
     # Return first valid mutation or fallback
     return next(valid_mutations, chromosome[:23] + ''.join(random.choices(
         string.ascii_letters.lower(), 
-        k=max(0, len(chromosome)-23))
+        k=max(0, len(chromosome)-23)))
     ))
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
@@ -331,6 +331,7 @@ def display_generation_stats(generation: int, generations: int, population: List
     Console().print(Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
         f"📊 Mean: {stats['mean']:.2f} | 📈 Best: {stats['best']:.2f}\n"
+        f"📉 Median: {stats['median']:.2f} | σ: {stats['std']:.2f}\n"
         f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}",
         title="Evolution Progress",
         style="blue"
