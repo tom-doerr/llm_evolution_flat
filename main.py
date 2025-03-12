@@ -169,33 +169,35 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
+class MutateSignature(dspy.Signature):
+    """Mutate chromosomes while preserving first 23 characters and increasing 'a' density."""
+    chromosome = dspy.InputField(desc="Current chromosome to mutate")
+    instructions = dspy.InputField(desc="Mutation strategy instructions") 
+    mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
+
 def mutate_with_llm(agent: dict) -> str:
-    """Optimized LLM mutation with prompt caching and validation"""
+    """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
+    instruction = agent.get("mutation_chromosome", 
+                          "Change 1-2 characters after position 23 while keeping first 23 intact")
     
     try:
-        # Get mutation instruction from agent's own mutation chromosome
-        instruction = agent.get("mutation_chromosome", 
-                              "Change 1-2 characters after position 23 while keeping first 23 intact")
-        response = mutate_prompt(chromosome=chromosome, instructions=instruction)
+        # Use DSPy predictor directly without caching
+        predictor = dspy.Predict(MutateSignature)
+        response = predictor(chromosome=chromosome, instructions=instruction)
         mutated = str(response.mutated_chromosome).strip()[:40].lower()
         
-        # Fast validation checks
+        # Validate mutation preserves core and improves 'a' count
         if (len(mutated) >= 23 and mutated.isalpha() and
-            mutated[:23] == chromosome[:23] and  # Preserve core segment
+            mutated[:23] == chromosome[:23] and
             mutated[:23].count('a') >= chromosome[:23].count('a')):
             return mutated
-            
-    except (ValueError, AttributeError, KeyError) as e:
+    except Exception as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
 
-    # Fallback mutation only modifies after core segment
-    chars = list(chromosome)
-    for _ in range(2):
-        idx = random.randint(23, len(chars)-1)
-        chars[idx] = random.choice(string.ascii_letters.lower())
-    return ''.join(chars)
+    # Fallback: Random mutation after core segment
+    return chromosome[:23] + ''.join(random.choices(string.ascii_letters.lower(), k=len(chromosome)-23))
 
 def mutate(chromosome: str) -> str:  # Problem param removed since we get from dspy config
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
