@@ -48,7 +48,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
         'best_current': current_best,
-        'worst_current': current_worst,
+        'worst_current': float(np.nanmin(arr)),
         'best_window': float(np.nanmax(arr)),
         'worst_window': float(np.nanmin(arr))
     }
