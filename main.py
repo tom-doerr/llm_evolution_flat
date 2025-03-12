@@ -265,10 +265,9 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    pop_size = min(pop_size, MAX_POPULATION)
-    assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
-
-    population = initialize_population(pop_size)[:MAX_POPULATION]
+    # Initialize population and validate size
+    population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
+    assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     fitness_window = []
 
     while True:  # Continuous evolution per spec.md
@@ -358,5 +357,4 @@ def validate_population_state(best, worst):
     assert isinstance(worst['chromosome'], str), "Chromosome should be string"
     assert len(best['chromosome']) <= 40, "Chromosome exceeded max length"
     assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
-
 
