@@ -75,11 +75,11 @@ def score_chromosome(chromosome: str) -> dict:
         prev_char = c
     
     return {
-        'vowel_ratio': analysis['vowel_count'] / 23,
-        'consonant_ratio': (23 - analysis['vowel_count']) / 23,
-        'uniqueness': len(analysis['unique_chars']) / 23,
-        'a_density': analysis['a_count'] / 23,
-        'repeating_pairs': analysis['repeats'] / 22,
+        'vowel_ratio': vowels / 23,
+        'consonant_ratio': (23 - vowels) / 23,
+        'uniqueness': len(unique_chars) / 23,
+        'a_density': a_count / 23,
+        'repeating_pairs': repeats / 22,
         'core_segment': core
     }
 
