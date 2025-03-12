@@ -17,7 +17,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Basic population trimming
 
 # Configure DSPy with OpenRouter and timeout
-DEBUG_MODE = False  # Control debug output
 WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
@@ -29,8 +28,8 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
-    """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
-    assert len(fitness_window) <= WINDOW_SIZE, "Window size exceeds 100"
+    """Calculate statistics for sliding window of last WINDOW_SIZE evaluations"""
+    assert len(fitness_window) <= WINDOW_SIZE, f"Window size exceeds {WINDOW_SIZE}"
     window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
     stats = {
         'mean': float(np.nanmean(window_arr)),
@@ -43,8 +42,8 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     return stats
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
-    """Maintain sliding window of last 100 evaluations"""
-    return (fitness_window + new_fitnesses)[-100:]  # Fixed window size from spec
+    """Maintain sliding window of last WINDOW_SIZE evaluations"""
+    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Use configurable window size
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
