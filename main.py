@@ -117,7 +117,6 @@ def initialize_population(pop_size: int) -> List[dict]:
         "".join(random.choices(string.ascii_letters + " ", k=length))
         for length in lengths
     ]
-    # Parallel create agents
     return [create_agent(c) for c in chromosomes]
 
 
