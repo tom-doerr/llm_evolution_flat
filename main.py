@@ -248,11 +248,21 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         
     selected_mate = llm_select_mate(
         parent,
-        random.choices(
-            candidates,
-            weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum((a['fitness']**2 + 1e-6 for a in candidates)),
-            k=min(5, len(population))
+        # Weighted sampling without replacement per spec.md
+        candidate_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
+        total_weight = candidate_weights.sum()
+        if total_weight <= 0:  # Handle zero/negative weights
+            candidate_weights = np.ones(len(candidates)) / len(candidates)
+        else:
+            candidate_weights /= total_weight
+            
+        selected_indices = np.random.choice(
+            len(candidates),
+            size=min(5, len(candidates)),
+            replace=False,
+            p=candidate_weights
         )
+        [candidates[i] for i in selected_indices]
     
     ))
     
