@@ -126,8 +126,8 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
             original_chromosome=chromosome,
             problem_description=f"{problem}\nRULES:\n1. ENHANCE INITIAL SEGMENT\n2. TRUNCATE EXCESS\n3. LETTERS ONLY\n4. MAX LENGTH 40",  # Obfuscated
         )
-        if response.completions:
-            mutated = response.completions[0].strip()[:23]  # Strictly keep first 23 chars
+        if response.mutated_chromosome:
+            mutated = str(response.mutated_chromosome).strip()[:23]  # Access named output field
             mutated = mutated.ljust(23, 'a')[:40]  # Ensure min length 23, max 40
             mutated = ''.join([c if c.isalpha() else 'a' for c in mutated])  # Enforce letters only
             return mutated
