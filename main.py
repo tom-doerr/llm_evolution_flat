@@ -5,6 +5,7 @@ import numpy as np
 from typing import List
 from rich.console import Console
 from rich.panel import Panel
+import re  # For mutation validation
 import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
@@ -108,7 +109,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str, generation: int) -> float:
+def evaluate_agent(agent: dict, _problem_description: str, _generation: int) -> float:
     """Evaluate the agent based on the optimization target"""
     # Validate input before scoring
     chromosome = str(agent["chromosome"])
@@ -411,8 +412,7 @@ def run_genetic_algorithm(
         log_population(population, generation, current_mean, current_median, current_std, current_diversity, log_file)
 
         # Display statistics from sliding window
-        display_generation_stats(generation, generations, population, best, 
-                               stats['mean'], stats['std'], fitness_window)
+        display_generation_stats(generation, generations, population, best, fitness_window)
 
         # Validate population state and size
         validate_population_state(best, worst)
@@ -441,11 +441,6 @@ def main():
     PROBLEM = "Optimize string patterns through evolutionary processes"
     dspy.configure(problem=PROBLEM)  # Store in DSPy settings
     run_genetic_algorithm(PROBLEM, generations=20)  # Use default pop_size from spec
-
-MAX_POPULATION = 1_000_000  # Hard limit per spec
-
-if __name__ == "__main__":
-    main()
 
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
@@ -476,7 +471,7 @@ def display_generation_stats(generation: int, generations: int, population: list
     
     panel = Panel(
         f"[bold]Generation {generation}/{generations}[/]\n"
-        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
+        f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {stats['mean']:.2f}\n" 
         f"📈 Median: {stats['median']:.2f} (IQR {stats['q25']:.1f}-{stats['q75']:.1f}) | 📉 Std: {stats['std']:.2f}\n"
         f"🌐 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
         f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
