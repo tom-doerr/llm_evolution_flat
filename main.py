@@ -140,7 +140,7 @@ def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
-        p=ranked_weights/np.sum(ranked_weights),
+        p=pareto_weights/np.sum(pareto_weights),
         replace=False
     )]
 
@@ -318,7 +318,7 @@ if __name__ == "__main__":
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
     """Log gzipped population data with rotation"""
-    with gzip.open("evolution.log.gz", "at" if generation else "wt", encoding='utf-8') as f:
+    with open("evolution.log", "a" if generation else "w", encoding='utf-8') as f:
         best = max(population, key=lambda x: x['fitness'])
         worst = min(population, key=lambda x: x['fitness'])
         f.write(f"Generation {generation} | Size: {len(population)} | "
