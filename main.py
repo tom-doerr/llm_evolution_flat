@@ -203,7 +203,7 @@ def mutate_with_llm(agent: dict) -> str:
             k=len(chromosome)-23
         )))
         
-    except (ValueError, RuntimeError) as e:
+    except (ValueError, dspy.DSPyException) as e:
         if DEBUG_MODE:
             print(f"Mutation error: {e}")
         return chromosome[:23] + ''.join(random.choices(
