@@ -414,16 +414,17 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "a", encoding="utf-8") as f:  # Using 'with' per pylint
-        # Spec.md requires dense, minimal logging
+    with open("evolution.log", "a", encoding="utf-8") as f:
+        # Minimal format: gen pop_size mean median std best worst
         f.write(
             f"{stats['generation']}\t" 
             f"{stats['population_size']}\t"
             f"{stats['mean']:.1f}\t"
-            f"{stats['median']:.1f}\t" 
+            f"{stats['median']:.1f}\t"
             f"{stats['std']:.1f}\t"
             f"{stats['best_window']:.1f}\t"
-            f"{stats['worst_window']:.1f}\n"
+            f"{stats['worst_window']:.1f}\t"
+            f"{stats['diversity']:.2f}\n"  # Added diversity metric
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
