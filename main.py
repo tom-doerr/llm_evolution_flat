@@ -275,8 +275,8 @@ def run_genetic_algorithm(
         )[-window_size:]
         
         # Calculate robust statistics
-        window_fitness = current_window
-        mean_fitness = sum(window_fitness) / len(window_fitness) if window_fitness else 0
+        window_fitness = run_genetic_algorithm.fitness_window
+        mean_fitness = sum(window_fitness)/len(window_fitness) if window_fitness else 0
         sorted_fitness = sorted(window_fitness)
         # Proper median calculation for even/odd window sizes
         n = len(sorted_fitness)
@@ -352,7 +352,7 @@ def run_genetic_algorithm(
                 try:
                     response = improve_prompt(
                         original_chromosome=next_gen[i]["chromosome"],
-                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. IMPROVE COMPOSITION\n2. MAINTAIN LENGTH RULES\n3. USE ALPHABETIC CHARACTERS\n4. AVOID EXPLANATIONS",
+                        problem_description=f"{problem}\n\nREFINEMENT RULES:\n1. MAXIMIZE 'A's IN FIRST 23 CHARACTERS\n2. TRUNCATE AFTER 23 CHARACTERS\n3. USE LETTERS ONLY\n4. LENGTH <=40 STRICTLY",
                     )
                     # Validate and apply response
                     if (
