@@ -275,7 +275,6 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)
     fitness_window = []
 
-    # Clear log file completely per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
         pass  # Truncate file immediately
 
@@ -284,17 +283,8 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
         stats = calculate_window_statistics(fitness_window)
         
-        log_population(population, generation, stats)
-        display_generation_stats(generation, generations, population, stats)
-        
-        # Trim population with weighted sampling
-        population = sorted(population, key=lambda x: -x['fitness'])
-        fitness_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
-        population = [population[i] for i in np.random.choice(
-            len(population),
-            size=min(len(population), MAX_POPULATION),
-            p=fitness_weights/fitness_weights.sum()
-        )][:MAX_POPULATION]
+        log_population(generation, stats)
+        display_generation_stats(generation, population, stats)
         
         parents = select_parents(population, fitness_window)
         population = generate_children(parents, population)[:MAX_POPULATION]
