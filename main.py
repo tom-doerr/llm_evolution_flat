@@ -21,7 +21,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
-DEBUG = False  # Control debug output
+DEBUG_MODE = False  # Control debug output
 WINDOW_SIZE = 100  # Sliding window size from spec.md
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
@@ -278,7 +278,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
                 
                 
         except AssertionError as e:
-            if DEBUG:
+            if DEBUG_MODE:
                 pass  # Debug placeholder for invalid candidate rejection
             pass  # Required indented block even if debug is False
     
@@ -326,6 +326,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     # Combine chromosomes
     split = random.randint(1, len(parent["chromosome"]) - 1)
     new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
+    validate_chromosome(new_chromosome)  # Validate during crossover
     return create_agent(new_chromosome)
 
 
