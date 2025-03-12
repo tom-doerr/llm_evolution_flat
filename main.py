@@ -240,18 +240,22 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    # Get candidates using sliding window of last 100 fitness evaluations
-    window_pop = [a for a in population[-WINDOW_SIZE:] if a["chromosome"] != parent["chromosome"]]
-    weights = [a["fitness"]**2 for a in window_pop]
+    # Get candidates using sliding window of last 100 evaluations
+    window_start = max(0, len(population) - WINDOW_SIZE)
+    window_pop = population[window_start:]
+    
+    # Calculate weights using fitness^2 as per spec.md
+    weights = np.array([a["fitness"]**2 for a in window_pop], dtype=np.float64)
+    # Add epsilon to avoid zero weights
+    weights += 1e-6 * np.mean(weights)
     
     # Get candidates using weighted sampling without replacement
     candidates = random.choices(
         population=window_pop,
-        weights=weights if sum(weights) > 0 else None,
+        weights=weights if np.sum(weights) > 0 else None,
         k=min(5, len(window_pop)))
     
     # Select mate using LLM prompt from qualified candidates
-    mate = llm_select_mate(parent, candidates)
     mate = llm_select_mate(parent, candidates)
     
     # Combine chromosomes with core validation
