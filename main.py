@@ -3,9 +3,9 @@ import random
 import string
 import gzip
 import numpy as np
-import dspy
 from rich.console import Console
 from rich.panel import Panel
+import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
@@ -314,9 +314,9 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def run_genetic_algorithm(
     generations: int = 10,
-    pop_size: int = 1_000_000,
-    log_file: str = "evolution.log.gz"
+    pop_size: int = 1_000_000
 ) -> None:
+    log_file: str = "evolution.log.gz"
     """Run genetic algorithm with optimized logging and scaling"""
     # Remove unused window_size per issues.txt
     # Enforce population limits with validation
@@ -394,7 +394,7 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, stats, log_file):
+def log_population(population, generation, mean, median, std, log_file):
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
     """Log gzipped population data with rotation"""
