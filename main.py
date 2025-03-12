@@ -15,10 +15,14 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Reduced code complexity
 # - Basic population trimming
 
-# TODO: Implement sliding window mate selection using fitness window (HIGH)
-# TODO: Optimize LLM prompt performance with batch processing (HIGH)
-# TODO: Fix function argument counts to meet pylint limits (MEDIUM)
-# TODO: Add chromosome compression for storage (LOW)
+# TODOs sorted by priority:
+# HIGH:
+# TODO: Implement sliding window mate selection using fitness window
+# TODO: Optimize LLM prompt performance with batch processing
+# MEDIUM:
+# TODO: Fix remaining function argument counts
+# LOW:
+# TODO: Add chromosome compression for storage
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -168,11 +172,6 @@ def select_parents(population: List[dict]) -> List[dict]:
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with prompt caching and validation"""
     chromosome = agent["chromosome"]
-    
-    # Use cached Predict template for performance
-    if "mutate_prompt" not in globals():
-        global mutate_prompt
-        mutate_prompt = dspy.Predict("chromosome -> mutated_chromosome")
     
     try:
         # Get mutation instruction from agent's own mutation chromosome
@@ -389,7 +388,7 @@ def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
 
-def log_population(population, generation, mean, median, std, log_file):
+def log_population(population, generation, mean_fitness, median_fitness, std_fitness, diversity, log_file):
     """Log gzipped population data with rotation"""
     diversity = calculate_diversity(population)
     """Log gzipped population data with rotation"""
