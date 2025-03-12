@@ -281,8 +281,16 @@ def run_genetic_algorithm(pop_size: int) -> None:
             'worst': min(a['fitness'] for a in population)
         })
         
-        log_population(stats.get('generation', 0), stats)
-        display_generation_stats(stats)  # Fixed parameter mismatch
+        stats.update({
+            'diversity': calculate_diversity(population),
+            'population_size': len(population),
+            'best': max(a['fitness'] for a in population),
+            'worst': min(a['fitness'] for a in population),
+            'generation': stats.get('generation', 0) + 1
+        })
+        
+        log_population(stats['generation'], stats)
+        display_generation_stats(stats)
         validate_population_state(*get_population_extremes(population))
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
