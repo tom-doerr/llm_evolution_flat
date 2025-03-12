@@ -295,7 +295,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     child_chrom.append(parent_chrom[prev:])
     
     return create_agent(''.join(child_chrom)[:40])
-    return create_agent(''.join(child_chrom)[:40])
 
 
 
