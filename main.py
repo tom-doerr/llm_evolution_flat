@@ -110,7 +110,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str) -> float:  # type: ignore
+def evaluate_agent(agent: dict, _problem_description: str) -> float:  # type: ignore, unused args
     """Evaluate the agent based on the optimization target"""
     # Validate input before scoring
     chromosome = str(agent["chromosome"])
