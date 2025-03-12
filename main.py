@@ -79,8 +79,10 @@ def create_agent(chromosome: str) -> dict:
     chromosome = validate_chromosome(chromosome)
     # Generate random chromosome if empty
     if not chromosome:
-        chromosome = "".join(random.choices(string.ascii_letters + " ", 
-                                k=random.randint(20, 40)))
+        # Generate random chromosome preserving core segment length
+        core = "".join(random.choices(string.ascii_lowercase, k=23))
+        extra = "".join(random.choices(string.ascii_letters + " ", k=random.randint(0, 17)))
+        chromosome = core + extra
     
     return {
         "chromosome": chromosome,
@@ -241,6 +243,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_candidates:
         raise ValueError("No valid mates")
 
+    # Validate fitness² weighting in one line
+    weights = [c['fitness']**2 + 1e-6 for c in valid_candidates]
+    assert sum(weights) > 0, "All candidate weights are zero"
+
     # Get LLM selection from valid candidates
     result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
@@ -262,9 +268,9 @@ def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
     hotspots = [
         i for i, c in enumerate(chromosome)
-        if c in HOTSPOT_CHARS
-        or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)
-        or random.random() < HOTSPOT_ANYWHERE_PROB
+        if (c in HOTSPOT_CHARS or
+            (c == ' ' and random.random() < HOTSPOT_SPACE_PROB) or
+            random.random() < HOTSPOT_ANYWHERE_PROB)
     ]
     
     # Ensure minimum hotspots and average 1 per chromosome
