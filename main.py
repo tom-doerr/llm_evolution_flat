@@ -174,8 +174,8 @@ def mutate_with_llm(agent: dict) -> str:
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=agent["mutation_chromosome"],
-        temperature=min(1.0, float(agent["mutation_chromosome"][:3] or 0.7),
-        top_p=min(1.0, float(agent["mutation_chromosome"][3:7] or 0.9)
+        temperature=min(1.0, float(agent["mutation_chromosome"][:3] or 0.7)),
+        top_p=min(1.0, float(agent["mutation_chromosome"][3:7] or 0.9))
     )
     
     # Validate mutations with generator expression
