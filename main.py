@@ -227,8 +227,9 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         return llm_match
         
     # Single fallback implementation with numerical stability
-    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64) + 1e-6
-    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
+    weights = np.array([c["fitness"]**2 + 1e-6 for c in valid], dtype=np.float64)
+    sum_weights = np.sum(weights)
+    return valid[np.random.choice(len(valid), p=weights/sum_weights)]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
