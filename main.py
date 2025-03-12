@@ -23,15 +23,22 @@ dspy.configure(lm=lm)
 assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 
-def create_agent(chromosome: str) -> dict:
-    """Create a new agent as a dictionary"""
-    # Validate and normalize chromosome
+def validate_chromosome(chromosome: str) -> str:
+    """Validate and normalize chromosome structure"""
     if isinstance(chromosome, list):
         chromosome = "".join(chromosome)
     chromosome = str(chromosome).strip()[:40]  # Enforce max length
+    
+    # Structural validation
+    assert 1 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
+    assert all(c.isalpha() or c == ' ' for c in chromosome), "Invalid characters"
+    assert chromosome == chromosome.strip(), "Whitespace not allowed at ends"
+    
+    return chromosome
 
-    # Boundary condition assertions
-    assert len(chromosome) >= 1, "Agent chromosome cannot be empty"
+def create_agent(chromosome: str) -> dict:
+    """Create a new agent as a dictionary"""
+    chromosome = validate_chromosome(chromosome)
     assert len(chromosome) <= 40, f"Chromosome length {len(chromosome)} exceeds max"
     assert all(
         c in string.ascii_letters + " " for c in chromosome
@@ -151,9 +158,17 @@ def mutate(chromosome: str) -> str:
 
 def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
     """Select mate using LLM prompt with candidate chromosomes"""
+    # Pre-filter candidates with validation
+    valid_candidates = [
+        agent for agent in candidates 
+        if validate_chromosome(agent["chromosome"]) and agent != parent
+    ]
+    if not valid_candidates:
+        raise ValueError("No valid mating candidates available")
+    
     # Format candidates with indexes
     candidate_list = [f"{idx}: {agent['chromosome'][:23]}" 
-                    for idx, agent in enumerate(candidates)]
+                    for idx, agent in enumerate(valid_candidates)]
     
     # Create mating prompt with hidden selection criteria
     prompt = dspy.Predict("parent_chromosome, candidates, problem -> best_candidate_id")
@@ -194,29 +209,6 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     return create_agent(new_chromosome)
 
 
-def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
-    """Maintain sliding window of last 100 evaluations"""
-    # Combine new fitness values with existing window
-    combined = (fitness_window[-window_size:] if fitness_window else []) + new_fitnesses
-    
-    # Trim to only keep the newest entries up to window size
-    return combined[-window_size:]
-
-def calculate_window_statistics(fitness_window, window_size):
-    """Calculate statistics for current fitness window including best/worst"""
-    window_data = fitness_window[-window_size:]
-    if not window_data:
-        return 0.0, 0.0, 0.0, 0.0, 0.0  # mean, median, std, best, worst
-    
-    mean = sum(window_data) / len(window_data)
-    sorted_data = sorted(window_data)
-    n = len(sorted_data)
-    
-    median = (sorted_data[n//2] if n % 2 else (sorted_data[n//2 - 1] + sorted_data[n//2]) / 2)
-    std = (sum((x-mean)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0.0
-    best = sorted_data[-1]
-    worst = sorted_data[0]
-    return mean, median, std, best, worst
 
 def generate_children(parents, population, pop_size, problem):
     """Generate new population through crossover/mutation"""
@@ -303,12 +295,13 @@ def run_genetic_algorithm(
         population = create_next_generation(next_gen, problem, mutation_rate, generation)
 
 
+# Import optimized statistics functions
+import helpers
+
 # Helper functions needed by run_genetic_algorithm
 
 if __name__ == "__main__":
     main()
-
-# Remaining helper functions below
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
     """Log gzipped population data with rotation"""
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
