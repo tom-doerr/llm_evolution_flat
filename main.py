@@ -270,31 +270,31 @@ def run_genetic_algorithm(
         current_best = max(agent["fitness"] for agent in population)
         current_worst = min(agent["fitness"] for agent in population)
         
-        # Maintain sliding window of last 100 evaluations including best/worst
+        # Maintain sliding window of last 100 evaluations
+        window_size = 100  # As per spec requirement
         if not hasattr(run_genetic_algorithm, "fitness_window"):
             run_genetic_algorithm.fitness_window = []
             
-        # Add current population stats to window
-        window_values = all_fitness + [current_best, current_worst]
+        # Add current population stats to window (without duplicates)
         run_genetic_algorithm.fitness_window = (
-            run_genetic_algorithm.fitness_window + window_values
+            run_genetic_algorithm.fitness_window + all_fitness
         )[-window_size:]
         
-        # Calculate robust statistics
-        window_fitness = run_genetic_algorithm.fitness_window
-        mean_fitness = sum(window_fitness)/len(window_fitness) if window_fitness else 0
-        sorted_fitness = sorted(window_fitness)
-        # Proper median calculation for even/odd window sizes
-        n = len(sorted_fitness)
-        if n == 0:
-            median_fitness = 0.0
-        else:
+        # Calculate sliding window statistics
+        window_data = run_genetic_algorithm.fitness_window
+        mean_fitness = sum(window_data)/len(window_data) if window_data else 0
+        sorted_data = sorted(window_data)
+        n = len(sorted_data)
+        
+        # Median calculation
+        median_fitness = 0.0
+        if n:
             mid = n // 2
-            if n % 2 == 1:
-                median_fitness = sorted_fitness[mid]
-            else:
-                median_fitness = (sorted_fitness[mid-1] + sorted_fitness[mid]) / 2
-        std_fitness = (sum((x-mean_fitness)**2 for x in window_fitness)/len(window_fitness))**0.5 if window_fitness else 0
+            median_fitness = (sorted_data[mid] if n % 2 else 
+                            (sorted_data[mid-1] + sorted_data[mid]) / 2)
+            
+        # Std deviation with Bessel's correction
+        std_fitness = (sum((x-mean_fitness)**2 for x in window_data)/(n-1))**0.5 if n > 1 else 0
 
         # Get best/worst before logging
         sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
