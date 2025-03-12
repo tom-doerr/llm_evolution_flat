@@ -389,9 +389,15 @@ def log_population(population: List[dict], generation: int, stats: dict) -> None
 def display_generation_stats(generation: int, generations: int, population: List[dict], stats: dict):
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
-    best = stats['best']
-    worst = stats['worst']
     diversity = calculate_diversity(population)
+    
+    # Add sliding window stats from spec.md
+    stats_text = (
+        f"📊 Window Mean: {stats['mean']:.2f} | "
+        f"Median: {stats['median']:.2f}\n"
+        f"📈 Std Dev: {stats['std']:.2f} | "
+        f"Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}"
+    )
     
     # Track diversity in window stats
     stats['diversity'] = diversity
