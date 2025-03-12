@@ -57,11 +57,12 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     except Exception as e:
         raise RuntimeError(f"Window statistics calculation failed: {str(e)}") from e
 
-def update_fitness_window(fitness_window: list, new_fitnesses: list, window_size: int) -> list:
+def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
+    window_size = 100  # Fixed per spec.md requirement
     assert isinstance(fitness_window, list), "Window must be list type"
     # Use collections.deque for efficient sliding window
-    window = fitness_window[-window_size+len(new_fitnesses):] + new_fitnesses
+    window = fitness_window[-(window_size - len(new_fitnesses)):] + new_fitnesses
     return window[-window_size:]  # Strict size enforcement per spec
 
 def score_chromosome(chromosome: str) -> dict:
