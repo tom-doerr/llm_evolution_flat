@@ -349,12 +349,9 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop separated to reduce statement count"""
     # Trim population with fitness-priority while maintaining recent mutations
-    population = sorted(
-        population,
-        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000)  # Fitness priority with diversity
-    )[:max_population]
+    population = sorted(population, key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000))[:max_population]
     assert len(population) <= max_population and max_population == MAX_POPULATION, \
-        f"Population {len(population)} exceeded {max_population} limit (MAX_POPULATION={MAX_POPULATION})"
+        f"Population {len(population)} exceeded limit ({MAX_POPULATION})"
     fitness_window = []
     
     for generation in itertools.count(0):
