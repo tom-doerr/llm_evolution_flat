@@ -134,10 +134,10 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Get top candidates and calculate combined weights
+    # Combined weight calculation with type stability
     candidates = population[-WINDOW_SIZE:]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    weights = weights * np.random.pareto(2.0, len(weights))
+    base_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    weighted_weights = base_weights * np.random.pareto(2.0, len(base_weights))
     
     total_weight = weights.sum()
     assert total_weight > 0, "All weights cannot be zero"
@@ -145,7 +145,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     return [candidates[i] for i in np.random.choice(
         len(candidates),
         size=min(len(population), MAX_POPULATION//2),
-        p=weights/total_weight,
+        p=weighted_weights/total_weight,
         replace=False
     )]
 
