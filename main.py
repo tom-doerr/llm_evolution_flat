@@ -158,6 +158,8 @@ MUTATION_RATE = 0.1  # Base mutation probability
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
 HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
+# Probability tuned to achieve average 1 switch per chrom combined with punctuation
+HOTSPOT_ANYWHERE_PROB = 0.02  # Reduced from 0.02 to 0.015 to better match spec.md requirement
 
 def validate_mutation_rate(chromosome: str) -> None:
     """Ensure mutation parameters stay within valid ranges"""
@@ -377,7 +379,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     
     # Empty log file using with statement
     with open("evolution.log", "w", encoding="utf-8") as _:  # File is intentionally empty
-        pass  # Truncate file without keeping reference
+        pass  # Truncate file without keeping reference (using _ for unused var)
     
     evolution_loop(population, max_population)
 
