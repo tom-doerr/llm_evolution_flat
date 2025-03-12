@@ -116,7 +116,6 @@ def initialize_population(pop_size: int) -> List[dict]:
     chromosomes = [
         "".join(random.choices(string.ascii_letters + " ", k=length))
         for length in lengths
-    ]
     # Parallel create agents
     return [create_agent(c) for c in chromosomes]
 
@@ -193,7 +192,7 @@ def mutate_with_llm(agent: dict) -> str:
         valid_mutations,
         agent["chromosome"][:23] + ''.join(random.choices(
             string.ascii_letters.lower(), 
-            k=random.randint(0, max(0, len(agent["chromosome"])-23))  # 40-23=17 max extra chars
+            k=random.randint(0, max(0, len(agent["chromosome"])-23)))  # 40-23=17 max extra chars
     )
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
