@@ -453,7 +453,8 @@ def validate_population_state(best, worst) -> None:
     assert len(worst['chromosome']) <= 40, "Chromosome exceeded max length"
     assert MAX_POPULATION == 1_000_000, "MAX_POPULATION constant modified"
     assert MAX_CHARS == 40, "MAX_CHARS constant modified"
-    assert len(best['metrics']['core_segment']) == 23, "Core segment length invalid"
-    assert best['chromosome'][:23].islower(), "Core segment must be lowercase"
-    assert ' ' not in best['chromosome'].strip(), "Whitespace only allowed inside"
+    # Combined validation checks
+    assert (len(best['metrics']['core_segment']) == 23 
+            and best['chromosome'][:23].islower() 
+            and ' ' not in best['chromosome'].strip()), "Core segment validation failed"
 
