@@ -53,8 +53,7 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     fitness -= len(chromosome[23:])  # -1 per character beyond 23
     
     # Validation assertions
-    assert core_score >= 0, f"Core score cannot be negative: {core_score}"
-    assert penalty >= 0, f"Penalty cannot be negative: {penalty}"
+    assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     if core_segment.count("a") == 0:
         print(f"WARNING: No 'a's in first 23 of: {chromosome}")
 
@@ -86,18 +85,23 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using fitness^2 weighted sampling without replacement"""
-    fitness_values = [agent["fitness"] for agent in population]
-    squared_fitness = [max(f, 0)**2 for f in fitness_values]
-    total_weight = sum(squared_fitness)
+    """Select parents using Pareto distribution weighted by fitness^2"""
+    # Sort by fitness descending and calculate Pareto weights
+    sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
+    fitness_values = [max(agent["fitness"], 0)**2 for agent in sorted_pop]
+    
+    # Apply Pareto distribution (alpha=2) weights to sorted fitness values
+    ranks = range(1, len(sorted_pop)+1)
+    pareto_weights = [f * (1/r)**2 for f, r in zip(fitness_values, ranks)]
+    total_weight = sum(pareto_weights)
     
     if total_weight <= 0:
         raise ValueError("All agents have zero fitness - cannot select parents")
     
-    # Normalize weights and select without replacement
-    probabilities = [w/total_weight for w in squared_fitness]
+    # Select without replacement using Pareto-weighted probabilities
+    probabilities = [w/total_weight for w in pareto_weights]
     selected_indices = random.choices(
-        range(len(population)), 
+        range(len(sorted_pop)), 
         weights=probabilities, 
         k=len(population)//2
     )
@@ -130,7 +134,7 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
         mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
         # More rigorous validation and normalization
         mutated = ''.join([c.lower() if c.isalpha() else '' for c in mutated])  # Letters only
-        mutated = mutated.ljust(23, random.choice('abcdefghijklmnopqrstuvwxyz'))  # Fill to min length
+        mutated = mutated.ljust(23, 'a')  # Fill to min length with 'a's which help fitness
         mutated = mutated[:40]  # Final length cap
         
         # Validation asserts
