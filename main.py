@@ -260,14 +260,15 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             size=min(5, len(candidates)),
             replace=False,
             # Weight by fitness^2 with Pareto distribution as per spec.md
-            p=(
-                (lambda weights: (weights/weights.sum()) if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
-                    np.array([
+            weights_array = np.array([
                         a['fitness']**2 * np.random.pareto(2) + 1e-6 
                         for a in candidates 
                         if validate_mating_candidate(a, parent)
                     ])
-                )
+            if weights_array.sum() > 0:
+                p = weights_array / weights_array.sum()
+            else:
+                p = np.ones(len(weights_array)) / len(weights_array)
             )
         )]
     )
@@ -339,9 +340,9 @@ def validate_population_extremes(population: List[dict]) -> None:
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    max_pop_limit = args.max_population  # Use local var with snake_case
-    population = initialize_population(min(pop_size, max_pop_limit))[:max_pop_limit]
-    assert 1 < len(population) <= max_pop_limit, f"Population size must be 2-{max_pop_limit}"
+    max_population = args.max_population  # Use snake_case variable
+    population = initialize_population(min(pop_size, max_population))[:max_population]
+    assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file at program start per spec.md requirements
     with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates unused var
