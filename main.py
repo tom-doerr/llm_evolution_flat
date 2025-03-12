@@ -1,7 +1,6 @@
 from typing import List
 import random
 import string
-import gzip
 import numpy as np
 from rich.console import Console
 from rich.panel import Panel
@@ -130,16 +129,12 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    window = fitness_window[-WINDOW_SIZE:]
-    candidates = [a for a in population if a['fitness'] in window]
-    
-    # Pareto distribution weighting by fitness^2 per spec.md
-    fitness_scores = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
-    pareto_weights = fitness_scores  # Use fitness^2 directly per spec
+    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
+    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
-        p=pareto_weights/np.sum(pareto_weights),
+        p=weights/np.sum(weights),
         replace=False
     )]
 
@@ -254,7 +249,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     next_gen = parents.copy()
-    target_size = min(len(population), MAX_POPULATION)
     
     for _ in range(min(MAX_POPULATION, len(parents)*2)):
         parent = random.choice(parents)
@@ -295,12 +289,11 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
         # Trim population with weighted sampling
         population = sorted(population, key=lambda x: -x['fitness'])
         fitness_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
-        selected_indices = np.random.choice(
+        population = [population[i] for i in np.random.choice(
             len(population),
             size=min(len(population), MAX_POPULATION),
             p=fitness_weights/fitness_weights.sum()
-        )
-        population = [population[i] for i in selected_indices][:MAX_POPULATION]
+        )][:MAX_POPULATION]
         
         parents = select_parents(population, fitness_window)
         population = generate_children(parents, population)[:MAX_POPULATION]
