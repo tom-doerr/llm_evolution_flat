@@ -317,11 +317,13 @@ def evolution_loop(population: List[dict]) -> None:
         stats = calculate_window_statistics(fitness_window)
         
         # Combined stats update
+        best_agent = max(population, key=lambda x: x["fitness"])
         stats.update(
             generation=generation,
             population_size=len(population),
             diversity=calculate_diversity(population),
-            best=max(a["fitness"] for a in population),
+            best=best_agent["fitness"],
+            best_core=best_agent["metrics"]["core_segment"],
             worst=min(a["fitness"] for a in population)
         )
         
