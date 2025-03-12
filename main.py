@@ -212,10 +212,15 @@ def run_genetic_algorithm(
         parents = select_parents(population)
         next_gen = parents.copy()
 
-        # Create children through crossover
+        # Create children through crossover with parent validation
         while len(next_gen) < pop_size:
-            parent1, parent2 = random.sample(parents, 2)
-            child = crossover(parent1, parent2)
+            if len(parents) >= 2:
+                parent1, parent2 = random.sample(parents, 2)
+                child = crossover(parent1, parent2)
+            else:
+                # Handle insufficient parents by mutating existing members
+                parent = random.choice(parents) if parents else create_agent("")
+                child = create_agent(mutate(parent["chromosome"]))
             next_gen.append(child)
 
         # Mutate children based on rate
