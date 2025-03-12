@@ -280,7 +280,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)
     fitness_window = []
 
-    open("evolution.log", "w").close()  # Empty log file per spec.md
+    # Empty log file at start per spec.md
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        f.write("")  # Explicit truncate
 
     for generation in range(generations):
         population = evaluate_population(population)
