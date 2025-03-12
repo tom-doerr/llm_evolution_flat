@@ -254,6 +254,8 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             k=min(5, len(population))
         )
     
+    ))
+    
     # Implement spec.md chromosome switching rules
     parent_chrom = parent["chromosome"]
     mate_chrom = selected_mate["chromosome"]
