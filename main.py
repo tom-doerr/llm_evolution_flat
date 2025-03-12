@@ -30,14 +30,17 @@ assert isinstance(lm, dspy.LM), "LM configuration failed"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last 100 evaluations (spec.md requirement)"""
+    assert len(fitness_window) <= WINDOW_SIZE, "Window size exceeds 100"
     window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
-    return {
+    stats = {
         'mean': float(np.nanmean(window_arr)),
         'median': float(np.nanmedian(window_arr)),
         'std': float(np.nanstd(window_arr)),
         'best': float(np.nanmax(window_arr)),
         'worst': float(np.nanmin(window_arr))
     }
+    assert stats['best'] >= stats['worst'], "Best cannot be worse than worst"
+    return stats
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
@@ -242,6 +245,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     valid = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid:
         raise ValueError("No valid mates")
+
+    # Validate fitness² weighting per spec.md
+    weights = [c['fitness']**2 + 1e-6 for c in valid]
+    sum_weights = sum(weights)
+    assert sum_weights > 0, "All candidate weights are zero"
+    normalized_weights = [w/sum_weights for w in weights]
 
     # Get LLM selection
     result = dspy.Predict(MateSelectionSignature)(
