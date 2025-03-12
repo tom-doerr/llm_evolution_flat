@@ -46,8 +46,9 @@ def evaluate_agent(agent: dict, _problem_description: str) -> float:
     core_segment = chromosome[:23].lower()
     assert len(core_segment) == 23, f"Core segment must be 23 chars, got {len(core_segment)}"
     
-    core_score = core_segment.count("a") * 2
-    penalty = (len(core_segment) - core_segment.count("a")) * 2
+    a_count = core_segment.count("a")
+    core_score = a_count * 2
+    penalty = (len(core_segment) - a_count) * 2
     fitness += core_score - penalty
     
     # Validation assertions
@@ -223,9 +224,10 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
 
 def crossover(parent: dict, population: List[dict], problem: str) -> dict:
     """Create child through LLM-assisted mate selection"""
-    # Get candidates using weighted sampling without replacement with deduplication
-    candidates = random.sample(
-        [a for a in population if a["chromosome"] != parent["chromosome"]],
+    # Get candidates using weighted sampling without replacement
+    candidates = random.choices(
+        population=[a for a in population if a["chromosome"] != parent["chromosome"]],
+        weights=[a["fitness"]**2 for a in population if a["chromosome"] != parent["chromosome"]],
         k=min(5, len(population)//2)
     )
     
@@ -256,7 +258,7 @@ def run_genetic_algorithm(
 
     # Clear log file at start
     with gzip.open(log_file, "wt", encoding="utf-8") as f:
-        f.write("generation,best_fitness,best_chromosome\n")
+        pass  # Empty file as per spec
 
     for generation in range(generations):
         # Evaluate all agents
