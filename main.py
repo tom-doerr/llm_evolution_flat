@@ -97,7 +97,7 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
     assert generations > 0, "Number of generations must be positive"
     
     population = initialize_population(pop_size)
-    logging.info(f"Starting evolution with population size {pop_size}")
+    logging.info("Starting evolution with population size %s", pop_size)
     
     for generation in range(generations):
         # Evaluate all agents
@@ -115,9 +115,9 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']})")
         
         # Log detailed info
-        logging.info(f"Generation {generation+1}")
-        logging.info(f"Best: {best['chromosome']} (fitness: {best['fitness']})")
-        logging.info(f"Worst: {worst['chromosome']} (fitness: {worst['fitness']})")
+        logging.info("Generation %s", generation+1)
+        logging.info("Best: %s (fitness: %s)", best['chromosome'], best['fitness'])
+        logging.info("Worst: %s (fitness: %s)", worst['chromosome'], worst['fitness'])
         
         # Select parents and create next generation
         parents = select_parents(population)
@@ -145,7 +145,7 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
                     else:
                         # If invalid response, mutate instead
                         next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
-                except Exception as e:
+                except (dspy.LMTimeoutError, RuntimeError) as e:
                     print(f"LLM improvement failed: {str(e)}")
                     # If LLM fails, mutate instead
                     next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
