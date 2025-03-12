@@ -215,19 +215,36 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     except AssertionError:
         return False
 
+class MateSelectionSignature(dspy.Signature):
+    """Select best mate candidate using agent's mating strategy chromosome."""
+    parent_chromosome = dspy.InputField(desc="Chromosome of parent agent choosing a mate")
+    candidate_chromosomes = dspy.InputField(desc="List of potential mate chromosomes")
+    selected_mate = dspy.OutputField(desc="Single selected mate chromosome from candidates list")
+
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
-    """Select mate using fitness-weighted sampling without replacement"""
+    """Select mate using parent's mate-selection chromosome/prompt"""
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     
     if not valid_candidates:
         raise ValueError("No valid mates")
     
-    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
-    if weights.sum() <= 0:
-        weights = np.ones(len(valid_candidates)) / len(valid_candidates)
-    else:
-        weights /= weights.sum()
+    # Use parent's mate-selection chromosome as the prompt/instruction
+    response = dspy.Predict(MateSelectionSignature)(
+        parent_chromosome=parent["chromosome"],
+        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
+        temperature=0.7,
+        top_p=0.9
+    )
     
+    # Validate and return first valid match from LLM response
+    selected_chromosome = str(response.selected_mate).strip()[:40]
+    for candidate in valid_candidates:
+        if candidate["chromosome"] == selected_chromosome:
+            return candidate
+    
+    # Fallback to fitness-weighted sampling if no LLM match
+    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
+    weights /= weights.sum() + 1e-6
     return valid_candidates[np.random.choice(len(valid_candidates), p=weights)]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
