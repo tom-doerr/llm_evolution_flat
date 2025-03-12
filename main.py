@@ -243,7 +243,7 @@ def crossover(parent: dict, population: List[dict], problem: str) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict], pop_size: int, problem: str) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    assert pop_size <= 1_000_000, "Population exceeds maximum limit"
+    pop_size = min(pop_size, 1_000_000)  # Hard cap
     next_gen = parents.copy()
     
     # Cap population growth while maintaining diversity
@@ -347,12 +347,17 @@ def run_genetic_algorithm(
 
 if __name__ == "__main__":
     main()
+def get_population_limit() -> int:
+    """Get hard population limit from spec"""
+    return 1_000_000
+
 def log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file):
     """Log gzipped population data with rotation"""
+    # Log population size against limit
     assert log_file.endswith('.gz'), "Log file must use .gz extension"
     mode = 'wt' if generation == 0 else 'at'
     with gzip.open(log_file, mode, encoding='utf-8') as f:
-        f.write(f"Generation {generation}\n")
+        f.write(f"Generation {generation} | Population: {len(population)}/{get_population_limit()}\n")
         f.write(f"Mean: {mean_fitness}, Median: {median_fitness}, Std: {std_fitness}\n")
         for agent in population:
             f.write(f"{agent['chromosome']}\t{agent['fitness']}\n")
