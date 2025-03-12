@@ -103,7 +103,7 @@ def create_agent(chromosome: str) -> dict:
     return {
         "chromosome": chromosome,
         "task_chromosome": chromosome[:23],
-        "mate_selection_chromosome": (chromosome[23:33].ljust(10, ' ')[:10]),  # 10 chars for mate selection
+        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10],  # 10 chars for mate selection per spec.md
         "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # 7 chars for mutation instructions
         "fitness": 0.0
     }
