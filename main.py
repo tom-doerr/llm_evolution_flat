@@ -178,6 +178,7 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
+    validate_mutation_rate(agent["mutation_chromosome"])
     chromosome = agent["chromosome"]
     
     # Validate mutation parameters from chromosome
