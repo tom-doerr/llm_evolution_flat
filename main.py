@@ -109,7 +109,7 @@ def create_agent(chromosome: str) -> dict:
     return {"chromosome": chromosome, "fitness": 0.0}
 
 
-def evaluate_agent(agent: dict, _problem_description: str) -> float:
+def evaluate_agent(agent: dict, _problem_description: str) -> float:  # type: ignore
     """Evaluate the agent based on the optimization target"""
     # Validate input before scoring
     chromosome = str(agent["chromosome"])
@@ -194,7 +194,6 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
-import re  # Moved toplevel import
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context""" 
@@ -288,12 +287,10 @@ def llm_select_mate(parent: dict, candidates: List[dict], problem: str) -> dict:
             if agent_chrom != parent_chrom and 23 <= len(agent_chrom) <= 40:
                 valid_candidates.append(agent)
                 
-                if debug:
-                    print(f"Valid candidate: {agent_chrom[:23]}... (fitness: {agent['fitness']})")
-                    
+                
         except AssertionError as e:
             if debug:
-                print(f"Invalid candidate rejected: {str(e)}")
+                # print(f"Invalid candidate rejected: {str(e)}")
     
     if not valid_candidates:
         raise ValueError(f"No valid mates among {len(candidates)} candidates")
@@ -532,7 +529,7 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float, problem: 
 def evaluate_population(population: List[dict], problem: str, generation: int) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
     for agent in population:
-        evaluate_agent(agent, problem, generation)
+        evaluate_agent(agent, problem)
     return population
 
 
