@@ -123,8 +123,7 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with random chromosomes using vectorized operations"""
-    # TODO: Optimize with true vectorization instead of list comprehensions
-    # Generate lengths first for vectorization
+    # Generate lengths first 
     lengths = [random.randint(20, 40) for _ in range(pop_size)]
     # Batch create all chromosomes
     chromosomes = [
@@ -256,9 +255,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             len(candidates),
             size=min(5, len(candidates)),
             replace=False,
-            p=(lambda weights: (weights/weights.sum()) if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
-                np.array([a['fitness']**2 + 1e-6 for a in candidates])
-            )
+            p=np.where((weights := np.array([a['fitness']**2 + 1e-6 for a in candidates])).sum() > 0,
+                weights/weights.sum(),
+                np.ones(len(weights))/len(weights)
         )]
         ) if validate_mating_candidate(c, parent)])
     
