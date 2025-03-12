@@ -285,12 +285,14 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
-    switch = random.choice(get_hotspots(parent["chromosome"]))
-    return (
-        f"{parent['chromosome'][:switch]}"
-        f"{mate['chromosome'][switch]}"
-        f"{parent['chromosome'][switch+1:]}"
-    )[:MAX_CHARS] if switch else parent["chromosome"]
+    p_chrom = parent["chromosome"]
+    m_chrom = mate["chromosome"]
+    hotspots = get_hotspots(p_chrom)
+    switch = random.choice(hotspots) if hotspots else 0
+    
+    # Handle edge cases where switch might be out of bounds
+    switch = min(switch, len(p_chrom)-1, len(m_chrom)-1)
+    return f"{p_chrom[:switch]}{m_chrom[switch]}{p_chrom[switch+1:]}"[:MAX_CHARS]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
@@ -380,18 +382,17 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
 
 def update_generation_stats(population: List[dict], fitness_data: tuple) -> tuple:
     """Calculate and return updated statistics for current generation"""
-    fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
     new_fitness = [a["fitness"] for a in evaluated_pop]
-    updated_window = update_fitness_window(fitness_window, new_fitness)
+    window = update_fitness_window(fitness_data[0], new_fitness)
     
     return ({
-        'generation': generation,
+        'generation': fitness_data[1],
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        **calculate_window_statistics(updated_window),
+        **calculate_window_statistics(window),
         **extreme_values(evaluated_pop)
-    }, updated_window[-WINDOW_SIZE:])
+    }, window[-WINDOW_SIZE:])
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
