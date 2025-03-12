@@ -21,6 +21,7 @@ statistics shown should be shown for the last 100 evaluations
 as a task i want to optimize this hidden goal for testing: reward increases for every a for the first 23 characters and decreases for every character after 23 characters. limit token output to 40 for the dspy lm
 don't do reward shaping
 this is supposed to be hard, I don't expect good results
+don't reveal the goal to the optimization process
 
 
 keep notes in notes.md about what you learned, what current issues are and plans
@@ -28,7 +29,7 @@ keep all of it in a single file
 keep it low complexity
 start with simple versions first, i always want to have something to run, we add features as we work on it
 use this model: openrouter/google/gemini-2.0-flash-001
-with c i mean continue
+when I type 'c', i mean continue working on implementing spec.md
 don't use OOP if possible
 use pure functions where possible
 in DSPy, you can do lm = dspy.LM('openrouter/google/gemini-2.0-flash-001') to load a model
@@ -41,7 +42,8 @@ remove duplicates from the task list
 instead of creating unit tests, lets just use many assertions 
 don't edit spec.md, follow what is in it 
 don't use docstrings, use comments when helpful to explain the why
-don't enumerate the task list
+don't enumerate the tasks in tasks.md
 don't use caching for the llm requests
 don't work on error handling, the code doesn't need to be reliable right now
+
 do use TODO comments a lot
