@@ -109,10 +109,21 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
     population = initialize_population(pop_size)
     assert len(population) == pop_size, f"Population size mismatch {len(population)} != {pop_size}"
     
+    # Clear log file at start
+    with gzip.open(log_file, 'wt', encoding='utf-8') as f:
+        f.write("generation,best_fitness,best_chromosome\n")
+    
     for generation in range(generations):
         # Evaluate all agents
         for agent in population:
             evaluate_agent(agent, problem)
+        
+        # Calculate population statistics
+        fitness_scores = [agent['fitness'] for agent in population]
+        mean_fitness = sum(fitness_scores)/len(fitness_scores)
+        sorted_fitness = sorted(fitness_scores)
+        median_fitness = sorted_fitness[len(fitness_scores)//2]
+        std_fitness = (sum((x - mean_fitness)**2 for x in fitness_scores)/len(fitness_scores))**0.5
         
         # Get best/worst before logging
         sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
@@ -125,8 +136,9 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         
         # Information-dense output
         print(f"\nGen {generation+1}/{generations} | Pop: {pop_size}")
-        print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']})")
-        print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']})")
+        print(f"Best: {best['chromosome'][:23]}... (fit:{best['fitness']:.1f})")
+        print(f"Worst: {worst['chromosome'][:23]}... (fit:{worst['fitness']:.1f})")
+        print(f"Stats: μ={mean_fitness:.1f} ±{std_fitness:.1f} | Med={median_fitness:.1f}")
         
         # Validate population state
         assert best['fitness'] >= worst['fitness'], "Fitness ordering invalid"
@@ -154,8 +166,12 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
                 try:
                     response = lm(prompt)
                     # Ensure response is valid
-                    if response and isinstance(response, str) and len(response) > 0:
-                        next_gen[i]['chromosome'] = response
+                    # Validate response meets requirements
+                    if (isinstance(response, str) and 
+                        len(response) > 0 and 
+                        len(response) <= 40 and
+                        all(c in string.ascii_letters + ' ' for c in response)):
+                        next_gen[i]['chromosome'] = response.strip()[:40]
                     else:
                         # If invalid response, mutate instead
                         next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
