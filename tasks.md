@@ -1,10 +1,15 @@
 # Genetic Algorithm Task List (Prioritized)
 
-- Add test coverage for core functions  
-- Develop property-based tests for genetic operations  
 - Create concise console output with Rich formatting  
-- Consider adding crossover rate parameter  
-- Improve error handling for LM timeouts  
+- Implement LLM-based mutation per spec  
+- Add weighted parent selection using Pareto distribution  
+- Add sliding window for last 100 evaluation stats  
+
+## Recently Completed
+[x] Add population statistics (mean/median/std)  
+[x] Harden LM response validation  
+[x] Implement mutation rate configuration  
+[x] Add boundary condition assertions  
 
 ## Recently Completed
 [x] Add population statistics (mean/median/std)  
@@ -16,13 +21,11 @@
 [x] Add compressed binary logging  
 
 ## Current Issues/Notes
-- Need to harden LM response validation
-- Should add input validation for all public functions
+- LLM-based mutation not yet implemented per spec
+- Parent selection uses simple truncation instead of Pareto distribution
+- Statistics show full history instead of last 100 evals
 - Chromosome truncation during creation needs logging
-- Mutation validation could impact performance
 - Fitness calculation needs penalty system for oversize chromosomes
-- Consider adding crossover rate parameter
-- Need better error handling for LM timeouts
 
 ## Next Steps
 1. Add boundary condition tests (empty strings, min/max lengths)

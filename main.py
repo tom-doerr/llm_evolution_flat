@@ -164,23 +164,20 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
         # Use LLM to improve top candidates (only every 5 generations)
         if generation % 5 == 0:
             for i in range(min(2, len(next_gen))):
-                prompt = f"Improve this solution: {next_gen[i]['chromosome']}\nThe goal is: {problem}"
-                # Retry up to 3 times on timeout
-                for attempt in range(3):
-                    try:
-                        response = lm(prompt)
-                        break  # Success - exit retry loop
-                    except TimeoutError:
-                        if attempt == 2:
-                            raise
-                    # Ensure response is valid
-                    # Validate response meets requirements
-                    try:
-                        if (isinstance(response, str) and 
-                            len(response) > 0 and 
-                            len(response) <= 40 and
-                            all(c in string.ascii_letters + ' ' for c in response)):
-                            next_gen[i]['chromosome'] = response.strip()[:40]
+                # Use DSPy predictor for guided improvement
+                improve_prompt = dspy.Predict(
+                    "original_chromosome problem_description -> improved_chromosome"
+                )
+                response = improve_prompt(
+                    original_chromosome=next_gen[i]['chromosome'],
+                    problem_description=problem
+                )
+                # Validate and apply response
+                if (response.completion and 
+                    len(response.completion) > 0 and
+                    len(response.completion) <= 40 and
+                    all(c in string.ascii_letters + ' ' for c in response.completion)):
+                    next_gen[i]['chromosome'] = response.completion.strip()[:40]
                         else:
                             # If invalid response, mutate instead
                             next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
