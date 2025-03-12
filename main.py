@@ -277,7 +277,6 @@ def log_and_display(stats: dict, population: List[dict]) -> None:
     log_population(stats)
     display_generation_stats(stats)
     validate_population_extremes(population)
-    log_and_display(stats, population)
 
 def validate_population_extremes(population: List[dict]) -> None:
     """Validate best/worst agents in population"""
