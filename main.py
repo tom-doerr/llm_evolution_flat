@@ -342,10 +342,13 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     
     # Apply mutations and track count
     mut_count = 0
-    mutated = [
-        mutate(agent["chromosome"]) if random.random() < mut_rate else (agent["chromosome"], mut_count := mut_count + 1)[0]
-        for agent in generation
-    ]
+    mutated = []
+    for agent in generation:
+        if random.random() < mut_rate:
+            mutated.append(mutate(agent["chromosome"]))
+            mut_count += 1
+        else:
+            mutated.append(agent["chromosome"])
     
     # Update chromosomes in place
     for agent, new_chrom in zip(generation, mutated):
@@ -356,16 +359,17 @@ def apply_mutations(generation: List[dict], base_mutation_rate: float) -> List[d
     print(f"🧬 D:{div_ratio:.0%} M:{mut_rate:.0%} U:{unique_count}/{len(generation)} Mut:{mut_count}")
     return generation
 
-def evaluate_population(population: List[dict]) -> List[dict]:
-    """Evaluate entire population's fitness with generation weighting"""
-    for agent in population:
-        evaluate_agent(agent)
-    return population
 
 
 def get_population_limit() -> int:
     """Get hard population limit from spec"""
     return MAX_POPULATION
+
+def evaluate_population(population: List[dict]) -> List[dict]:
+    """Evaluate entire population's fitness with generation weighting"""
+    for agent in population:
+        evaluate_agent(agent)
+    return population
 
 def validate_population_state(best, worst):
     """Validate fundamental population invariants"""
