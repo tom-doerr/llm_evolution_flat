@@ -206,24 +206,20 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid = [c for c in candidates if validate_mating_candidate(c, parent)]
-    if not valid:
+    valid_mates = [c for c in candidates if validate_mating_candidate(c, parent)]
+    if not valid_mates:
         raise ValueError("No valid mates")
 
     response = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid],
+        candidate_chromosomes=[c["chromosome"] for c in valid_mates],
         temperature=0.7,
         top_p=0.9
     )
 
     selected = str(response.selected_mate).strip()[:40]
-    for c in valid:
-        if c["chromosome"] == selected:
-            return c
-
-    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
-    return valid[np.random.choice(len(valid), p=weights/weights.sum())]
+    return next((c for c in valid_mates if c["chromosome"] == selected),
+               max(valid_mates, key=lambda x: x["fitness"]**2))
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
@@ -252,12 +248,12 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     next_gen = parents.copy()
     max_children = min(MAX_POPULATION, len(parents)*2)
     
-    for _ in range(max_children):
-        parent = random.choice(parents)
-        try:
-            next_gen.append(crossover(parent, population))
-        except ValueError:
-            next_gen.append(create_agent(mutate(parent["chromosome"])))
+    next_gen.extend(
+        crossover(random.choice(parents), population)
+        if random.random() < 0.9 else  # 90% crossover, 10% mutation
+        create_agent(mutate(random.choice(parents)["chromosome"]))
+        for _ in range(max_children)
+    )
     
     return next_gen[:MAX_POPULATION]
 
