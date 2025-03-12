@@ -205,7 +205,10 @@ def mutate_with_llm(chromosome: str) -> str:
         # Extract and validate mutation
         mutated = str(response.mutated_chromosome).strip()[:40]
         mutated = ''.join([c.lower() for c in mutated if c.isalpha()])
-        mutated = mutated.ljust(23, 'a')[:40]  # Ensure minimum length
+        
+        # Core validation for hidden optimization goal
+        assert mutated[:23].count('a') >= 1, "Mutation lost core 'a' requirement"
+        mutated = mutated.ljust(23, 'a')[:40]  # Pad with a's if needed
         
         # Structured validation
         if not (23 <= len(mutated) <= 40 and mutated.isalpha()):
@@ -371,7 +374,7 @@ def run_genetic_algorithm(
     fitness_window = []  # Initialize window
     for generation in range(generations):
         # Evaluate population
-        population = evaluate_population(population, problem)
+        population = evaluate_population(population, problem, generation)
 
         # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
