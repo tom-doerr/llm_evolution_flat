@@ -2,6 +2,7 @@ import random
 import string
 import gzip
 import json
+import numpy as np
 from typing import List
 from rich.console import Console
 from rich.table import Table
@@ -104,17 +105,21 @@ def select_parents(population: List[dict]) -> List[dict]:
     assert total_weight > 0, "Total parent selection weight must be positive"
         raise ValueError("All agents have zero fitness - cannot select parents")
     
-    # Select without replacement using Pareto-weighted probabilities
-    probabilities = [w/total_weight for w in pareto_weights]
-    # Weighted sampling without replacement using reservoir sampling
-    selected_indices = []
+    # Convert to numpy arrays for efficient computation
     population_size = len(population)
     sample_size = len(population) // 2
-    for i in range(sample_size):
-        selected_indices.append(random.choices(range(population_size), weights=probabilities, k=1)[0])
+    indices = np.arange(population_size)
     
-    # Deduplicate while preserving order using dictionary (insertion ordered in Python 3.7+)
-    return list({agent["chromosome"]: population[i] for i in selected_indices}.values())
+    # Use numpy's weighted sampling without replacement
+    selected_indices = np.random.choice(
+        indices,
+        size=sample_size,
+        replace=False,
+        p=np.array(pareto_weights)/total_weight
+    )
+    
+    # Return selected parents using advanced indexing
+    return [population[i] for i in selected_indices]
 
 
 
