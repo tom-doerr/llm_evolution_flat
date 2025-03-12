@@ -262,15 +262,30 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         )
     ))
     
-    return create_agent(''.join(
-        m_char if (random.random() < 1/len(parent["chromosome"])) or (p_char in {'.', '!', '?', ' '})
-        else p_char
-        for p_char, m_char in itertools.zip_longest(
-            parent["chromosome"],
-            selected_mate["chromosome"],
-            fillvalue=' '
-        )
-    )[:40])
+    # Implement spec.md chromosome switching rules
+    parent_chrom = parent["chromosome"]
+    mate_chrom = selected_mate["chromosome"]
+    
+    # Create hotspots at punctuation and spaces
+    hotspots = [
+        i for i, c in enumerate(parent_chrom)
+        if c in {'.', '!', '?', ' '} or random.random() < 0.1
+    ]
+    
+    # Ensure average 1 switch per chromosome as per spec.md
+    if not hotspots:
+        hotspots = random.sample(range(len(parent_chrom)), k=1)
+    
+    # Perform switches at hotspots
+    child_chrom = []
+    last_switch = 0
+    for switch_point in sorted(random.sample(hotspots, min(len(hotspots), 1))):
+        child_chrom.extend(parent_chrom[last_switch:switch_point])
+        child_chrom.extend(mate_chrom[switch_point:switch_point+1])  # Take 1 char from mate
+        last_switch = switch_point + 1
+    
+    child_chrom.extend(parent_chrom[last_switch:])
+    return create_agent(''.join(child_chrom)[:40]
 
 
 
