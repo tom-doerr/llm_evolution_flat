@@ -257,10 +257,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
-    return [
-        i for i, c in enumerate(chromosome)
-        if c in {'.', '!', '?', ' '} or random.random() < 0.1
-    ]
+    # Force at least one hotspot and ensure ~1 switch per combination on average
+    forced_hotspots = [i for i, c in enumerate(chromosome) if c in {'.', '!', '?', ' '}]
+    random_hotspots = [i for i in range(len(chromosome)) if random.random() < 0.15]
+    return list(set(forced_hotspots + random_hotspots)) or [0]
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
@@ -284,13 +284,14 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         valid_candidates,
         weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
         k=min(5, len(valid_candidates))
+    )
     
     mate = llm_select_mate(parent, selected)
     
     return create_agent(build_child_chromosome(
         parent["chromosome"],
         mate["chromosome"],
-        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1]
+        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)])
     ))
 
 
