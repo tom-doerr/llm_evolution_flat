@@ -485,4 +485,6 @@ def validate_population_state(best, worst) -> None:
         len(best['metrics']['core_segment']) == 23 and
         ' ' not in best['chromosome'].strip()
     ), "Core segment validation failed"
+    
+    # TODO: Add mutation rate validation once implemented
 
