@@ -154,12 +154,11 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     chromosome = agent["chromosome"]
+    instructions = agent.get("mutation_chromosome", "Change 1-2 characters after position 23")
     
-    # Batch process and validate mutations
     response = dspy.Predict(MutateSignature)(
         chromosome=[chromosome]*3,
-        instructions=[agent.get("mutation_chromosome", 
-                             "Change 1-2 characters after position 23")]*3,
+        instructions=[instructions]*3,
         temperature=0.7,
         top_p=0.9
     )
@@ -235,20 +234,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
-    # Get candidates using sliding window of last 100 evaluations
-    window_start = max(0, len(population) - WINDOW_SIZE)
-    window_pop = population[window_start:]
+    window_pop = population[-WINDOW_SIZE:]
+    weights = np.array([a["fitness"]**2 + 1e-6 for a in window_pop], dtype=np.float64)
     
-    # Calculate weights using fitness^2 as per spec.md
-    weights = np.array([a["fitness"]**2 for a in window_pop], dtype=np.float64)
-    # Add epsilon to avoid zero weights
-    weights += 1e-6 * np.mean(weights)
-    
-    # Get candidates using weighted sampling without replacement
-    # Get candidates using weighted sampling without replacement
     candidates = random.choices(
         population=window_pop,
-        weights=weights if np.sum(weights) > 0 else None,
+        weights=weights,
         k=min(5, len(window_pop)))
     
     # Select mate using LLM prompt from qualified candidates
@@ -306,19 +297,14 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
-def run_genetic_algorithm(
-    generations: int = 10,
-    pop_size: int = 1_000_000,
-    fitness_window: list = None
-) -> None:
+def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> None:
     """Run genetic algorithm with optimized logging and scaling"""
-    # Remove unused window_size per issues.txt
-    # Enforce population limits with validation
-    pop_size = min(pop_size, get_population_limit())
-    assert 1 < pop_size <= get_population_limit(), f"Population size must be 2-{get_population_limit()}"
+    pop_size = min(pop_size, MAX_POPULATION)
+    assert 1 < pop_size <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     assert generations > 0, "Number of generations must be positive"
 
-    population = initialize_population(pop_size)
+    population = [create_agent("".join(random.choices(string.ascii_letters + " ", k=random.randint(20,40)))) 
+                for _ in range(pop_size)]
     fitness_window = []
 
     # Initialize log file path and clear it per spec
@@ -381,8 +367,8 @@ if __name__ == "__main__":
 
 
 def log_population(population: List[dict], generation: int, stats: dict) -> None:
-    diversity = calculate_diversity(population)
     """Log gzipped population data with rotation"""
+    diversity = calculate_diversity(population)
     log_file = "evolution.log.gz"
     population = sorted(population, key=lambda x: -x['fitness'])[:MAX_POPULATION]
     mode = 'wt' if generation == 0 else 'at'
@@ -396,14 +382,6 @@ def display_generation_stats(generation: int, generations: int, population: List
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
     diversity = calculate_diversity(population)
-    
-    # Add sliding window stats from spec.md
-    stats_text = (
-        f"📊 Window Mean: {stats['mean']:.2f} | "
-        f"Median: {stats['median']:.2f}\n"
-        f"📈 Std Dev: {stats['std']:.2f} | "
-        f"Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}"
-    )
     
     # Track diversity in window stats
     stats['diversity'] = diversity
