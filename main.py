@@ -288,24 +288,14 @@ def run_genetic_algorithm(
         display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, median_fitness)
 
         # Validate population state
-        assert best["fitness"] >= worst["fitness"], "Fitness ordering invalid"
-        assert len(best["chromosome"]) <= 40, "Chromosome exceeded max length"
-        assert len(worst["chromosome"]) <= 40, "Chromosome exceeded max length"
+        validate_population_state(best, worst)
 
         # Generate next generation
         parents = select_parents(population)
         next_gen = generate_children(parents, population, pop_size, problem)
 
-        # Mutate children based on rate
-        for i in range(len(next_gen)):
-            if random.random() < mutation_rate:
-                next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
-
-        # Improve top candidates periodically
-        if generation % 5 == 0:
-            next_gen = improve_top_candidates(next_gen, problem)
-
-        population = next_gen
+        # Create and evolve next generation
+        population = create_next_generation(next_gen, problem, mutation_rate, generation)
 
 
 # Helper functions needed by run_genetic_algorithm
@@ -416,6 +406,28 @@ def improve_top_candidates(next_gen, problem):
             print(f"LLM improvement failed: {str(e)}")
             next_gen[i]["chromosome"] = mutate(next_gen[i]["chromosome"])
     return next_gen
+
+def create_next_generation(next_gen, problem, mutation_rate, generation):
+    """Handle mutation and periodic improvement of new generation"""
+    next_gen = apply_mutations(next_gen, mutation_rate)
+    
+    if generation % 5 == 0:
+        next_gen = improve_top_candidates(next_gen, problem)
+        
+    return next_gen
+
+def apply_mutations(generation, mutation_rate):
+    """Apply mutations to generation based on mutation rate"""
+    for i in range(len(generation)):
+        if random.random() < mutation_rate:
+            generation[i]["chromosome"] = mutate(generation[i]["chromosome"])
+    return generation
+
+def validate_population_state(best, worst):
+    """Validate fundamental population invariants"""
+    assert best["fitness"] >= worst["fitness"], "Fitness ordering invalid"
+    assert len(best["chromosome"]) <= 40, "Chromosome exceeded max length"
+    assert len(worst["chromosome"]) <= 40, "Chromosome exceeded max length"
 
 def validate_improvement(response):
     """Validate LLM improvement response meets criteria"""
