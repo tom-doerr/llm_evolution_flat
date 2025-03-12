@@ -146,17 +146,22 @@ def select_parents(population: List[dict]) -> List[dict]:
     population = population[:MAX_POPULATION]
     assert len(population) <= MAX_POPULATION, f"Population exceeded {MAX_POPULATION} limit"
     
-    # Weighted sampling without replacement with combined probability calculation
-    # Normalize weights and handle zero-sum case
-    weights_sum = weights.sum() + 1e-9
-    normalized_weights = weights / weights_sum
+    # Weighted sampling without replacement using reservoir sampling
+    sample_size = min(len(population), MAX_POPULATION//2)
+    selected_indices = []
+    population_indices = list(range(len(population)))
     
-    selected_indices = np.random.choice(
-        len(population),
-        size=min(len(population), MAX_POPULATION//2),
-        p=normalized_weights,
-        replace=False
-    )
+    for i in range(sample_size):
+        total_weight = weights[i:].sum()
+        r = random.uniform(0, total_weight)
+        cumulative = 0
+        for j in range(i, len(population)):
+            cumulative += weights[j]
+            if cumulative >= r:
+                population_indices[i], population_indices[j] = population_indices[j], population_indices[i]
+                weights[i], weights[j] = weights[j], weights[i]
+                break
+        selected_indices.append(population_indices[i])
     
     return [population[i] for i in selected_indices]
 
@@ -281,7 +286,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     # Ensure average 1 switch per chromosome as per spec.md
     if not hotspots:
-        hotspots = random.sample(range(len(parent_chrom)), k=1)
+        hotspots = random.sample(range(len(parent["chromosome"])), k=1)
     
     # Perform switches at hotspots
     parent_chromosome = parent["chromosome"]
