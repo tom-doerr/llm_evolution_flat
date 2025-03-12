@@ -14,10 +14,10 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # 1. Implement generation-based scoring weights
 
 # TODO priority order: 
-# 1. Implement complete sliding window statistics (mean/median/std)
-# 2. Fix too-many-locals in score_chromosome
+# 1. Remove unused variables (ex, f)
+# 2. Reduce function arguments per pylint
 # 3. Validate chromosome structure during crossover
-# 4. Fix remaining code quality warnings
+# 4. Implement sliding window statistics
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
@@ -60,7 +60,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
     """Maintain sliding window of last 100 evaluations"""
     assert isinstance(fitness_window, list), "Window must be list type"
-    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:] 
+    return (fitness_window + new_fitnesses)[-WINDOW_SIZE:]  # Simple slicing for fixed size
 
 def score_chromosome(chromosome: str) -> dict:
     """Calculate structural scoring metrics"""
@@ -310,7 +310,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         return valid_candidates[chosen_id]
     return random.choice(candidates)
 
-def crossover(parent: dict, population: List[dict], problem: str) -> dict:
+def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
     # Get candidates using weighted sampling without replacement
     candidates = random.choices(
