@@ -356,4 +356,5 @@ def validate_improvement(response):
 def main():
     """Main entry point"""
     PROBLEM = "Optimize string patterns through evolutionary processes"
+    dspy.configure(problem=PROBLEM)  # Store in DSPy settings
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)
