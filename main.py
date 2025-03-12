@@ -265,6 +265,11 @@ def get_population_extremes(population: List[dict]) -> tuple:
     sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
     return sorted_pop[0], sorted_pop[-1]
 
+def validate_population_extremes(population: List[dict]) -> None:
+    """Validate best/worst agents in population"""
+    best, worst = get_population_extremes(population)
+    validate_population_state(best, worst)
+
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
