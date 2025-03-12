@@ -145,9 +145,9 @@ def select_parents(population: List[dict]) -> List[dict]:
 # Configuration constants from spec.md
 MUTATION_RATE = 0.1  # Base mutation probability 
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
-HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
-MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
-HOTSPOT_ANYWHERE_PROB = 0.023  # Tuned to achieve average 1 switch per chrom combined with punctuation
+HOTSPOT_SPACE_PROB = 0.15  # Increased space hotspot probability per spec.md emphasis
+MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
+HOTSPOT_ANYWHERE_PROB = 0.025  # Adjusted to exactly 1 hotspot per 40 char chromosome (40 * 0.025 = 1)
 
 
 
