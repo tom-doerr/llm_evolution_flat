@@ -136,7 +136,7 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
                     else:
                         # If invalid response, mutate instead
                         next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
-                except (dspy.LMTimeoutError, RuntimeError) as e:
+                except (TimeoutError, RuntimeError) as e:
                     print(f"LLM improvement failed: {str(e)}")
                     # If LLM fails, mutate instead
                     next_gen[i]['chromosome'] = mutate(next_gen[i]['chromosome'])
