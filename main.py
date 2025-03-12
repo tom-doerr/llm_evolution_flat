@@ -250,39 +250,34 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         random.choices(valid, weights=[c["fitness"]**2 + 1e-6 for c in valid])[0]
     )
 
+def get_hotspots(chromosome: str) -> list:
+    """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
+    return [
+        i for i, c in enumerate(chromosome)
+        if c in {'.', '!', '?', ' '} or random.random() < 0.1
+    ]
+
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
     candidates = population[-WINDOW_SIZE:] or population
     if not candidates:
         raise ValueError("No candidates available for crossover")
-        
-    selected_mate = llm_select_mate(
-        parent,
-        random.choices(
-            population=candidates,
-            weights=[a['fitness']**2 + 1e-6 for a in candidates if validate_mating_candidate(a, parent)],
-            k=min(5, len(candidates))
-        ) if candidates else []
-    )
     
-    # Implement spec.md chromosome switching rules
-    # Create hotspots at punctuation and spaces using direct access
-    hotspots = [
-        i for i, c in enumerate(parent["chromosome"])
-        if c in {'.', '!', '?', ' '} or random.random() < 0.1
-    ]
+    # Get validated candidates with weights
+    valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
+    weights = [a['fitness']**2 + 1e-6 for a in valid_candidates]
+    selected = random.choices(valid_candidates, weights=weights, k=min(5, len(valid_candidates)))
     
-    # Ensure average 1 switch per chromosome as per spec.md
-    if not hotspots:
-        hotspots = random.sample(range(len(parent["chromosome"])), k=1)
+    # Select mate and create child
+    mate = llm_select_mate(parent, selected)
+    hotspots = get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1)]
+    switch_point = random.choice(hotspots)
     
-    # Perform chromosome combination with single switch point
-    parent_chrom = parent["chromosome"]
-    mate_chrom = selected_mate["chromosome"]
-    switch_point = random.choice(hotspots) if hotspots else 0
-    child_chrom = parent_chrom[:switch_point] + mate_chrom[switch_point:]
+    # Build child chromosome with single character switch
+    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
+    child_chrom = f"{p_chrom[:switch_point]}{m_chrom[switch_point:switch_point+1]}{p_chrom[switch_point+1:]}"
     
-    return create_agent(''.join(child_chrom)[:40])
+    return create_agent(child_chrom[:40])
 
 
 
