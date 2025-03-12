@@ -13,10 +13,10 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # Completed:
 # 1. Implement generation-based scoring weights
 
-# TODO: Prioritize remaining tasks
-# 1. Implement sliding window statistics (mean/median/std)
-# 2. Validate chromosome structure during crossover
-# 3. Address code quality warnings
+# TODO: Prioritize remaining tasks by spec.md
+# 1. Validate chromosome structure during crossover (HIGH)
+# 2. Implement sliding window statistics (MEDIUM)
+# 3. Address remaining code quality warnings (LOW)
 
 # Configure DSPy with OpenRouter and timeout
 MAX_POPULATION = 1_000_000  # From spec.md
