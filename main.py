@@ -307,13 +307,11 @@ def log_population(generation: int, stats: dict) -> None:
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
-    pop_count = stats.get('population_size', 0)
-    diversity = stats.get('diversity', 0.0)
     Console().print(Panel(
         f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f}\n"
         f"▲{stats['best']:.1f} ▼{stats['worst']:.1f}\n" 
-        f"Δ{diversity:.0%} 👥{pop_count}/{MAX_POPULATION}",
+        f"Δ{stats['diversity']:.0%} 👥{stats['population_size']}/{MAX_POPULATION}",
         title="Evolution Progress",
         style="blue"
     ))
