@@ -9,9 +9,8 @@ from rich.table import Table
 import dspy
 
 # TODO List (sorted by priority):
-# 1. Optimize fitness window statistics calculations
-# 2. Add population size monitoring/limiting
-# 3. Implement chromosome structure scoring metrics
+# 1. Add population size monitoring/limiting
+# 2. Implement chromosome structure scoring metrics
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -287,11 +286,14 @@ def run_genetic_algorithm(
         # Evaluate population
         population = evaluate_population(population, problem)
 
-        # Update and calculate sliding window statistics
+        # Update and calculate sliding window statistics using helpers
         all_fitness = [agent["fitness"] for agent in population]
         window_size = 100
-        fitness_window = update_fitness_window(fitness_window, all_fitness, window_size)
-        mean_fitness, median_fitness, std_fitness, best_window, worst_window = calculate_window_statistics(fitness_window, window_size)
+        fitness_window = helpers.update_fitness_window(fitness_window, all_fitness, window_size)
+        stats = helpers.calculate_window_statistics(fitness_window, window_size)
+        mean_fitness = stats['mean']
+        median_fitness = stats['median'] 
+        std_fitness = stats['std']
 
         # Get population extremes
         best, worst = get_population_extremes(population)
