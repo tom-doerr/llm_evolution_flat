@@ -158,8 +158,8 @@ def select_parents(population: List[dict]) -> List[dict]:
     # Validate and select
     assert np.all(weights >= 0), "Negative weights detected"
     selected_indices = np.random.choice(
-        len(sorted_pop),
-        size=len(sorted_pop)//2,
+        len(population),
+        size=len(population)//2,
         replace=False,
         p=weights
     )
