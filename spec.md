@@ -14,7 +14,8 @@ include mean, median, std deviation for population reward
 set the default population size limit to one million
 mutation should be llm based, maybe by prompting the llm to rephrase the text
 mating should work by loading the dna of agents into the prompt and then using the mating chromosome/prompt of the agent allowed to mate to select one of the candidates
-the candidates list should be created by weighted sampling based on score without replacement
+the canidates list should be created by weighted sampling based on score without replacement
+statistics shown should be shown for the last 100 evaluations
 
 
 as a task i want to optimize this hidden goal for testing: reward increases for every a for the first 23 characters and decreases for every character after 23 characters. limit token output to 40 for the dspy lm
