@@ -43,6 +43,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
 
     arr = np.array(window, dtype=np.float64)
     current_best_worst = (arr[-1], arr[-1]) if len(arr) > 0 else (0.0, 0.0)
+    current_best, current_worst = current_best_worst
     
     return {
         'mean': float(np.nanmean(arr)),
@@ -259,9 +260,11 @@ def crossover(parent: dict, population: List[dict]) -> dict:
             len([c for c in candidates if validate_mating_candidate(c, parent)]),
             size=min(5, len(candidates)),
             replace=False,
+            # Weight by fitness^2 with Pareto distribution as per spec.md
             p=(lambda weights: (weights/weights.sum()) if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
-                np.array([a['fitness']**2 + 1e-6 for a in candidates if validate_mating_candidate(a, parent)])
+                np.array([(a['fitness']**2 * np.random.pareto(2)) + 1e-6 for a in candidates if validate_mating_candidate(a, parent)])
             )
+        )]
         )]
     
     # Implement spec.md chromosome switching rules
