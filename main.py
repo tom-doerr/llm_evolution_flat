@@ -420,7 +420,7 @@ def run_genetic_algorithm(
         # Display statistics using sliding window
         display_generation_stats(generation, generations, population, best, stats)
         
-        # Log window stats for validation
+        # Log stats for validation
         assert stats['mean'] >= 0, "Negative mean in window stats"
         assert stats['best'] >= stats['worst'], "Invalid best/worst relationship"
 
@@ -472,7 +472,6 @@ def display_generation_stats(generation: int, generations: int, population: list
     """Rich-formatted display with essential stats using sliding window"""
     console = Console()
     diversity = calculate_diversity(population)
-    current_pop_size = len(population)
     
     # Track diversity in window stats
     stats['diversity'] = diversity
