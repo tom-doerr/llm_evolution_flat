@@ -260,19 +260,16 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid:
         raise ValueError("No valid mates")
 
-    response = dspy.Predict(MateSelectionSignature)(
+    # Get LLM selection
+    result = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["mate_selection_chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
-    )
+    ).selected_mate
 
-    # Weighted sampling without replacement per spec.md
-    # Weighted sampling without replacement using Pareto distribution (spec.md requirements)
-    weights = np.array([c["fitness"]**2 for c in valid], dtype=np.float64)
-    pareto = np.random.pareto(3.0, len(valid)) + 1
-    probs = (weights * pareto) / (weights * pareto).sum()
-    return valid[np.random.choice(len(valid), p=probs)]
+    # Find best match from LLM response
+    return max(valid, key=lambda x: x["chromosome"].lower().startswith(result.lower()))
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
@@ -308,6 +305,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     return create_agent(build_child_chromosome(parent, mate))
 
+# TODO: Implement chromosome switching probability tuning per spec.md hotspots
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
