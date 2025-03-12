@@ -184,29 +184,33 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 
 
-def mutate_with_llm(chromosome: str, problem: str) -> str:
-    """Mutate chromosome using LLM-based rephrasing"""
+def mutate_with_llm(chromosome: str) -> str:
+    """Mutate chromosome using LLM-based rephrasing with strict validation"""
     mutate_prompt = dspy.structured.StructuredPrompt(
-        "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
-        validate_output=lambda x: re.match(r"^[a-zA-Z]{23,40}$", x))
+        "original_chromosome: str -> mutated_chromosome: str",
+        validate_output=lambda x: re.match(r"^[A-Za-z]{23,40}$", x))
     try:
         # Strict input validation
+        problem = dspy.settings.get("problem")
         assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-        assert re.match(r"^[a-zA-Z]+$", chromosome), "Invalid characters"
+        assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
-            original_chromosome=chromosome,
-            problem_description=f"{problem}\nMUTATION RULES:\n- EXACTLY 23-40 LETTERS/SPACES\n- MODIFY 1-3 CHARACTERS\n- PRESERVE FIRST 23 STRUCTURE\n- OUTPUT ONLY 40-CHAR STRING\n- NO MARKDOWN/FORMATTING",
+            original_chromosome=f"{chromosome[:40]}\n"
+                              f"Problem: {problem}\n"
+                              "Rules:\n"
+                              "- Change 2-3 characters\n"
+                              "- Keep first 23 chars intact\n"
+                              "- Letters only, 23-40 length\n"
+                              "Mutated version: ",
         )
-        mutated = str(response.get('mutated_chromosome', chromosome)).strip()[:40]  # Fallback to original
-        # More rigorous validation and normalization
-        mutated = ''.join([c.lower() if c.isalpha() else '' for c in mutated])  # Letters only
-        mutated = mutated.ljust(23, 'a')  # Fill to min length with 'a's which help fitness
-        mutated = mutated[:40]  # Final length cap
+        # Extract and validate mutation
+        mutated = str(response.mutated_chromosome).strip()[:40]
+        mutated = ''.join([c.lower() for c in mutated if c.isalpha()])
+        mutated = mutated.ljust(23, 'a')[:40]  # Ensure minimum length
         
-        # Validation asserts
-        assert len(mutated) >= 23, f"Mutation too short: {len(mutated)}"
-        assert len(mutated) <= 40, f"Mutation too long: {len(mutated)}"
-        assert all(c.isalpha() for c in mutated), f"Invalid chars: {mutated}"
+        # Structured validation
+        if not (23 <= len(mutated) <= 40 and mutated.isalpha()):
+            raise ValueError(f"Invalid mutation: {mutated}")
         
         return mutated
     except (TimeoutError, RuntimeError, AssertionError) as e:
