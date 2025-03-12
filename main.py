@@ -180,12 +180,13 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    chromosome = agent["chromosome"]
     mutation_chrom = agent["mutation_chromosome"]
     
-    # Combined parameter extraction and validation
-    temperature = max(0.0, min(1.0, float(mutation_chrom[:3] or '0.7')))
-    top_p = max(0.0, min(1.0, float(mutation_chrom[3:7] or '0.9')))
+    # Combined parameter extraction and validation with tuple unpacking
+    temperature, top_p = (
+        max(0.0, min(1.0, float(mutation_chrom[i:i+3] or default)))
+        for i, default in ((0, '0.7'), (3, '0.9'))
+    )
     
     response = dspy.Predict(MutateSignature)(
         chromosome=chromosome,
@@ -289,10 +290,10 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
-    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
+    p_chrom = parent["chromosome"]
     hotspots = get_hotspots(p_chrom)
-    switch_point = random.choice(hotspots)
-    return f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:MAX_CHARS]
+    return f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] \
+        if (switch := random.choice(hotspots)) else p_chrom
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
@@ -375,17 +376,16 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     """Calculate and return updated statistics for current generation"""
     fitness_window, generation = fitness_data
     evaluated_pop = evaluate_population(population)
-    new_fitnesses = [a["fitness"] for a in evaluated_pop]
     
-    # Consolidated stats calculation
+    # Use generator expressions and combined operations
     stats = {
-        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitnesses)),
         'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        'best': max(new_fitnesses),
-        'best_core': max(evaluated_pop, key=lambda x: x["fitness"])["metrics"]["core_segment"],
-        'worst': min(new_fitnesses)
+        **calculate_window_statistics(
+            update_fitness_window(fitness_window, [a["fitness"] for a in evaluated_pop])
+        ),
+        **extreme_values(evaluated_pop)
     }
     
     return stats, fitness_window[-WINDOW_SIZE:]
@@ -450,6 +450,15 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
 
 
 
+
+def extreme_values(population: List[dict]) -> dict:
+    """Get best/worst fitness and core segment"""
+    best_agent = max(population, key=lambda x: x["fitness"])
+    return {
+        'best': best_agent["fitness"],
+        'best_core': best_agent["metrics"]["core_segment"],
+        'worst': min(a["fitness"] for a in population)
+    }
 
 def calculate_diversity(population: List[dict]) -> float:
     """Calculate population diversity ratio [0-1]"""
