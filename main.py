@@ -36,18 +36,24 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     assert 0 <= len(window) <= WINDOW_SIZE, f"Window size violation: {len(window)}"
     
     if not window:
-        return {'mean': 0.0, 'median': 0.0, 'std': 0.0,
-                'best': 0.0, 'worst': 0.0, 'q25': 0.0, 'q75': 0.0}
+        return {
+            'mean': 0.0, 'median': 0.0, 'std': 0.0,
+            'best_current': 0.0, 'worst_current': 0.0,
+            'best_window': 0.0, 'worst_window': 0.0
+        }
 
     arr = np.array(window, dtype=np.float64)
+    current_best = arr[-1] if len(arr) > 0 else 0.0
+    current_worst = arr[-1] if len(arr) > 0 else 0.0
+    
     return {
         'mean': float(np.nanmean(arr)),
         'median': float(np.nanmedian(arr)),
         'std': float(np.nanstd(arr)),
-        'best': float(np.nanmax(arr)),
-        'worst': float(np.nanmin(arr)),
-        'q25': float(np.nanpercentile(arr, 25)),
-        'q75': float(np.nanpercentile(arr, 75))
+        'best_current': current_best,
+        'worst_current': current_worst,
+        'best_window': float(np.nanmax(arr)),
+        'worst_window': float(np.nanmin(arr))
     }
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
