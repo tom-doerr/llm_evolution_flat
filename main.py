@@ -343,10 +343,7 @@ def run_genetic_algorithm(
         log_population(
             population,
             generation,
-            stats['mean'],  # Use sliding window stats
-            stats['median'],
-            stats['std'],
-            current_diversity,
+            stats,
             "evolution.log.gz"
         )
 
