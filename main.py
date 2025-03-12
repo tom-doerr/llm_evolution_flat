@@ -4,7 +4,7 @@ from typing import List
 import dspy
 
 # Configure DSPy with OpenRouter
-lm = dspy.LM('openrouter/google/gemini-2.0-flash-001')
+lm = dspy.LM('openrouter/google/gemini-2.0-flash-001', max_tokens=40)
 dspy.configure(lm=lm)
 
 def create_agent(chromosome: str) -> dict:
