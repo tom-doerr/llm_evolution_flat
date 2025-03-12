@@ -213,16 +213,22 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_mates:
         raise ValueError("No valid mates")
 
-    response = dspy.Predict(MateSelectionSignature)(
+    # Get LLM selection or fallback to weighted choice
+    selected = dspy.Predict(MateSelectionSignature)(
         parent_chromosome=parent["chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid_mates],
         temperature=0.7,
         top_p=0.9
-    )
+    ).selected_mate.strip()[:40]
 
-    selected = str(response.selected_mate).strip()[:40]
-    return next((c for c in valid_mates if c["chromosome"] == selected),
-               max(valid_mates, key=lambda x: x["fitness"]**2))
+    # Check if LLM selection is valid
+    llm_choice = next((c for c in valid_mates if c["chromosome"] == selected), None)
+    if llm_choice:
+        return llm_choice
+        
+    # Fallback to fitness-weighted selection
+    weights = np.array([c["fitness"]**2 + 1e-6 for c in valid_mates])
+    return valid_mates[np.random.choice(len(valid_mates), p=weights/weights.sum())]
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
