@@ -347,15 +347,14 @@ def apply_mutations(generation: List[dict], base_rate: float) -> List[dict]:
     div_ratio = calculate_diversity(generation)
     rate = np.clip(base_rate * (1.0 - np.log1p(div_ratio)), 0.1, 0.8)
     
-    mutated = [{
-        **agent,
-        "chromosome": (mutate(agent["chromosome"]) 
-            if random.random() < rate 
-            else agent["chromosome"])
-    } for agent in generation]
+    # Simplified mutation application
+    mutated = []
+    for agent in generation:
+        chrom = mutate(agent["chromosome"]) if random.random() < rate else agent["chromosome"]
+        mutated.append({**agent, "chromosome": chrom})
 
     unique = len({a["chromosome"] for a in mutated})
-    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} U:{unique}/{len(generation)}")
+    print(f"🧬 D:{div_ratio:.0%} M:{rate:.0%} Unique:{unique}")
     return mutated
 
 
