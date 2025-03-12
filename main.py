@@ -123,14 +123,13 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Calculate weights using vectorized operations
-    fitness_scores = np.array([a['fitness'] ** 2 for a in population], dtype=np.float64)
-    pareto_weights = np.random.pareto(3.0, len(population)) + 1
-    weights = fitness_scores * pareto_weights
-    
-    # Numeric stability and normalization
+    # Calculate combined weights in one step
+    weights = (
+        np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) * 
+        (np.random.pareto(3.0, len(population)) + 1)
+    )
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
-    weights /= weights.sum()
+    weights /= weights.sum()  # Normalize
     
     # Select without replacement using weighted probabilities
     selected_indices = np.random.choice(
@@ -168,13 +167,10 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    mc, agent_chrom = agent["mutation_chromosome"], agent["chromosome"]
-    
-    # Extract and validate parameters
-    temp_str = mc[0:3] or '0.7'
-    top_p_str = mc[3:7] or '0.9'
-    temperature = max(0.0, min(2.0, float(temp_str)))
-    top_p = max(0.0, min(1.0, float(top_p_str)))
+    # Combined extraction and validation
+    mc = agent["mutation_chromosome"]
+    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))
+    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))
     
     assert 0.0 <= temperature <= 2.0, f"Invalid temperature {temperature}"
     assert 0.0 <= top_p <= 1.0, f"Invalid top_p {top_p}"
@@ -286,8 +282,9 @@ def get_hotspots(chromosome: str) -> list:
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
-    p_chrom, m_chrom = parent["chromosome"], mate["chromosome"]
-    switch = random.choice(get_hotspots(p_chrom))
+    switch = random.choice(get_hotspots(parent["chromosome"]))
+    p_chrom = parent["chromosome"]
+    m_chrom = mate["chromosome"]
     return f"{p_chrom[:switch]}{m_chrom[switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] if switch else p_chrom
 
 def crossover(parent: dict, population: List[dict]) -> dict:
