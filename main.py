@@ -44,15 +44,14 @@ def calculate_window_statistics(fitness_window: list) -> dict:
                 "best": 0.0, "worst": 0.0, "q25": 0.0, "q75": 0.0}
     
     try:
-        arr = np.array(window, dtype=np.float64)
         return {
-            "mean": float(np.nanmean(arr)),
-            "median": float(np.nanmedian(arr)),
-            "std": float(np.nanstd(arr)),
-            "best": float(np.nanmax(arr)),
-            "worst": float(np.nanmin(arr)),
-            "q25": float(np.nanpercentile(arr, 25)),
-            "q75": float(np.nanpercentile(arr, 75))
+            "mean": float(np.nanmean(window)),
+            "median": float(np.nanmedian(window)),
+            "std": float(np.nanstd(window)),
+            "best": float(np.nanmax(window)),
+            "worst": float(np.nanmin(window)),
+            "q25": float(np.nanpercentile(window, 25)),
+            "q75": float(np.nanpercentile(window, 75))
         }
     except Exception as e:
         raise RuntimeError(f"Window statistics calculation failed: {str(e)}") from e
@@ -160,13 +159,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighting by fitness^2"""
     # Sort population by descending fitness
     sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
-    ranks = np.arange(1, len(sorted_pop) + 1)
-    
-    # Calculate Pareto distribution weights using fitness^2 as specified
-    fitness_squared = np.array([a['fitness']**2 for a in sorted_pop])
-    weights = fitness_squared / fitness_squared.sum()  # Weight by fitness^2
-    weights *= 1.0 / (ranks ** 2)  # Apply Pareto distribution
-    weights /= weights.sum()  # Normalize again after combined weighting
+    # Calculate Pareto distribution weights using fitness^2 and inverse square ranking
+    weights = np.array([a['fitness']**2 for a in sorted_pop])
+    weights /= weights.sum()
+    weights *= 1.0 / (np.arange(1, len(sorted_pop)+1) ** 2)
+    weights /= weights.sum()
     
     # Validate weights before selection
     assert np.all(weights >= 0), "Negative weights detected in parent selection"
