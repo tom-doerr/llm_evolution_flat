@@ -1,8 +1,8 @@
 import random
 import string
+import logging
 from typing import List
 import dspy
-import logging
 
 # Configure logging
 logging.basicConfig(
