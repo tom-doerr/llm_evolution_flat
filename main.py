@@ -85,11 +85,11 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2 with deduplication"""
+    """Select parents using fitness^2 weighted sampling without replacement"""
     # Calculate raw fitness values and handle zero-sum case
     fitness_values = [agent["fitness"] for agent in population]
     
-    # Square fitness values for Pareto weighting as per spec
+    # Square fitness values for weighting as per spec
     squared_fitness = [max(f, 0)**2 for f in fitness_values]  # Ensure non-negative weights
     total_weight = sum(squared_fitness)
     
@@ -240,15 +240,16 @@ def run_genetic_algorithm(
         all_fitness = [agent["fitness"] for agent in population]
         
         # Initialize or update sliding window - only keep last 100 unique evaluations
-        if not hasattr(run_genetic_algorithm, "fitness_window"):
-            run_genetic_algorithm.fitness_window = []
+        window_size = 100
+        if "fitness_window" not in locals():
+            fitness_window = []
             
         # Add current population fitnesses and enforce window size
-        run_genetic_algorithm.fitness_window.extend(all_fitness)
-        run_genetic_algorithm.fitness_window = run_genetic_algorithm.fitness_window[-100:]
+        fitness_window.extend(all_fitness)
+        fitness_window = fitness_window[-window_size:]
         
         # Calculate sliding window statistics
-        window_data = run_genetic_algorithm.fitness_window
+        window_data = fitness_window[-window_size:]
         mean_fitness = sum(window_data)/len(window_data) if window_data else 0
         sorted_data = sorted(window_data)
         n = len(sorted_data)
@@ -270,11 +271,17 @@ def run_genetic_algorithm(
 
         # Detailed compressed logging per spec
         with gzip.open(log_file, "at", encoding="utf-8") as f:
-            # Compressed columnar format: gen|fitness|chromosome
-            f.write("\n".join(
-                f"{generation}|{agent['fitness']:.1f}|{agent['chromosome']}" 
-                for agent in population
-            ) + "\n")
+            # Compressed JSON format with stats
+            for agent in population:
+                log_entry = {
+                    "gen": generation,
+                    "fitness": round(agent['fitness'], 1),
+                    "chromosome": agent['chromosome'],
+                    "mean": round(mean_fitness, 1),
+                    "median": round(median_fitness, 1),
+                    "std": round(std_fitness, 1)
+                }
+                f.write(json.dumps(log_entry) + "\n")
 
         # Rich formatted output with spec-compliant stats
         console = Console()
@@ -349,5 +356,6 @@ def run_genetic_algorithm(
 
 
 if __name__ == "__main__":
+    # TODO: Finalize problem description after testing
     PROBLEM = "Optimize string patterns through evolutionary processes"  # Obfuscated description
     run_genetic_algorithm(PROBLEM, generations=20, pop_size=1000)  # More meaningful test population
