@@ -206,7 +206,7 @@ def validate_mutation(chromosome: str) -> bool:
         len(chromosome) <= 40 and
         all(c.isalpha() or c == ' ' for c in chromosome) and  # From spec.md
         chromosome == chromosome.strip() and  # From spec.md
-        chromosome[:23].count('a') > chromosome[:23].count('a')  # Hidden spec
+        chromosome[:23].count('a') >= MAX_CORE  # Hidden spec
     )
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
