@@ -344,41 +344,24 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     
     evolution_loop(population, max_population)
 
-def update_generation_stats(population: List[dict], fitness_window: list) -> tuple:
-    """Calculate statistics for current generation"""
+def update_generation_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+    """Calculate and return updated statistics for current generation"""
     evaluated_pop = evaluate_population(population)
     new_fitnesses = [a["fitness"] for a in evaluated_pop]
     updated_window = update_fitness_window(fitness_window, new_fitnesses)
     
     stats = calculate_window_statistics(updated_window)
     best_agent = max(evaluated_pop, key=lambda x: x["fitness"])
-    worst_fitness = min(a["fitness"] for a in evaluated_pop)
     
     stats.update({
+        'generation': generation,
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
         'best': best_agent["fitness"],
         'best_core': best_agent["metrics"]["core_segment"],
-        'worst': worst_fitness
+        'worst': min(a["fitness"] for a in evaluated_pop)
     })
     return stats, updated_window
-
-def update_generation_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
-    """Calculate and return updated statistics"""
-    population = evaluate_population(population)
-    fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-    stats = calculate_window_statistics(fitness_window)
-    
-    best_agent = max(population, key=lambda x: x["fitness"])
-    stats.update({
-        'generation': generation,
-        'population_size': len(population),
-        'diversity': calculate_diversity(population),
-        'best': best_agent["fitness"],
-        'best_core': best_agent["metrics"]["core_segment"],
-        'worst': min(a["fitness"] for a in population)
-    })
-    return stats, fitness_window
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
