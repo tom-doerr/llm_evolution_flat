@@ -137,8 +137,8 @@ def calculate_parent_weights(population: List[dict]) -> np.ndarray:
     fitness_scores = np.array([a['fitness'] ** 2 for a in population], dtype=np.float64)
     assert not np.isnan(fitness_scores).any(), "NaN values detected in fitness scores"
     
-    # Pareto distribution weighting by fitness^2 per spec.md
-    weights = fitness_scores * (np.random.pareto(2.0, len(population)) + 1)
+    # Pareto distribution with shape parameter=3.0 as specified (fitness^2 * Pareto)
+    weights = fitness_scores * (np.random.pareto(3.0, len(population)) + 1)
     
     # Numeric stability with vectorized operations
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6, np.finfo(np.float64).max, axis=0)
