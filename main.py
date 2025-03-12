@@ -251,23 +251,14 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         
     selected_mate = llm_select_mate(
         parent,
-        # Weighted sampling without replacement per spec.md
-        candidate_weights = np.array([a['fitness']**2 + 1e-6 for a in candidates])
-        total_weight = candidate_weights.sum()
-        
-        # Handle zero/negative weights per spec.md requirements
-        if total_weight <= 0:
-            candidate_weights = np.ones(len(candidates)) / len(candidates)
-        else:
-            candidate_weights /= total_weight
-
-        selected_indices = np.random.choice(
+        [candidates[i] for i in np.random.choice(
             len(candidates),
             size=min(5, len(candidates)),
             replace=False,
-            p=candidate_weights
-        )
-        candidates = [candidates[i] for i in selected_indices]
+            p=(lambda weights: weights/weights.sum() if weights.sum() > 0 else np.ones(len(weights))/len(weights))(
+                np.array([a['fitness']**2 + 1e-6 for a in candidates])
+            )
+        )]
     
     # Implement spec.md chromosome switching rules
     parent_chrom = parent["chromosome"]
