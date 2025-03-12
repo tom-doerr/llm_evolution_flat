@@ -262,31 +262,36 @@ def get_hotspots(chromosome: str) -> list:
         if c in {'.', '!', '?', ' '} or random.random() < 0.1
     ]
 
+def get_hotspots(chromosome: str) -> list:
+    """Get chromosome switch points per spec.md rules (punctuation/space with 10% chance)"""
+    return [
+        i for i, c in enumerate(chromosome)
+        if c in {'.', '!', '?', ' '} or random.random() < 0.1
+    ]
+
+def build_child_chromosome(p_chrom: str, m_chrom: str, hotspots: list) -> str:
+    """Construct child chromosome with single character switch"""
+    switch_point = random.choice(hotspots) if hotspots else 0
+    return f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:40]
+
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome switching"""
     candidates = (population[-WINDOW_SIZE:] or population)[:100]  # Hard limit
     valid_candidates = [a for a in candidates if validate_mating_candidate(a, parent)]
     
-    # Combined selection and mating
-    mate = llm_select_mate(
-        parent,
-        random.choices(
-            valid_candidates,
-            weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
-            k=min(5, len(valid_candidates))
-    )
+    # Fix syntax errors in random.choices call
+    selected = random.choices(
+        valid_candidates,
+        weights=[a['fitness']**2 + 1e-6 for a in valid_candidates],
+        k=min(5, len(valid_candidates))
     
-    # Simplified chromosome switching
-    switch_point = random.choice(
-        get_hotspots(parent["chromosome"]) or 
-        [random.randint(0, len(parent["chromosome"])-1]
-    )
-    p_chrom = parent["chromosome"]
-    m_chrom = mate["chromosome"]
+    mate = llm_select_mate(parent, selected)
     
-    return create_agent(
-        f"{p_chrom[:switch_point]}{m_chrom[switch_point]}{p_chrom[switch_point+1:]}"[:40]
-    )
+    return create_agent(build_child_chromosome(
+        parent["chromosome"],
+        mate["chromosome"],
+        get_hotspots(parent["chromosome"]) or [random.randint(0, len(parent["chromosome"])-1]
+    ))
 
 
 
