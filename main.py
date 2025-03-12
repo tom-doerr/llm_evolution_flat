@@ -301,7 +301,11 @@ def run_genetic_algorithm(
         # Log population with generation stats
         log_population(population, generation, mean_fitness, median_fitness, std_fitness, log_file)
 
-        # Display generation statistics
+        # Calculate and display statistics
+        fitness_values = [a['fitness'] for a in population]
+        mean_fitness = np.mean(fitness_values)
+        median_fitness = np.median(fitness_values)
+        std_fitness = np.std(fitness_values)
         display_generation_stats(generation, generations, population, best, mean_fitness, std_fitness, fitness_window)
 
         # Validate population state
