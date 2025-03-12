@@ -148,29 +148,24 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
     
-    # Enforce population limit first (spec.md requirement)
+    # Enforce population limit and get weights
     population = population[:MAX_POPULATION]
     weights = calculate_parent_weights(population)
     
-    # Convert weights to probabilities
-    total_weight = sum(weights)
-    probs = [w / total_weight for w in weights]
-    
-    # Weighted sampling without replacement using reservoir sampling
+    # Optimized weighted sampling using numpy
     sample_size = min(len(population), MAX_POPULATION//2)
-    selected_indices = []
-    for i, w in enumerate(probs):
-        if len(selected_indices) < sample_size:
-            selected_indices.append(i)
-        else:
-            j = random.choices(range(sample_size), weights=[probs[x] for x in selected_indices])[0]
-            if random.random() < w / probs[selected_indices[j]]:
-                selected_indices[j] = i
-    return [population[i] for i in selected_indices]
+    indices = np.random.choice(
+        len(population),
+        size=sample_size,
+        replace=False,
+        p=weights
+    )
+    return [population[i] for i in indices]
 
-# TODO: Implement mutation rate validation
-# TODO: Add hotspot probability tuning per spec.md
-# TODO: Optimize sliding window statistics calculation
+# Configuration constants from spec.md
+MUTATION_RATE = 0.1  # Base mutation probability 
+HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space
+MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
 
 
 
