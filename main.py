@@ -149,8 +149,6 @@ HOTSPOT_SPACE_PROB = 0.1  # Probability to create hotspot at space (spec.md 10%)
 MIN_HOTSPOTS = 1  # Minimum switch points per chromosome
 HOTSPOT_ANYWHERE_PROB = 0.023  # ~1 hotspot per 40 char chromosome on average (spec.md requirement)
 # Probability tuned to achieve average 1 switch per chrom combined with punctuation
-HOTSPOT_ANYWHERE_PROB = 0.02  # Reduced from 0.02 to 0.015 to better match spec.md requirement
-
 
 
 
