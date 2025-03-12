@@ -391,13 +391,17 @@ if __name__ == "__main__":
     )
 
 def log_population(stats: dict) -> None:
-    """Log population statistics in plain text format"""
+    """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
-        # Use formatted string literals for cleaner output
+        # Spec.md requires dense, minimal logging
         f.write(
-            f"Gen:{stats['generation']} Mean:{stats['mean']:.2f} "
-            f"Best:{stats['best']:.2f} Worst:{stats['worst']:.2f} "
-            f"σ:{stats['std']:.1f} Size:{stats['population_size']}\n"
+            f"{stats['generation']}\t" 
+            f"{stats['population_size']}\t"
+            f"{stats['mean']:.1f}\t"
+            f"{stats['median']:.1f}\t" 
+            f"{stats['std']:.1f}\t"
+            f"{stats['best_window']:.1f}\t"
+            f"{stats['worst_window']:.1f}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
