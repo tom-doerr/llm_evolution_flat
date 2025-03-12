@@ -191,28 +191,39 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def mutate_with_llm(chromosome: str, problem: str) -> str:
     """Mutate chromosome using LLM-based rephrasing with problem context"""
-    import re  # Added missing import for regex validation
-    # Allow spaces in validation per spec while preserving core rules
+    import re
     validation_pattern = r"^[A-Za-z ]{23,40}$"
+    
+    def validate_mutation(response):
+        """Structured validation with error tracking"""
+        result = str(response).strip()
+        if not re.match(validation_pattern, result):
+            raise ValueError(f"Invalid mutation format: {result}")
+        if result[:23].count('a') < chromosome[:23].count('a'):
+            raise ValueError(f"Core 'a's decreased from {chromosome[:23].count('a')} to {result[:23].count('a')}")
+        if len(result) < 23:
+            raise ValueError(f"Length below minimum (23): {len(result)}")
+        return result
+
     mutate_prompt = dspy.structured.StructuredPrompt(
         "original_chromosome: str, problem_description: str -> mutated_chromosome: str",
-        validate_output=lambda x: (
-            re.match(validation_pattern, x) and 
-            x[:23].count('a') >= 1  # Hidden goal enforcement
-        ))
+        validate_output=validate_mutation
+    )
     try:
         # Strict input validation
         problem = dspy.settings.get("problem")
         assert 23 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
         assert re.match(r"^[A-Za-z]+$", chromosome), "Invalid characters"
         response = mutate_prompt(
-            original_chromosome=f"{chromosome[:40]}\n"
+            original_chromosome=f"Original: {chromosome[:40]}\n"
                               f"Problem: {problem}\n"
-                              "Rules:\n"
-                              "- Change 2-3 characters\n"
-                              "- Keep first 23 chars intact\n"
-                              "- Letters only, 23-40 length\n"
-                              "Mutated version: ",
+                              "Mutation Rules:\n"
+                              "1. Modify exactly 2-3 characters\n"
+                              "2. Preserve first 23 characters\n"
+                              "3. Use only letters/spaces\n"
+                              "4. Length 23-40\n"
+                              "5. Enhance core segment quality\n"
+                              "Mutated Version: ",
         )
         # Extract and validate mutation
         mutated = str(response.mutated_chromosome).strip()[:40]
