@@ -310,7 +310,6 @@ def run_genetic_algorithm(
     generations: int = 10,
     pop_size: int = 1_000_000
 ) -> None:
-    log_file: str = "evolution.log.gz"
     """Run genetic algorithm with optimized logging and scaling"""
     # Remove unused window_size per issues.txt
     # Enforce population limits with validation
