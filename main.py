@@ -160,7 +160,7 @@ def mutate_with_llm(agent: dict) -> str:
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
-        instructions=agent.get("mutation_chromosome", "Change 1-2 chars post-23"),
+        instructions=agent.get("mutation_chromosome", "Modify post-23 chars using hotspots"),
         temperature=0.7,
         top_p=0.9
     )
