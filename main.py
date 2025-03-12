@@ -152,15 +152,14 @@ def select_parents(population: List[dict]) -> List[dict]:
     population = population[:MAX_POPULATION]
     weights = calculate_parent_weights(population)
     
-    # Efficient weighted sampling without replacement
+    # Convert weights to probabilities
+    total_weight = sum(weights)
+    probs = [w / total_weight for w in weights]
+    
+    # Weighted sampling without replacement using probability-ordered selection
     sample_size = min(len(population), MAX_POPULATION//2)
-    # Use generator to avoid storing full permutation array
-    selected_indices = (i for i in np.random.choice(
-        len(population),
-        size=sample_size,
-        replace=False,
-        p=weights
-    ))
+    sorted_indices = sorted(range(len(population)), key=lambda i: -probs[i])
+    selected_indices = sorted_indices[:sample_size]
     
     return [population[i] for i in selected_indices]
 
@@ -376,7 +375,7 @@ def update_generation_stats(population: List[dict], fitness_window: list, genera
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop with combined operations"""
     population = sorted(population, 
-        key=lambda a: (-a["fitness"], hash(a["chromosome"]) % 1000)
+        key=lambda a: (-a["fitness"], -hash(a["chromosome"]))
     )[:max_population]
     
     fitness_window = []
