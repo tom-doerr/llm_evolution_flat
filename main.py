@@ -130,16 +130,17 @@ def initialize_population(pop_size: int) -> List[dict]:
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto distribution weighted by fitness^2"""
     # Combined candidates and weights into single list comprehension
-    parent_pool = [(a, a['fitness']**2 + 1e-6) 
-                  for a in population[-WINDOW_SIZE:]]
-    
+    # Combined parent pool and selection into single loop
     selected = []
-    max_select = min(len(parent_pool)//2, MAX_POPULATION)
-    while len(selected) < max_select and parent_pool:
-        candidates, weights = zip(*parent_pool)
-        idx = random.choices(range(len(candidates)), weights=weights, k=1)[0]
-        selected.append(candidates.pop(idx))
-        weights.pop(idx)
+    pool = [(a, a['fitness']**2 + 1e-6) for a in population[-WINDOW_SIZE:]]
+    
+    while len(selected) < min(len(pool)//2, MAX_POPULATION) and pool:
+        candidates, weights = zip(*pool)
+        selected.append(pool.pop(random.choices(
+            range(len(candidates)), 
+            weights=weights, 
+            k=1
+        )[0])[0])
         
     return selected
 
@@ -286,7 +287,9 @@ def run_genetic_algorithm(pop_size: int) -> None:
         
         log_population(stats['generation'], stats)
         display_generation_stats(stats)
-        validate_population_state(*get_population_extremes(population))
+        # Inlined population extremes validation
+        sorted_pop = sorted(population, key=lambda x: x["fitness"], reverse=True)
+        validate_population_state(sorted_pop[0], sorted_pop[-1])
         population = generate_children(select_parents(population), population)[:MAX_POPULATION]
 
 
