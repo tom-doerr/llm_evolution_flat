@@ -129,14 +129,14 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict], fitness_window: list) -> List[dict]:
     """Select parents using sliding window of fitness^2 weighted sampling"""
-    candidates = [a for a in population if a['fitness'] in fitness_window[-WINDOW_SIZE:]]
-    weights = np.array([a['fitness']**2 + 1e-6 for a in candidates], dtype=np.float64)
+    candidates = population[-WINDOW_SIZE:]  # Use most recent window per spec
+    weights = np.array([a['fitness']**2 for a in candidates], dtype=np.float64)
     return [candidates[i] for i in np.random.default_rng().choice(
         len(candidates), 
         size=min(len(candidates)//2, MAX_POPULATION),
         p=weights/np.sum(weights),
         replace=False
-    )]
+    ))
 
 
 
@@ -275,9 +275,9 @@ def run_genetic_algorithm(generations: int = 10, pop_size: int = 1_000_000) -> N
     population = initialize_population(pop_size)
     fitness_window = []
 
-    # Empty log file at start per spec.md
+    # Clear log file completely per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        f.write("")  # Explicit truncate
+        pass  # Truncate file immediately
 
     for generation in range(generations):
         population = evaluate_population(population)
