@@ -1,10 +1,9 @@
-import os
-import openai
-from typing import List, Dict, Any
+import dspy
+from typing import List
 
-# Configure OpenRouter
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = os.getenv("OPENROUTER_API_KEY")
+# Configure DSPy with OpenRouter
+lm = dspy.LM('openrouter/google/gemini-2.0-flash-001')
+dspy.configure(lm=lm)
 
 class GeneticAgent:
     def __init__(self, chromosome: str):
@@ -14,17 +13,11 @@ class GeneticAgent:
     def evaluate(self, problem_description: str) -> float:
         """Evaluate the agent by making an LLM request"""
         try:
-            response = openai.ChatCompletion.create(
-                model="google/gemini-2.0-flash-001",
-                messages=[
-                    {"role": "system", "content": problem_description},
-                    {"role": "user", "content": self.chromosome}
-                ]
-            )
+            response = lm(self.chromosome)
             # For now, just use response length as fitness
-            self.fitness = len(response.choices[0].message.content)
+            self.fitness = len(response)
             return self.fitness
-        except Exception as e:
+        except RuntimeError as e:
             print(f"Error in LLM request: {e}")
             return 0.0
 
@@ -43,5 +36,5 @@ def run_genetic_algorithm(problem: str, generations: int = 10, pop_size: int = 5
             print(f"Chromosome: {agent.chromosome[:50]}... | Fitness: {fitness}")
 
 if __name__ == "__main__":
-    problem = "Optimize this solution for maximum efficiency"
-    run_genetic_algorithm(problem)
+    PROBLEM = "Optimize this solution for maximum efficiency"
+    run_genetic_algorithm(PROBLEM)

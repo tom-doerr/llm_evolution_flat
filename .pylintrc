@@ -32,3 +32,6 @@ max-line-length=120
 [BASIC]
 # Allow single-letter variable names
 good-names=i,j,k,ex,run,x,y,z
+
+# Disable trailing whitespace check
+disable=trailing-whitespace
