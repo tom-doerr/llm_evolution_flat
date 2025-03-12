@@ -176,7 +176,7 @@ def mutate_with_llm(agent: dict) -> str:
     mutate_prompt = dspy.Predict(
         "chromosome -> mutated_chromosome",
         instructions=agent.get("mutation_chromosome", 
-                             "Modify 1-3 characters while maintaining core structure")
+                             "Keep first 23 chars with many 'a's, change 2-3 later chars. Length 23-40. Letters only.")
     )
     try:
         response = mutate_prompt(chromosome=chromosome)
