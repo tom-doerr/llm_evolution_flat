@@ -93,7 +93,19 @@ def create_agent(chromosome: str) -> dict:
         # Fallback to random chromosome if empty
         length = random.randint(20, 40)
         chromosome = "".join(random.choices(string.ascii_letters + " ", k=length))
-    return {"chromosome": chromosome, "fitness": 0.0}
+    # Split into three specialized chromosomes per spec.md
+    task_chrom = chromosome[:23]
+    remaining = chromosome[23:] if len(chromosome) > 23 else ''
+    mate_chrom = remaining[:17] if len(remaining) >= 17 else remaining.ljust(17, ' ')
+    mutation_chrom = remaining[17:] if len(remaining) > 17 else ''
+    
+    return {
+        "chromosome": chromosome,
+        "task_chromosome": task_chrom,
+        "mate_selection_chromosome": mate_chrom[:17],
+        "mutation_chromosome": mutation_chrom[:20],
+        "fitness": 0.0
+    }
 
 
 def evaluate_agent(agent: dict) -> float:
@@ -154,7 +166,7 @@ def mutate_with_llm(agent: dict) -> str:
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
-        instructions=agent.get("mutation_chromosome", "Modify post-23 chars using hotspots"),
+        instructions=agent["mutation_chromosome"],
         temperature=0.7,
         top_p=0.9
     )
@@ -214,7 +226,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         raise ValueError("No valid mates")
 
     response = dspy.Predict(MateSelectionSignature)(
-        parent_chromosome=parent["chromosome"],
+        parent_chromosome=parent["mate_selection_chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid],
         temperature=0.7,
         top_p=0.9
