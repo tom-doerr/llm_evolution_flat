@@ -164,9 +164,8 @@ def select_parents(population: List[dict]) -> List[dict]:
     # Calculate population diversity using evolution module
     diversity = evolution.calculate_diversity(population)
     
-    # Dynamically adapt weights using continuous diversity measure
-    exponent = 1 + 2 * (1 - diversity)  # Scales from 1 (max diversity) to 3 (min diversity)
-    weights = np.array([(agent['fitness'] - min_fitness + 1e-8)**exponent for agent in population])
+    # Use Pareto distribution weighting by fitness^2 per spec
+    weights = np.array([(agent['fitness'] ** 2 + 1e-8) for agent in population])
     weights += 1e-8  # Add epsilon to avoid zero weights
     weights /= weights.sum()  # Normalize
     
@@ -192,9 +191,9 @@ def mutate_with_llm(chromosome: str, problem: str) -> str:
     try:
         response = mutate_prompt(
             original_chromosome=chromosome,
-            problem_description=f"{problem}\nMUTATION RULES:\n1. EXACTLY 23-40 LETTERS\n2. NO SPECIAL CHARS\n3. MAINTAIN CORE STRUCTURE\n4. CHANGE <= 3 CHARACTERS",  # Validation rules in prompt
+            problem_description=f"{problem}\nMUTATION RULES:\n1. 23-40 LETTERS ONLY\n2. CHANGE 1-3 CHARACTERS\n3. KEEP CORE STRUCTURE\n4. OUTPUT ONLY THE MUTATED STRING",  # More specific rules
         )
-        mutated = str(response.mutated_chromosome).strip()[:40]  # Hard truncate
+        mutated = str(response.get('mutated_chromosome', chromosome)).strip()[:40]  # Fallback to original
         # More rigorous validation and normalization
         mutated = ''.join([c.lower() if c.isalpha() else '' for c in mutated])  # Letters only
         mutated = mutated.ljust(23, 'a')  # Fill to min length with 'a's which help fitness
@@ -439,7 +438,7 @@ def display_generation_stats(generation, generations, population, best, mean_fit
         f"🏆 Best: {best['fitness']:.2f} | 📊 Mean: {mean_fitness:.2f}\n" 
         f"📈 Median: {stats['median']:.2f} | 📉 Std: {std_fitness:.2f}\n"
         f"🧬 Diversity: {diversity:.1%} | 👥 Size: {len(population)}\n"
-        f"👥 Population: {len(population)}/{get_population_limit()}",
+        f"🏆 Best/Worst: {stats['best']:.1f}/{stats['worst']:.1f}",
         title="Evolution Progress",
         style="blue"
     )
