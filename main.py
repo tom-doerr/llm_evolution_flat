@@ -240,10 +240,13 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     if not candidates:
         raise ValueError("No candidates available for crossover")
         
-    selected_mate = llm_select_mate(parent, random.choices(
-        candidates,
-        weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum(a['fitness']**2 + 1e-6 for a in candidates),
-        k=min(5, len(population))
+    selected_mate = llm_select_mate(
+        parent,
+        random.choices(
+            candidates,
+            weights=np.array([a['fitness']**2 + 1e-6 for a in candidates])/sum(a['fitness']**2 + 1e-6 for a in candidates),
+            k=min(5, len(population))
+        )
     )
     )
     
