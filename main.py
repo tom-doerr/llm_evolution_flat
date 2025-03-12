@@ -144,25 +144,24 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2 with sliding window"""
-    # Use sliding window of recent fitness values
-    window_size = min(len(population), WINDOW_SIZE)
-    sorted_pop = sorted(population, key=lambda x: -x['fitness'])[:window_size]
+    """Select parents using sliding window of last 100 fitness evaluations"""
+    window_pop = population[-WINDOW_SIZE:]  # Use actual sliding window from spec
+    weights = np.array([a['fitness']**2 for a in window_pop], dtype=np.float64)
     
-    # Square weights for Pareto distribution
-    weights = np.array([a['fitness']**2 for a in sorted_pop], dtype=np.float64)
-    weights /= weights.sum()
+    # Handle case where all weights are zero
+    if np.sum(weights) <= 0:
+        weights = np.ones(len(window_pop)) / len(window_pop)
+    else:
+        weights /= weights.sum()
     
-    # Weighted sampling without replacement
-    selected = []
-    indices = np.arange(len(sorted_pop))
-    while len(selected) < len(population)//2 and len(indices) > 0:
-        chosen_idx = np.random.choice(indices, p=weights/weights.sum())
-        selected.append(sorted_pop[chosen_idx])
-        indices = np.delete(indices, chosen_idx)
-        weights = np.delete(weights, chosen_idx)
-    
-    return selected
+    # Weighted sampling without replacement using indexes
+    selected_idx = np.random.choice(
+        len(window_pop), 
+        size=min(len(population)//2, len(window_pop)),
+        p=weights,
+        replace=False
+    )
+    return [window_pop[i] for i in selected_idx]
 
 
 
@@ -223,26 +222,18 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using fitness-weighted sampling without replacement"""
-    # Filter valid candidates once
-    valid_candidates = [
-        c for c in candidates 
-        if c["chromosome"] != parent["chromosome"] 
-        and c["fitness"] > 0
-    ]
+    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     
     if not valid_candidates:
         raise ValueError("No valid mates")
-        
-    # Use numpy for weighted sampling without replacement
-    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
-    weights /= weights.sum()
     
-    selected_idx = np.random.choice(
-        len(valid_candidates), 
-        p=weights,
-        replace=False
-    )
-    return valid_candidates[selected_idx]
+    weights = np.array([c["fitness"]**2 for c in valid_candidates], dtype=np.float64)
+    if weights.sum() <= 0:
+        weights = np.ones(len(valid_candidates)) / len(valid_candidates)
+    else:
+        weights /= weights.sum()
+    
+    return valid_candidates[np.random.choice(len(valid_candidates), p=weights)]
 
 def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument count
     """Create child through LLM-assisted mate selection"""
@@ -362,7 +353,7 @@ def run_genetic_algorithm(
         assert len(population) <= get_population_limit(), f"Population overflow {len(population)} > {get_population_limit()}"
         # Generate next generation with size monitoring
         parents = select_parents(population)
-        next_gen = generate_children(parents, population, len(population))
+        next_gen = generate_children(parents, population)
         print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
         # Auto-adjust mutation rate based on diversity
