@@ -17,7 +17,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 
 # TODOs sorted by priority:
 # HIGH:
-# TODO: Implement sliding window mate selection using fitness window
 # TODO: Optimize LLM prompt performance with batch processing
 # LOW:
 # TODO: Add chromosome compression for storage
@@ -250,21 +249,26 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     
     return valid_candidates[np.random.choice(len(valid_candidates), p=weights)]
 
-def crossover(parent: dict, population: List[dict]) -> dict:  # Fixed argument count
+def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection"""
+    # Get candidates using sliding window of last 100 fitness evaluations
+    window_pop = [a for a in population[-WINDOW_SIZE:] if a["chromosome"] != parent["chromosome"]]
+    weights = [a["fitness"]**2 for a in window_pop]
+    
     # Get candidates using weighted sampling without replacement
     candidates = random.choices(
-        population=[a for a in population if a["chromosome"] != parent["chromosome"]],
-        weights=[a["fitness"]**2 for a in population if a["chromosome"] != parent["chromosome"]],
-        k=min(5, len(population)//2)
-    )
+        population=window_pop,
+        weights=weights if sum(weights) > 0 else None,
+        k=min(5, len(window_pop))
     
     # Select mate using LLM prompt from qualified candidates
     mate = llm_select_mate(parent, candidates)
     
     # Combine chromosomes with core validation
-    min_split = 23 - len(mate["chromosome"]) 
-    split = random.randint(max(1, min_split), len(parent["chromosome"]) - 1)
+    split = random.randint(
+        max(1, 23 - len(mate["chromosome"])), 
+        len(parent["chromosome"]) - 1
+    )
     
     try:
         new_chromosome = parent["chromosome"][:split] + mate["chromosome"][split:]
