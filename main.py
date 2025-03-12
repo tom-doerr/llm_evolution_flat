@@ -160,9 +160,14 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness²"""
-    # Square fitness values for Pareto distribution weighting
-    weights = np.array([agent['fitness']**2 for agent in population])
+    """Select parents using adaptive weights based on diversity"""
+    # Calculate population diversity
+    unique_chromosomes = len({agent["chromosome"] for agent in population})
+    diversity = unique_chromosomes / len(population) if population else 0.0
+    
+    # Adapt weights based on diversity (more exploration when diversity is low)
+    exponent = 3 if diversity < 0.1 else 2 if diversity < 0.3 else 1.5
+    weights = np.array([agent['fitness']**exponent for agent in population])
     weights += 1e-8  # Add epsilon to avoid zero weights
     weights /= weights.sum()  # Normalize
     
@@ -331,7 +336,6 @@ def run_genetic_algorithm(
     problem: str,
     generations: int = 10,
     pop_size: int = 1_000_000,  # Default per spec
-    mutation_rate: float = 0.5,
     log_file: str = "evolution.log.gz",
 ):
     """Run genetic algorithm with optimized logging and scaling"""
@@ -387,6 +391,10 @@ def run_genetic_algorithm(
         next_gen = generate_children(parents, population, pop_size, problem)
         print(f"Population size: {len(next_gen)}/{MAX_POPULATION}")  # Simple monitoring
 
+        # Auto-adjust mutation rate based on diversity
+        current_diversity = calculate_diversity(population)
+        mutation_rate = 0.8 if current_diversity < 0.1 else 0.5 if current_diversity < 0.3 else 0.2
+        
         # Create and evolve next generation
         population = create_next_generation(next_gen, problem, mutation_rate, generation)
 
