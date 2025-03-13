@@ -198,8 +198,11 @@ def validate_mutation(chromosome: str) -> bool:
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     """Validate candidate meets mating requirements"""
+    # Per spec.md: candidates must differ and have valid chromosomes
     if candidate == parent:
         return False
+    # Validate mutation chromosome format
+    assert len(candidate["mutation_chromosome"]) == 7, "Mutation chromosome length invalid"
     try:
         # Validate mate selection chromosome exists and meets spec.md length
         assert len(candidate["mate_selection_chromosome"]) == 10, "Invalid mate selection chromosome length"
