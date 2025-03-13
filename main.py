@@ -14,7 +14,6 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
 WINDOW_SIZE = 100  # Default, can be overridden by CLI
-# pylint: disable=too-many-locals,too-many-statements,too-many-nested-blocks
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -158,27 +157,22 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
 
-    # Calculate weights using vectorized operations
     fitness = np.array([max(a['fitness'], 0) for a in population], dtype=np.float64)
     weights = (fitness ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
-    weights /= weights.sum()
+    
+    if weights.sum() > 0:
+        weights /= weights.sum()
+    else:  # Handle all-zero weights case
+        weights = np.ones_like(weights) / len(weights)
 
-    # Simplified sampling with modern numpy
     rng = np.random.default_rng()
-    try:
-        selected_indices = rng.choice(
-            len(population),
-            size=min(len(population), MAX_POPULATION//2),
-            replace=False,
-            p=weights
-        )
-    except ValueError:
-        selected_indices = rng.choice(
-            len(population),
-            size=min(len(population), MAX_POPULATION//2),
-            replace=False
-        )
+    selected_indices = rng.choice(
+        len(population),
+        size=min(len(population), MAX_POPULATION//2),
+        replace=False,
+        p=weights
+    )
         
     return [population[i] for i in selected_indices]
 
