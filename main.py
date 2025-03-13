@@ -43,7 +43,7 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md requirements"
 
 # Test mock configuration 
 if __name__ == "__main__" and "pytest" in sys.modules:
-    lm = dspy.LM("openrouter/mock_model")  # Use valid openrouter prefix
+    lm = dspy.LM("openai/mock_model")  # Use valid openai prefix
     dspy.configure(lm=lm, test_mode=True)
     assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
@@ -330,16 +330,19 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:  # pylint: disable=
     m_chrom = mate["chromosome"]
     hotspots = get_hotspots(p_chrom)
     
-    parts, source, last_idx = [], p_chrom, 0
+    parts = []
+    current_source = p_chrom
+    last_idx = 0
 
     for pos in sorted(hotspots):
-        if pos < len(p_chrom):
-            if random.random() < 0.6:
-                source = m_chrom if source == p_chrom else p_chrom
-            parts.append(source[last_idx:pos])
-            last_idx = pos
+        if pos >= len(p_chrom):
+            continue
+        if random.random() < 0.6:
+            current_source = m_chrom if current_source == p_chrom else p_chrom
+        parts.append(current_source[last_idx:pos])
+        last_idx = pos
 
-    parts.append(source[last_idx:])  # Final segment
+    parts.append(current_source[last_idx:])  # Final segment
     return validate_chromosome("".join(parts))
 
 def crossover(parent: dict, population: List[dict]) -> dict:
@@ -543,22 +546,20 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                 parent = random.choice(select_parents(population))
                 
                 # Simplified child creation pipeline
-                child = (crossover(parent, population) if random.random() < CROSSOVER_RATE 
-                        else create_agent(mutate(parent, cli_args)))
+                child = crossover(parent, population) if random.random() < CROSSOVER_RATE else None
+                child = child or create_agent(mutate(parent, cli_args))
                 
-                if child:
-                    child["fitness"] = evaluate_agent(child)
-                    population.append(child)
-                    
-                    # Maintain population size
-                    if len(population) > MAX_POPULATION:
-                        population = trim_population(population, MAX_POPULATION)
-                    
-                    # Update statistics every 10 iterations
-                    iterations += 1
-                    if iterations % 10 == 0:
-                        stats = calculate_window_statistics(fitness_window)
-                        _handle_iteration_stats(stats, population, cli_args)
+                child["fitness"] = evaluate_agent(child)
+                population.append(child)
+                
+                # Maintain population size
+                population = population if len(population) <= MAX_POPULATION else trim_population(population, MAX_POPULATION)
+                
+                # Update statistics every 10 iterations
+                iterations += 1
+                if iterations % 10 == 0:
+                    stats = calculate_window_statistics(fitness_window)
+                    _handle_iteration_stats(population, cli_args)  # Pass population directly
                         
         except KeyboardInterrupt:
             print("\nEvolution stopped by user. Exiting gracefully.")
