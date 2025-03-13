@@ -149,7 +149,7 @@ HOTSPOT_ANYWHERE_PROB = 0.025  # Adjusted to exactly 1 hotspot per 40 char chrom
 class MutateSignature(dspy.Signature):
     """Mutate chromosomes while preserving first 23 characters and increasing 'a' density."""
     chromosome = dspy.InputField(desc="Current chromosome to mutate")
-    instructions = dspy.InputField(desc="Mutation strategy instructions") 
+    mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
 def mutate_with_llm(agent: dict) -> str:
@@ -158,7 +158,7 @@ def mutate_with_llm(agent: dict) -> str:
     core_segment = agent["chromosome"][:23].lower()
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
-        instructions=agent["mutation_chromosome"]
+        mutation_instructions=agent["mutation_chromosome"]
     )
 
     valid_candidate = next(
