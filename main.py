@@ -83,10 +83,10 @@ def create_agent(chromosome: str) -> dict:
     
     # Preserve original chromosome structure while deriving components
     return {
-        "chromosome": original_chromo,  # Store original unevolved chromosome
-        "task_chromosome": original_chromo[:23],  # Unmodified first 23 chars
-        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower(),
-        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7],
+        "chromosome": chromosome,
+        "task_chromosome": chromosome[:23],
+        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),  # 10 chars enforced per spec.md
+        "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # 7 chars for mutation instructions
         "fitness": 0.0
     }
 
