@@ -542,54 +542,38 @@ def _create_child(parent: dict, population: list, cli_args: argparse.Namespace) 
 
 def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads)
-    # Evaluate initial population in parallel
-    futures = [executor.submit(evaluate_agent, agent) for agent in population]
-    # Process futures to ensure evaluation completes
-    concurrent.futures.wait(futures)
-    fitness_window = [a["fitness"] for a in population]
-    
-    print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
-
-    try:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads) as executor:
+        # Initial evaluation
+        list(executor.map(evaluate_agent, population))
+        fitness_window = [a["fitness"] for a in population]
+        
+        print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
         iterations = 0
-        with concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads) as executor:
-            # Error handling for thread pool
-            futures = []
+        
+        try:
             while True:
-                iterations += 1
                 parent = random.choice(select_parents(population))
                 
-                # Create new child through mutation or crossover
-                # Submit and track future
-                future = executor.submit(
-                    crossover if random.random() < CROSSOVER_RATE and len(population) > 1 
-                    else lambda p: create_agent(mutate(p, cli_args)),
-                    parent,
-                    population
-                )
-
-                try:
-                    child = future.result()
+                # Simplified child creation pipeline
+                child = (crossover(parent, population) if random.random() < CROSSOVER_RATE 
+                        else create_agent(mutate(parent, cli_args)))
+                
+                if child:
                     child["fitness"] = evaluate_agent(child)
                     population.append(child)
                     
+                    # Maintain population size
                     if len(population) > MAX_POPULATION:
                         population = trim_population(population, MAX_POPULATION)
                     
-                    fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
-                    
+                    # Update statistics every 10 iterations
+                    iterations += 1
                     if iterations % 10 == 0:
                         stats = calculate_window_statistics(fitness_window)
                         _handle_iteration_stats(stats, population, cli_args)
                         
-                except (ValueError, TypeError) as e:
-                    print(f"Child creation failed: {e}")
-
-                time.sleep(0.01)
-                
-    except KeyboardInterrupt:
-        print("\nEvolution stopped by user. Exiting gracefully.")
+        except KeyboardInterrupt:
+            print("\nEvolution stopped by user. Exiting gracefully.")
 
 def _handle_iteration_stats(stats: dict, population: list, cli_args: argparse.Namespace) -> None:
     """Handle stats display and logging for each iteration batch"""
