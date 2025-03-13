@@ -1,16 +1,12 @@
+import argparse
 import concurrent.futures
 import random
 import string
 import sys
 import time
-import argparse
 from typing import List
 
 # Third party imports
-import numpy as np
-import dspy
-from rich.console import Console
-from rich.panel import Panel
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
@@ -295,7 +291,7 @@ def _fallback_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     return fallback
 
 
-def mutate(agent: dict) -> str:
+def mutate(agent: dict, cli_args: argparse.Namespace) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
     mutated = mutate_with_llm(agent, cli_args)
     agent['mutations'] = agent.get('mutations', 0) + 1  # Track mutation count per agent
@@ -539,11 +535,11 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     
     return [population[i] for i in selected_indices]
 
-def evolution_loop(population: List[dict]) -> None:
+def evolution_loop(population: List[dict], args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
     
     fitness_window = []
-    num_threads = args.threads  # Use the threads argument
+    num_threads = args.threads
     iterations = 0
     
     # Initial evaluation of population
