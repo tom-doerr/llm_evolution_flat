@@ -210,6 +210,8 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     if candidate == parent:
         return False
     try:
+        # Validate all 3 chromosomes exist and are non-empty
+        assert all(candidate[key] for key in ["chromosome", "task_chromosome", "mate_selection_chromosome"]), "Missing chromosomes"
         validated = validate_chromosome(candidate["chromosome"])
         # Ensure chromosomes are different and valid length (spec.md requirements)
         return (
