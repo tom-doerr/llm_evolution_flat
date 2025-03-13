@@ -295,14 +295,18 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
         k=min(len(parents), MAX_POPULATION//2)
     )
     
-    return [
-        crossover(random.choice(selected_parents), population)
-        if random.random() < 0.9 else 
-        agent = create_agent(mutate(random.choice(selected_parents)))
-        agent['mutation_source'] = 'llm_mutation'  # Track mutation source
-        agent
-        for _ in range(MAX_POPULATION - len(selected_parents))
-    ][:MAX_POPULATION]
+    children = []
+    for _ in range(MAX_POPULATION - len(selected_parents)):
+        if random.random() < 0.9:
+            child = crossover(random.choice(selected_parents), population)
+        else:
+            parent = random.choice(selected_parents)
+            mutated = mutate(parent)
+            agent = create_agent(mutated)
+            agent['mutation_source'] = 'llm_mutation'
+            child = agent
+        children.append(child)
+    return children[:MAX_POPULATION]
 
 
 def get_population_extremes(population: List[dict]) -> tuple:
