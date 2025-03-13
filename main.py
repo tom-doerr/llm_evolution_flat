@@ -170,15 +170,15 @@ def mutate_with_llm(agent: dict) -> str:
         instructions=mc,
     )
     
-    core = agent["chromosome"][:23].lower()
-    for r in response.completions:
-        candidate = str(r).strip()[:40].lower()
-        if candidate.startswith(core):
+    # Validate responses using pre-computed core
+    core_segment = agent["chromosome"][:23].lower()
+    for completion in response.completions:
+        candidate = str(completion).strip()[:40].lower()
+        if candidate.startswith(core_segment):
             return candidate
     
-    # Fallback mutation
-    return (core + ''.join(random.choices(string.ascii_lowercase + ' ', 
-                      k=random.randint(0, 17))))[:40]
+    # Fallback mutation with core preservation
+    return f"{core_segment}{''.join(random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17)))}"[:40]
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
