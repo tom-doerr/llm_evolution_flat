@@ -199,6 +199,7 @@ HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per 
 HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
+AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
 
 
 
@@ -369,60 +370,28 @@ def get_hotspots(chromosome: str) -> list:
     return sorted(list(set(hotspots)))  # Remove duplicates and sort
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
-    """Construct child chromosome with character switches at hotspots"""
+    """Construct child chromosome with switches at hotspots"""
     p_chrom = parent["chromosome"]
     m_chrom = mate["chromosome"]
     
-    # Get hotspots for chromosome switching
     hotspots = get_hotspots(p_chrom)
-    
-    # If no hotspots found, create at least one
-    if not hotspots and p_chrom:
-        # Create hotspot in core and after core
-        hotspots = [random.randint(0, 22), random.randint(23, min(len(p_chrom), len(m_chrom)) - 1)]
-    
-    # Build combined chromosome with switches at hotspots
-    result = ""
-    last_pos = 0
+    result = []
     use_parent = True
-    
+    last_pos = 0
+
     for pos in sorted(hotspots):
-        if pos >= min(len(p_chrom), len(m_chrom)):
+        if pos >= len(p_chrom):
             continue
             
-        # Add segment from current chromosome
-        segment = p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos]
-        result += segment if last_pos < len(segment) else ""
-        
-        # Switch chromosomes
+        # Take segment from current parent
+        result.append(p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos])
         use_parent = not use_parent
         last_pos = pos
+
+    # Add remaining sequence
+    result.append(p_chrom[last_pos:] if use_parent else m_chrom[last_pos:])
     
-    # Add final segment
-    if last_pos < min(len(p_chrom), len(m_chrom)):
-        final = p_chrom[last_pos:] if use_parent else m_chrom[last_pos:]
-        result += final
-    
-    # Special case: improve 'a' count in core
-    result_core = result[:23] if len(result) >= 23 else result.ljust(23, 'a')
-    result_suffix = result[23:30] if len(result) > 23 else ""
-    
-    # Occasionally boost 'a' count in offspring
-    if random.random() < 0.2:  # 20% chance
-        result_core_list = list(result_core)
-        # Replace 1-3 random non-'a' characters with 'a's
-        non_a_positions = [i for i in range(23) if result_core_list[i] != 'a']
-        if non_a_positions:
-            for _ in range(min(3, len(non_a_positions))):
-                if not non_a_positions:
-                    break
-                pos = random.choice(non_a_positions)
-                result_core_list[pos] = 'a'
-                non_a_positions.remove(pos)
-            result_core = ''.join(result_core_list)
-    
-    # Validate before returning
-    return validate_chromosome(result_core + result_suffix)
+    return validate_chromosome("".join(result))
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
