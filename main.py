@@ -20,7 +20,6 @@ PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
 CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', '-', '_', '"', "'"}  # Punctuation only
-HOTSPOT_SPACE_PROB = 0.35  # Separate space probability 
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1.0 avg switches per chrom
@@ -44,7 +43,7 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md requirements"
 
 # Test mock configuration 
 if __name__ == "__main__" and "pytest" in sys.modules:
-    lm = dspy.LM("mockprovider/mock_model")  # Add valid provider prefix
+    lm = dspy.LM("openrouter/mock_model")  # Use valid openrouter prefix
     dspy.configure(lm=lm, test_mode=True)
     assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
@@ -232,16 +231,8 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 
 def _build_mutation_prompt(agent: dict) -> str:
     """Construct mutation prompt string per spec.md requirements"""
-    return (
-        f"{agent['mutation_chromosome']}\n"
-        f"Original DNA: {agent['chromosome']}\n"
-        "Mutated version must:\n"
-        "- Keep first 23 characters mostly intact\n" 
-        "- Increase 'a' density in first 23 chars\n"
-        "- Remove characters after position 23\n"
-        "- Only use letters and spaces\n"
-        "Mutated version:"
-    ).strip()
+    # Use mutation chromosome as the sole instruction per spec.md
+    return f"{agent['mutation_chromosome']}\nOriginal: {agent['chromosome']}\nMutated:"
 
 def _process_llm_response(response, cli_args) -> str:
     """Process LLM response into valid chromosome"""
@@ -301,10 +292,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
         parent_dna=parent["chromosome"],
-        candidate_chromosomes=[f"{c['chromosome']} (fitness: {c['fitness']})" + 
-                             f"\nTask: {c['task_chromosome']}" +
-                             f"\nMate: {c['mate_selection_chromosome']}" +
-                             f"\nMutate: {c['mutation_chromosome']}" 
+        candidate_chromosomes=[f"{c['chromosome']} (fitness: {c['fitness']})" 
                              for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
@@ -428,7 +416,7 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as log_file:
         log_file.truncate(0)  # Immediately clear file contents per spec
-        header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
+        header = "Generation | Population | Mean | Median | StdDev | Best | Worst | Diversity | Core | Mutations | Threads | A-Count\n"
         # Write initial log entry
         log_file.write(f"Evolution started at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         # Validate plain text format
