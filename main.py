@@ -501,7 +501,7 @@ def log_and_display_stats(iterations: int, population: List[dict], fitness_windo
     best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
     
     stats.update({
-        'generation': generation,
+        'generation': iterations,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
@@ -706,13 +706,11 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, cli_
     best_core = best_agent.get("metrics", {}).get("core_segment", "")
     
     # Print best chromosome for debugging
-    if best_agent:
-        if args.verbose:
-            if args.verbose:
-                print(f"Best chromosome: {best_agent['chromosome']}")
-            print(f"Best fitness: {best_agent['fitness']}")
-            print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
-            print(f"Length after core: {len(best_agent['chromosome']) - 23}")
+    if best_agent and cli_args.verbose:
+        print(f"Best chromosome: {best_agent['chromosome']}")
+        print(f"Best fitness: {best_agent['fitness']}")
+        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
+        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
     
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
