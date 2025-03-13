@@ -1,5 +1,7 @@
 import random
 import string
+import concurrent.futures
+import time
 from typing import List
 
 import numpy as np
@@ -22,8 +24,9 @@ lm = dspy.LM(
 )
 dspy.configure(lm=lm)
 
-# Test mock configuration
 import sys
+
+# Test mock configuration
 if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
     dspy.configure(lm=lm, test_mode=True)
@@ -209,7 +212,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, args) -> str:
+def mutate_with_llm(agent: dict, args: argparse.Namespace) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -533,8 +536,6 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
 
 def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop without discrete generations"""
-    import concurrent.futures
-    import time
     
     fitness_window = []
     num_threads = args.threads  # Use the threads argument
