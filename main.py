@@ -17,6 +17,7 @@ WINDOW_SIZE = 100  # Default, can be overridden by CLI
 # Configuration constants moved from later in file
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
+CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
@@ -27,13 +28,15 @@ assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
 assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
 class EvolutionaryOptimizer(dspy.Module):
-    def __init__(self):
+    def __init__(self, population_size=1000):
         super().__init__()
-        self.population = []
+        self.population = initialize_population(population_size)
+        self.fitness_window = []
     
     def forward(self, **kwargs):
-        # TODO: Implement DSPy optimization interface
-        return self.population
+        """Run evolutionary optimization and return best candidates"""
+        self.population = evolution_loop(self.population, argparse.Namespace(threads=10, verbose=False))
+        return [agent["chromosome"] for agent in self.population[:10]]
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -282,12 +285,9 @@ def validate_mutation(chromosome: str) -> bool:
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     """Validate candidate meets mating requirements"""
-    return all([
-        candidate != parent,
-        all(key in candidate for key in ("mutation_chromosome", "mate_selection_chromosome", "chromosome")),
-        len(validate_chromosome(candidate["chromosome"])) >= 23,
-        validate_chromosome(candidate["chromosome"]) != parent["chromosome"]
-    ])
+    return (candidate != parent and 
+            len(candidate["chromosome"]) >= 23 and
+            candidate["chromosome"] != parent["chromosome"])
 
 class MateSelectionSignature(dspy.Signature):
     """Select mate using agent's mate-selection chromosome as instructions"""
@@ -562,7 +562,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                 parent = random.choice(selected_parents)
                 
                 # Either crossover or mutate
-                if random.random() < 0.9 and len(population) > 1:
+                if random.random() < CROSSOVER_RATE and len(population) > 1:
                     # Submit crossover task
                     future = executor.submit(crossover, parent, population)
                 else:
