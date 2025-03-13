@@ -368,7 +368,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights using fitness^2 * Pareto distribution per spec
     weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
@@ -510,7 +510,7 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
 
-def log_and_display_stats(stats: dict) -> None:
+def log_and_display_stats(stats: dict, fitness_window: list, population: list, generation: int) -> None:
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
     current_fitness = [a["fitness"] for a in population]
@@ -575,7 +575,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
                     
                     if iterations % 10 == 0:
-                        _handle_iteration_stats(stats, fitness_window, population, iterations, cli_args)
+                        _handle_iteration_stats(population, fitness_window, cli_args)
                         
                 except (ValueError, TypeError) as e:
                     print(f"Child creation failed: {e}")
