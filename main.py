@@ -42,7 +42,7 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md requirements"
 
 # Test mock configuration 
 if __name__ == "__main__" and "pytest" in sys.modules:
-    lm = dspy.LM("mock_model")
+    lm = dspy.LM("mock/mock_model")  # Add provider prefix to mock model
     dspy.configure(lm=lm, test_mode=True)
     assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
