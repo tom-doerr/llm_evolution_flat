@@ -245,14 +245,11 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         top_p=0.9
     ).selected_mate.lower()
 
-    # Find best match with fallback to weighted random
-    sum_weights = sum(a['fitness']**2 for a in valid_candidates)
-    weights = [a['fitness']**2/sum_weights for a in valid_candidates]
+    # Find best match with fallback to random valid candidate
     for candidate in valid_candidates:
         if candidate["chromosome"].lower().startswith(result):
             return candidate
-    candidates = [c for c in valid_candidates if result.lower() in c["chromosome"].lower()]
-    return random.choice(candidates) if candidates else random.choice(valid_candidates)
+    return random.choice(valid_candidates)
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
