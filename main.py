@@ -26,6 +26,15 @@ HOTSPOT_ANYWHERE_PROB = 0.025  # Matches spec.md requirement for ~1 switch per c
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
 assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
+class EvolutionaryOptimizer(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.population = []
+    
+    def forward(self, **kwargs):
+        # TODO: Implement DSPy optimization interface
+        return self.population
+
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=80, timeout=10, cache=False
@@ -166,7 +175,8 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
 
     fitness = np.array([max(a['fitness'], 0) for a in population], dtype=np.float64)
-    weights = (fitness ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
+    # Stronger fitness pressure per spec
+    weights = (fitness ** 3) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
     
     if weights.sum() > 0:
@@ -650,11 +660,10 @@ def display_generation_stats(stats: dict) -> None:
     a_count = best_core.count('a') if best_core else 0
     
     console.print(Panel(
-        f"[bold]Gen {stats.get('generation', 0)}[/]\n"
-        f"Current μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}\n"
-        f"Window μ:{stats.get('window_mean', 0.0):.1f} σ:{stats.get('window_std', 0.0):.1f}\n"
-        f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
-        f"Core: [a's:{a_count}/23] {best_core[:10]}...{best_core[-10:]}\n" 
+        f"[bold]Gen {stats.get('generation', 0)}[/] "
+        f"Best: {stats.get('best', 0.0):.1f} Δ{stats.get('diversity', 0.0):.0%}\n"
+        f"μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} "
+        f"Core: [a's:{a_count}/23] {best_core[:10]}...\n" 
         f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         subtitle=f"[Population: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}]",
@@ -761,7 +770,7 @@ if __name__ == "__main__":
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
-                       help='Number of parallel threads (default: 10)',
+                       help='Number of parallel threads (default: %(default)s)',
                        choices=range(1, 21))  # Don't require flag for default
     parser.add_argument('--verbose', action='store_true',
                        help='Enable verbose output')
