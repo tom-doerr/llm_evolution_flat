@@ -1,6 +1,7 @@
 import concurrent.futures
 import random
 import string
+import sys
 import time
 import argparse
 from typing import List
@@ -25,6 +26,7 @@ lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=80, timeout=10, cache=False
 )
 dspy.configure(lm=lm)
+assert dspy.settings.lm is not None, "DSPy LM must be configured"
 
 # Test mock configuration
 if __name__ == "__main__" and "pytest" in sys.modules:
