@@ -65,6 +65,8 @@ def score_chromosome(chromosome: str) -> dict:
 
 def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
+    assert MAX_CHARS == 40, "MAX_CHARS must be 40 per spec.md"
+    assert MAX_CORE == 23, "MAX_CORE must be 23 per spec.md"
     if isinstance(chromosome, list):
         chromosome = "".join(chromosome)
     
@@ -88,7 +90,11 @@ def validate_chromosome(chromosome: str) -> str:
     return chromosome
 
 def create_agent(chromosome: str) -> dict:
-    """Create a new agent as a dictionary"""
+    """Create agent with 3 chromosomes per spec.md"""
+    # Validate chromosome structure
+    assert len(chromosome) >= 23, "Must have core task chromosome"
+    assert len(chromosome) >= 33, "Must have mate-selection chromosome"
+    assert len(chromosome) >= 40, "Must have mutation chromosome"
     # Validate and clean chromosome first
     chromosome = validate_chromosome(chromosome)
     
@@ -152,6 +158,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
+PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
 HOTSPOT_CHARS = {'.', '!', '?', ' '}
 HOTSPOT_SPACE_PROB = 0.15  # Increased space hotspot probability per spec.md emphasis
@@ -285,6 +292,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 class MateSelectionSignature(dspy.Signature):
     """Select mate using agent's mate-selection chromosome as instructions"""
     mate_selection_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent") 
+    parent_dna = dspy.InputField(desc="DNA of parent agent selecting mate")
     candidate_chromosomes = dspy.InputField(desc="Validated potential mates")
     selected_mate = dspy.OutputField(desc="Chromosome of selected mate from candidates list")
 
@@ -434,6 +442,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
+        f.truncate(0)  # Explicitly empty the file
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
         f.write(header)
         # Validate plain text format
@@ -620,12 +629,13 @@ def display_generation_stats(stats: dict) -> None:
     console = Console()
     console.print(Panel(
         f"[bold]Gen {stats.get('generation', 0)}[/]\n"
-        f"μ:{stats.get('mean', 0.0):.1f} σ:{stats.get('std', 0.0):.1f} (window)\n"
+        f"Current μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}\n"
+        f"Window μ:{stats.get('window_mean', 0.0):.1f} σ:{stats.get('window_std', 0.0):.1f}\n"
         f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
         f"Core: {stats.get('best_core', '')}\n"
         f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
-        subtitle=f"[Population size: {stats.get('population_size', 0)}/{MAX_POPULATION}]",
+        subtitle=f"[Population: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}]",
         style="blue"
     ))
     
