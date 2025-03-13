@@ -233,10 +233,11 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     sum_weights = sum(a['fitness']**2 for a in valid_candidates)
     weights = [a['fitness']**2/sum_weights for a in valid_candidates]
 
-    # Calculate normalized weights in single step
-    sum_weights = sum(a['fitness']**2 + 1e-6 for a in valid_candidates)
-    assert sum_weights > 0, "All candidate weights are zero"
-    weights = [(a['fitness']**2 + 1e-6)/sum_weights for a in valid_candidates]
+    # Calculate normalized weights with numeric stability
+    raw_weights = [a['fitness']**2 + 1e-9 for a in valid_candidates]  # Add epsilon to each term
+    sum_weights = sum(raw_weights) + 1e-9  # Prevent division by zero
+    weights = [w/sum_weights for w in raw_weights]
+    assert sum_weights > 1e-9, "All candidate weights are zero"
 
     # Get LLM selection with weighted candidates
     result = dspy.Predict(MateSelectionSignature)(
@@ -313,7 +314,7 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     
     # Generate children with mutation/crossover balance
     return [
-        (crossover(random.choice(selected_parents), population) 
+        crossover(random.choice(selected_parents), population) 
         if random.random() < 0.9 else  # 90% crossover
         create_agent(mutate(random.choice(selected_parents)))
         for _ in range(MAX_POPULATION - len(selected_parents))
@@ -392,7 +393,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
         
         # Evolve population continuously without generations
         population = generate_children(select_parents(population), population)
-        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        population, new_fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        fitness_window = new_fitness_window
 
 
 
