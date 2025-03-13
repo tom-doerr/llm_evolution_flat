@@ -167,11 +167,11 @@ def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto(fitness²) weighting per spec.md"""
     if not population:
         return []
-
-    fitness = np.array([a['fitness'] for a in population], dtype=np.float64)
-    weights = _calculate_parent_weights(fitness)
     
-    return _select_weighted_parents(population, weights)
+    return _select_weighted_parents(
+        population,
+        _calculate_parent_weights(np.array([a['fitness'] for a in population], dtype=np.float64))
+    )
 
 def _calculate_parent_weights(fitness: np.array) -> np.array:
     """Calculate normalized selection weights using fitness² * Pareto"""
@@ -414,7 +414,7 @@ def validate_population_extremes(population: List[dict]) -> None:
 def run_evolution(population_size: int = 1000, cli_args: argparse.Namespace = None) -> list:
     """Run evolutionary optimization"""
     population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
-    evolution_loop(population, cli_args, window_size=cli_args.window_size)
+    evolution_loop(population, cli_args)
     return population
 
 def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
