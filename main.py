@@ -22,8 +22,8 @@ CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
-HOTSPOT_ANYWHERE_PROB = 0.015  # Adjusted to maintain ~1 switch avg with punctuation
-HOTSPOT_SPACE_PROB = 0.08  # Reduced space probability
+HOTSPOT_ANYWHERE_PROB = 0.045  # Adjusted to maintain ~1 switch avg across 40-char chromosome
+HOTSPOT_SPACE_PROB = 0.04  # Reduced space probability to balance total
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -369,7 +369,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], params: dict) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights using fitness^2 * Pareto distribution per spec
     weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
@@ -530,14 +530,15 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                 parent = random.choice(select_parents(population))
                 
                 # Create new child through mutation or crossover
-                future = executor.submit(
+                # Store futures to avoid expression-not-assigned warning
+                futures = [executor.submit(
                     crossover if random.random() < CROSSOVER_RATE and len(population) > 1 
                     else lambda p: create_agent(mutate(p, cli_args)),
                     parent,
                     population
                 ) if random.random() < CROSSOVER_RATE else executor.submit(
                     lambda p: create_agent(mutate(p, cli_args)), parent
-                )
+                )]
 
                 try:
                     child = future.result()
@@ -560,8 +561,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def _handle_iteration_stats(iterations: int, population: List[dict], 
-                          fitness_window: list, cli_args: argparse.Namespace) -> None:
+def _handle_iteration_stats(stats: dict) -> None:
     """Handle stats display and logging for each iteration batch"""
     stats = calculate_window_statistics(fitness_window)
     best_agent = max(population, key=lambda x: x["fitness"]) if population else None
