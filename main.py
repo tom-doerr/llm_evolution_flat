@@ -639,7 +639,7 @@ def log_population(stats: dict) -> None:
                 f"{stats.get('best', 0.0):.1f}\t"
                 f"{stats.get('worst', 0.0):.1f}\t"
                 f"{stats.get('diversity', 0.0):.2f}\t"
-                f"{stats.get('best_core', '')}\n")
+                f"{stats.get('best_core', '')[:23]}\n")
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
