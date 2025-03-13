@@ -295,9 +295,16 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
+    # Calculate weights, ensuring they're all positive
+    weights = [max(a['fitness'], 0.001)**2 for a in parents]
+    
+    # If all weights are zero, use uniform weights
+    if sum(weights) <= 0:
+        weights = [1.0] * len(parents)
+    
     selected_parents = random.choices(
         parents,
-        weights=[a['fitness']**2 for a in parents],
+        weights=weights,
         k=min(len(parents), MAX_POPULATION//2)
     )
     
