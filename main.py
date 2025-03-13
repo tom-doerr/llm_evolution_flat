@@ -52,7 +52,6 @@ def score_chromosome(chromosome: str) -> dict:
     assert len(core) == 23, "Core segment must be 23 characters"
     
     # Calculate a_count and repeating pairs using optimized methods
-    a_count = core.count('a')
     repeats = sum(core[i] == core[i-1] for i in range(1, len(core)))
     
     return {
@@ -235,7 +234,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
     # Get LLM selection with weighted candidates
     result = dspy.Predict(MateSelectionSignature)(
-        parent_chromosome=parent["mate_selection_chromosome"],
+        mate_selection_chromosome=parent["mate_selection_chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid_candidates],  # Fix typo in chromosome
         temperature=0.7,
         top_p=0.9
