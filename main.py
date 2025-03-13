@@ -634,15 +634,17 @@ def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
-        f.write(f"{stats.get('generation', 0)}\t"
-                f"{stats.get('population_size', 0)}\t"
-                f"{stats.get('current_mean', 0.0):.1f}\t"
-                f"{stats.get('current_median', 0.0):.1f}\t"
-                f"{stats.get('current_std', 0.0):.1f}\t"
-                f"{stats.get('best', 0.0):.1f}\t"
-                f"{stats.get('worst', 0.0):.1f}\t"
-                f"{stats.get('diversity', 0.0):.2f}\t"
-                f"{stats.get('best_core', '')[:23]}\n")
+        f.write(
+            f"{stats.get('generation', 0)}\t" 
+            f"{stats.get('population_size', 0)}\t"
+            f"{stats.get('current_mean', 0.0):.1f}\t"
+            f"{stats.get('current_median', 0.0):.1f}\t" 
+            f"{stats.get('current_std', 0.0):.1f}\t"
+            f"{stats.get('best', 0.0):.1f}\t"
+            f"{stats.get('worst', 0.0):.1f}\t"
+            f"{stats.get('diversity', 0.0):.1f}\t"
+            f"{stats.get('best_core', '')[:23]}\n"
+        )
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
