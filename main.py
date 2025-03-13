@@ -174,11 +174,10 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
     
     # Weighted sampling per spec.md: fitness² * Pareto distribution
-    weights = np.nan_to_num(
-        np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) *
-        (np.random.pareto(PARETO_SHAPE, len(population)) + 1),  # Configurable shape
-        nan=1e-6
-    ).clip(1e-6)
+    # Pareto distribution weighting by fitness^2 per spec.md
+    fitness_squared = np.array([max(a['fitness'], 0)**2 for a in population], dtype=np.float64)
+    pareto = np.random.pareto(PARETO_SHAPE, len(population)) + 1
+    weights = np.nan_to_num(fitness_squared * pareto, nan=1e-6).clip(1e-6)
     
     weights /= weights.sum()  # Normalize
     assert np.isclose(weights.sum(), 1.0), "Weights must sum to 1"
@@ -195,10 +194,10 @@ def select_parents(population: List[dict]) -> List[dict]:
 # Configuration constants from spec.md
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
-HOTSPOT_CHARS = {'.', '!', '?', ' '}
-HOTSPOT_SPACE_PROB = 0.15  # Increased space hotspot probability per spec.md emphasis
+HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per spec.md
+HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
-HOTSPOT_ANYWHERE_PROB = 0.025  # Adjusted to exactly 1 hotspot per 40 char chromosome (40 * 0.025 = 1)
+HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
 
 
 
@@ -232,16 +231,16 @@ def _try_llm_mutation(agent: dict) -> str:
         return None
 
 def _build_mutation_prompt(agent: dict) -> str:
-    """Construct mutation prompt string"""
+    """Construct mutation prompt string per spec.md requirements"""
     return f"""
-    Current chromosome: {agent["chromosome"]}
-    Instructions: {agent['mutation_chromosome']}
-    Important rules:
-    1. First 23 chars determine core fitness
-    2. Maximize 'a's in first 23 characters
-    3. Keep total length 23-30 (shorter better after 23)
-    4. Only lowercase letters
-    Modified chromosome:
+    MUTATION INSTRUCTIONS: {agent['mutation_chromosome']}
+    CURRENT CHROMOSOME: {agent["chromosome"]}
+    REQUIREMENTS:
+    - PRESERVE first 23 characters (core segment)
+    - INCREASE 'a' density in first 23 characters
+    - REDUCE length after 23 characters
+    - USE ONLY lowercase letters and spaces
+    OUTPUT ONLY the modified chromosome:
     """.strip()
 
 def _process_llm_response(response) -> str:
@@ -496,7 +495,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        f.truncate(0)  # Explicitly empty the file
+        pass  # File is emptied by opening in write mode
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
         f.write(header)
         # Validate plain text format
