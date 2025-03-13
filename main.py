@@ -19,7 +19,8 @@ WINDOW_SIZE = 100  # Default, can be overridden by CLI
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
 CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
-HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
+HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', '-', '_', '"', "'"}  # Punctuation only
+HOTSPOT_SPACE_PROB = 0.35  # Separate space probability 
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1.0 avg switches per chrom
@@ -231,10 +232,14 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 
 def _build_mutation_prompt(agent: dict) -> str:
     """Construct mutation prompt string per spec.md requirements"""
-    # Directly use mutation chromosome as instructions per spec.md
     return (
         f"{agent['mutation_chromosome']}\n"
         f"Original DNA: {agent['chromosome']}\n"
+        "Mutated version must:\n"
+        "- Keep first 23 characters mostly intact\n" 
+        "- Increase 'a' density in first 23 chars\n"
+        "- Remove characters after position 23\n"
+        "- Only use letters and spaces\n"
         "Mutated version:"
     ).strip()
 
@@ -295,8 +300,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
-        parent_dna=parent["chromosome"], 
-        candidate_chromosomes=[f"{c['chromosome']} (fitness: {c['fitness']})" for c in valid_candidates], 
+        parent_dna=parent["chromosome"],
+        candidate_chromosomes=[f"{c['chromosome']} (fitness: {c['fitness']})" + 
+                             f"\nTask: {c['task_chromosome']}" +
+                             f"\nMate: {c['mate_selection_chromosome']}" +
+                             f"\nMutate: {c['mutation_chromosome']}" 
+                             for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
     ).selected_mate.lower()
@@ -707,7 +716,7 @@ def main():
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
                       help='Initial population size (default: 1000)',
-                      choices=range(1, main.MAX_POPULATION+1))
+                      choices=range(1, MAX_POPULATION+1))
     parser.add_argument('--problem', type=str, default='hidden',
                       choices=['hidden', 'other'],
                       help='Problem type to optimize (default: hidden)')
