@@ -756,7 +756,7 @@ def validate_population_state(best, worst) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
-    parser.add_argument('--pop-size', type=int, default=1___000,
+    parser.add_argument('--pop-size', type=int, default=1_000,
                        help='Initial population size (default: 1000)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
