@@ -211,7 +211,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
         return False
     try:
         # Validate all 3 chromosomes exist and are non-empty
-        assert all(candidate[key] for key in ["chromosome", "task_chromosome", "mate_selection_chromosome"]), "Missing chromosomes"
+        assert all(candidate[key] and len(str(candidate[key])) >= 10 for key in ["chromosome", "task_chromosome", "mate_selection_chromosome"]), "Invalid chromosomes"
         validated = validate_chromosome(candidate["chromosome"])
         # Ensure chromosomes are different and valid length (spec.md requirements)
         return (
