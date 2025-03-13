@@ -107,7 +107,9 @@ def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromo = validate_chromosome(agent["chromosome"])
     metrics = score_chromosome(chromo)
-    agent["fitness"] = metrics['a_density'] * 46 - len(chromo) - 23  # Combined calculation
+    # Hidden goal: maximize 'a's in first 23 chars, minimize length after that
+    a_count = chromo[:23].count('a')
+    agent["fitness"] = a_count - (len(chromo) - 23 if len(chromo) > 23 else 0)
     
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
     agent["metrics"] = metrics
@@ -455,6 +457,14 @@ def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop without generation concept"""
     fitness_window = []
     
+    # Initial evaluation of population
+    population = evaluate_population(population)
+    fitness_window = [a["fitness"] for a in population]
+    
+    # Print initial stats
+    print(f"Initial population: {len(population)} agents")
+    print(f"Initial best fitness: {max(fitness_window) if fitness_window else 0}")
+    
     for generation in itertools.count(0):  # Track generation for logging
         # Trim and evolve in one pass
         population = trim_population(
@@ -481,6 +491,10 @@ def evolution_loop(population: List[dict]) -> None:
         
         # Display and log stats
         handle_generation_output(stats, population)
+        
+        # Add a small delay to prevent CPU overload
+        import time
+        time.sleep(0.1)
 
 
 
@@ -507,7 +521,8 @@ def log_population(stats: dict) -> None:
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
-    Console().print(Panel(
+    console = Console()
+    console.print(Panel(
         f"[bold]Gen {stats.get('generation', 0)}[/]\n"
         f"μ:{stats.get('mean', 0.0):.1f} σ:{stats.get('std', 0.0):.1f} (window)\n"
         f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
@@ -517,6 +532,9 @@ def display_generation_stats(stats: dict) -> None:
         subtitle=f"[Population size: {stats.get('population_size', 0)}/{MAX_POPULATION}]",
         style="blue"
     ))
+    
+    # Print a separator for better readability
+    console.print("─" * 80)
 
 
 
@@ -573,6 +591,11 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     # Get best agent and core segment
     best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
     best_core = best_agent.get("metrics", {}).get("core_segment", "")
+    
+    # Print best chromosome for debugging
+    if best_agent:
+        print(f"Best chromosome: {best_agent['chromosome']}")
+        print(f"Best fitness: {best_agent['fitness']}")
     
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
