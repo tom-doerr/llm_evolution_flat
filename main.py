@@ -423,13 +423,13 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Initialize log with header and truncate any existing content per spec.md
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        f.truncate(0)  # Immediately clear file contents per spec
+    with open("evolution.log", "w", encoding="utf-8") as log_file:
+        log_file.truncate(0)  # Immediately clear file contents per spec
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
-        f.write(header)
+        log_file.write(header)
         # Validate plain text format
         assert '\n' in header and '\t' in header, "Log format must be plain text"
-        assert not any([',' in header, '[' in header, ']' in header]), "No structured formats allowed in log"
+        assert not any(c in header for c in '[],'), "No structured formats allowed in log"
     
     evolution_loop(population, cli_args)
 
