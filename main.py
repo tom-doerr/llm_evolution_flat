@@ -31,7 +31,7 @@ assert dspy.settings.lm is not None, "DSPy LM must be configured"
 import sys
 
 # Test mock configuration
-if __name__ == "__main__" and "pytest" in sys.modules:
+if __name__ == "__main__" and "pytest" in sys.modules:  # pylint: disable=used-before-assignment
     lm = dspy.LM("mock_model")
     dspy.configure(lm=lm, test_mode=True)
 
