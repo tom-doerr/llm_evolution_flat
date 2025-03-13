@@ -157,17 +157,22 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     core_segment = agent["chromosome"][:23].lower()
-    
-    # Process LLM response and validate candidates
-    for completion in dspy.Predict(MutateSignature)(
+    response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=agent["mutation_chromosome"]
-    ).completions:
-        if (candidate := str(completion).strip()[:40].lower()).startswith(core_segment):
-            return candidate
+    )
 
-    # Fallback mutation with core preservation
-    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17))}"[:40]
+    valid_candidates = [
+        str(c).strip()[:40].lower()
+        for c in response.completions
+        if str(c).strip().lower().startswith(core_segment)
+    ]
+
+    if valid_candidates:
+        return random.choice(valid_candidates)
+    
+    # Fallback with core preservation
+    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
