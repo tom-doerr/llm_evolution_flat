@@ -530,15 +530,13 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                 parent = random.choice(select_parents(population))
                 
                 # Create new child through mutation or crossover
-                # Store futures to avoid expression-not-assigned warning
-                futures = [executor.submit(
+                # Submit and track future
+                future = executor.submit(
                     crossover if random.random() < CROSSOVER_RATE and len(population) > 1 
                     else lambda p: create_agent(mutate(p, cli_args)),
                     parent,
                     population
-                ) if random.random() < CROSSOVER_RATE else executor.submit(
-                    lambda p: create_agent(mutate(p, cli_args)), parent
-                )]
+                )
 
                 try:
                     child = future.result()
