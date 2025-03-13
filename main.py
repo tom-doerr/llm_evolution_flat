@@ -71,26 +71,24 @@ def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     assert MAX_CHARS == 40, "MAX_CHARS must be 40 per spec.md"
     assert MAX_CORE == 23, "MAX_CORE must be 23 per spec.md"
+    
+    chromosome = _clean_input(chromosome)
+    chromosome = _ensure_min_length(chromosome)
+    return chromosome
+
+def _clean_input(chromosome: str) -> str:
+    """Clean and normalize chromosome input"""
     if isinstance(chromosome, list):
         chromosome = "".join(chromosome)
-    
-    # Convert to string and strip whitespace
-    chromosome = str(chromosome).strip()[:40].lower()  # Normalize to lowercase
-    
-    # For empty strings, return a valid default
+    chrom = str(chromosome).strip()[:40].lower()
+    return ''.join(c for c in chrom if c.isalpha() or c == ' ').strip()
+
+def _ensure_min_length(chromosome: str) -> str:
+    """Ensure minimum length and pad with 'a's if needed"""
     if not chromosome:
-        return "a" * 23  # Default to valid chromosome with 'a's
-    
-    # Clean invalid characters and strip again to ensure no whitespace at ends
-    chromosome = ''.join(c for c in chromosome if c.isalpha() or c == ' ').strip()
-    
-    # Structural validation
-    assert len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-    
-    # If chromosome is too short after cleaning, pad with 'a's
+        return "a" * 23
     if len(chromosome) < 23:
-        chromosome = chromosome.ljust(23, 'a')
-    
+        return chromosome.ljust(23, 'a')
     return chromosome
 
 def create_agent(chromosome: str) -> dict:
@@ -786,6 +784,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
+                       help='Initial population size (default: 1000)')
+    parser.add_argument('--problem', type=str, default='hidden',
                        help='Initial population size (default: 1000)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
