@@ -189,13 +189,13 @@ MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
 WINDOW_SIZE = 100  # Default, can be overridden by CLI
 MUTATION_RATE = 0.1  # Base mutation probability 
-HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # More punctuation
+HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Increased per spec.md space focus
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 # Total average switches = punctuation + spaces + anywhere = ~1.0
 HOTSPOT_ANYWHERE_PROB = 0.015  # Adjusted to account for punctuation/space probabilities
 AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
-HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
+HOTSPOT_ANYWHERE_PROB = 0.025  # Matches spec.md requirement for ~1 switch per chromosome
 
 
 
@@ -213,7 +213,7 @@ def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
 
     llm_result = _try_llm_mutation(agent, cli_args)
-    return llm_result if llm_result else _fallback_mutation(agent)
+    return llm_result if llm_result else _fallback_mutation(agent, cli_args)
 
 def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     """Attempt LLM-based mutation and return valid result or None"""
@@ -366,8 +366,8 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
         if pos >= len(p_chrom):
             continue
             
-        # Probabilistic switching at hotspots (80% chance per spec)
-        if random.random() < 0.8:
+        # Switch chromosomes at hotspots with 80% probability per spec.md
+        if random.random() < 0.8:  # Matches spec.md requirement for switching probability
             use_parent = not use_parent
         result.append(p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos])
         last_pos = pos
@@ -394,7 +394,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:  # pylint: disable=unused-argument
     """Generate new population through validated crossover/mutation"""
     # Calculate weights, ensuring they're all positive
     weights = [max(a['fitness'], 0.001)**2 for a in parents]
@@ -614,7 +614,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     handle_generation_output(stats, population)
                     
                     # Print best chromosome for debugging
-                    if args.verbose and best_agent:
+                    if cli_args.verbose and best_agent:
                         print(f"Best chromosome: {best_agent['chromosome']}")
                         print(f"Best fitness: {best_agent['fitness']}")
                         print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
