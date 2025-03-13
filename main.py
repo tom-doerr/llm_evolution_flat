@@ -29,17 +29,6 @@ HOTSPOT_SPACE_PROB = 0.15  # Adjusted to maintain ~1 switch avg across all chars
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
 assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
-class EvolutionaryOptimizer(dspy.Module):
-    def __init__(self, population_size=1000):
-        super().__init__()
-        self.population = initialize_population(population_size)
-        self.fitness_window = []
-    
-    def forward(self):
-        """Evolve population through DSPy interface"""
-        # Implement basic evolution step per spec.md requirements
-        self.population = select_parents(self.population)
-        return [agent["chromosome"] for agent in self.population[:10]]
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
@@ -180,9 +169,9 @@ def select_parents(population: List[dict]) -> List[dict]:
     if not population:
         return []
 
-    fitness = np.array([max(a['fitness'], 0) for a in population], dtype=np.float64)
-    # Stronger fitness pressure per spec
-    weights = (fitness ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
+    fitness = np.array([a['fitness'] for a in population], dtype=np.float64)
+    # Stronger fitness pressure per spec with negative handling
+    weights = (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
     
     if weights.sum() > 0:
