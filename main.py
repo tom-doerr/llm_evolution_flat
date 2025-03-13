@@ -5,9 +5,6 @@ import string
 import sys
 import time
 from typing import List
-
-
-# Third party imports
 import numpy as np
 import dspy
 from rich.console import Console
@@ -228,7 +225,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=unused-argument
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
