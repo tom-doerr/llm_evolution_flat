@@ -5,7 +5,8 @@ import string
 import sys
 import time
 from typing import List
-from tenacity import retry, wait_exponential, stop_after_attempt 
+
+from tenacity import retry, stop_after_attempt, wait_exponential
 import numpy as np
 import dspy
 from rich.console import Console
@@ -626,7 +627,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace, window_
 
 
 
-def log_population(stats: dict) -> None:  # Removed unused cli_args parameter
+def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
