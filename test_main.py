@@ -6,7 +6,7 @@ import dspy
 
 @pytest.fixture
 def mock_lm():
-    lm = dspy.LM("mockprovider/mock_model")  # Valid provider prefix
+    lm = dspy.LM("openai/mock_model")  # Use valid provider prefix
     lm.return_value = MagicMock()
     return lm
 
@@ -21,20 +21,24 @@ def test_mutation_mock(mock_lm):
     main.dspy.settings.lm = mock_lm
     mock_lm.return_value = MagicMock()
     mock_lm.return_value.completions = ["aaaaaabbbccc"]
-    mock_lm.model = "mockprovider/mock_model"  # Valid provider prefix
+    mock_lm.model = "openai/mock_model"  # Valid provider prefix
     
     agent = main.create_agent("test")
     # Create proper argparse namespace with required fields
     args = argparse.Namespace(verbose=False, threads=1)
-    mutated = main.mutate(agent, args)
-    assert mutated["chromosome"] != "test"
+    mutated_chromo = main.mutate(agent, args)
+    assert mutated_chromo != agent["chromosome"]
+    mutated_agent = main.create_agent(mutated_chromo)
+    assert len(mutated_agent["chromosome"]) >= 23
 
 def test_crossover_no_duplicates():
     parent1 = main.create_agent("a"*23)
     parent2 = main.create_agent("b"*23)
     child = main.crossover(parent1, [parent2])
+    assert 23 <= len(child["chromosome"]) <= 40
     assert child["chromosome"] != parent1["chromosome"]
     assert child["chromosome"] != parent2["chromosome"]
+    assert main.validate_chromosome(child["chromosome"])
 
 def test_trim_population_deduplication():
     pop = [main.create_agent("aaa"), main.create_agent("aaa"), main.create_agent("bbb")]
