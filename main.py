@@ -174,14 +174,13 @@ def select_parents(population: List[dict]) -> List[dict]:
         _calculate_parent_weights(np.array([a['fitness'] for a in population], dtype=np.float64))
     )
 
-def _calculate_parent_weights(fitness: np.array) -> np.array:
+def _calculate_parent_weights(fitness: np.array) -> np.array:  # pylint: disable=too-many-locals
     """Calculate normalized selection weights using fitness² * Pareto"""
     # Enhanced per spec.md: Use fitness^2 * Pareto distribution weights
-    # Combined numpy operations to reduce locals
-    return np.nan_to_num(
-        (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(fitness)) + 1),
-        nan=1e-6
-    ).clip(1e-6) / np.sum(np.abs(fitness) ** 2)
+    squared_fitness = np.abs(fitness) ** 2
+    pareto_weights = np.random.pareto(PARETO_SHAPE, len(fitness)) + 1
+    weighted = np.nan_to_num(squared_fitness * pareto_weights, nan=1e-6)
+    return weighted.clip(1e-6) / np.sum(squared_fitness)
 
 def _select_weighted_parents(population: List[dict], weights: np.array) -> List[dict]:
     """Select parents using weighted sampling without replacement"""
@@ -328,30 +327,22 @@ def get_hotspots(chromosome: str) -> list:
     
     return sorted(set(hotspots))  # Deduplicate and sort
 
-def build_child_chromosome(parent: dict, mate: dict) -> str:
+def build_child_chromosome(parent: dict, mate: dict) -> str:  # pylint: disable=too-many-locals
     """Construct child chromosome with switches at hotspots"""
     p_chrom = parent["chromosome"]
     m_chrom = mate["chromosome"]
     hotspots = get_hotspots(p_chrom)
     
-    # Track recombination state
-    parts = []
-    source = p_chrom
-    last_idx = 0
+    parts, source, last_idx = [], p_chrom, 0
 
     for pos in sorted(hotspots):
-        if pos >= len(p_chrom):
-            continue
-            
-        # Switch source with 60% probability at each hotspot    
-        if random.random() < 0.6:
-            source = m_chrom if source == p_chrom else p_chrom
-        parts.append(source[last_idx:pos])
-        last_idx = pos
+        if pos < len(p_chrom):
+            if random.random() < 0.6:
+                source = m_chrom if source == p_chrom else p_chrom
+            parts.append(source[last_idx:pos])
+            last_idx = pos
 
-    # Add final segment
-    parts.append(source[last_idx:])
-    
+    parts.append(source[last_idx:])  # Final segment
     return validate_chromosome("".join(parts))
 
 def crossover(parent: dict, population: List[dict]) -> dict:
