@@ -259,7 +259,7 @@ def _process_llm_response(response, cli_args) -> str:
         candidate = str(comp).strip().lower()[:MAX_CHARS]
         candidate = ''.join(c for c in candidate if c.isalpha() or c == ' ').strip()
         if len(candidate) >= MAX_CORE and validate_mutation(candidate):
-            if cli_args and cli_args.verbose:
+            if cli_args.verbose:
                 print(f"LLM mutation successful: {candidate}")
             return candidate
     return None
