@@ -609,7 +609,8 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     
                     # Print best chromosome for debugging
                     if cli_args.verbose and best_agent:
-                        print(f"Best chromosome: {best_agent['chromosome']}")
+                        if cli_args.verbose and best_agent:
+                            print(f"Best chromosome: {best_agent['chromosome']}")
                         print(f"Best fitness: {best_agent['fitness']}")
                         print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
                         print(f"Length after core: {len(best_agent['chromosome']) - 23}")
@@ -722,10 +723,11 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     
     # Print best chromosome for debugging
     if best_agent:
-        print(f"Best chromosome: {best_agent['chromosome']}")
-        print(f"Best fitness: {best_agent['fitness']}")
-        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
-        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
+        if args.verbose:
+            print(f"Best chromosome: {best_agent['chromosome']}")
+            print(f"Best fitness: {best_agent['fitness']}")
+            print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
+            print(f"Length after core: {len(best_agent['chromosome']) - 23}")
     
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
