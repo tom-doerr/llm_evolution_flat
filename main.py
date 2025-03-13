@@ -64,7 +64,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
         'best': float(np.nanmax(window_arr)),
         'worst': float(np.nanmin(window_arr))
     }
-    assert stats['best'] >= stats['worst'], "Best cannot be worse than worst"
+    assert stats['best'] >= stats['worst'], f"Best ({stats['best']}) cannot be worse than worst ({stats['worst']})"
     return stats
 
 def update_fitness_window(fitness_window: list, new_fitnesses: list) -> list:
@@ -312,24 +312,18 @@ def get_hotspots(chromosome: str) -> list:
     if not chromosome:
         return []
         
-    # Probabilistic hotspot selection per spec.md requirements
-    hotspots = []
-    for i, c in enumerate(chromosome):
-        # Punctuation marks are automatic hotspots
-        if c in HOTSPOT_CHARS:
-            hotspots.append(i)
-        # Space switching probability
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:  # Single probability
-            hotspots.append(i)
-        # Random anywhere probability
-        elif random.random() < HOTSPOT_ANYWHERE_PROB:
-            hotspots.append(i)
+    hotspots = [
+        i for i, c in enumerate(chromosome)
+        if (c in HOTSPOT_CHARS or
+            (c == ' ' and random.random() < HOTSPOT_SPACE_PROB) or
+            random.random() < HOTSPOT_ANYWHERE_PROB)
+    ]
     
     # Enforce minimum hotspots if needed
-    if len(hotspots) < MIN_HOTSPOTS and chromosome:
+    if len(hotspots) < MIN_HOTSPOTS:
         hotspots.extend(random.sample(range(len(chromosome)), k=MIN_HOTSPOTS-len(hotspots)))
     
-    return sorted(list(set(hotspots)))  # Remove duplicates and sort
+    return sorted(set(hotspots))  # Deduplicate and sort
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with switches at hotspots"""
@@ -430,7 +424,7 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        # Empty the file per spec.md
+        f.truncate(0)  # Immediately clear file contents per spec
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
         f.write(header)
         # Validate plain text format
@@ -629,7 +623,7 @@ def display_generation_stats(stats: dict) -> None:
         f"[bold]Gen {stats.get('generation', 0)}[/] | "
         f"🏆 [green]{stats.get('best', 0.0):.1f}[/] | "
         f"📊 μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
-        f"👥 [yellow]{stats.get('population_size', 0):,}[/]/[dim]{MAX_POPULATION:,}[/] | "
+        f"👥 [bold yellow]{stats.get('population_size', 0):,}[/]/[dim]{MAX_POPULATION:,}[/] | "
         f"🧬 {stats.get('diversity', 0.0):.0%} | "
         f"🔀 {stats.get('mutation_rate', 0.0):.1f}/agt | "
         f"🧵 {stats.get('threads', 1)}"
