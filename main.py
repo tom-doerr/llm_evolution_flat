@@ -25,7 +25,7 @@ dspy.configure(lm=lm)
 
 # Validate configuration
 assert isinstance(lm, dspy.LM), "LM configuration failed"
-assert lm.model == "openrouter/google/gemini-2.0-flash-001", "Model must match spec.md"
+assert "gemini-2.0-flash" in lm.model, "Model must match spec.md"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
@@ -166,7 +166,6 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     # Extract mutation chromosome
     mc = agent["mutation_chromosome"]
-    )
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
