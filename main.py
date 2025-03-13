@@ -168,8 +168,6 @@ def mutate_with_llm(agent: dict) -> str:
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
         instructions=mc,
-        temperature=params[0],
-        top_p=params[1],
     )
     
     core = agent["chromosome"][:23].lower()
