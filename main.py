@@ -207,6 +207,8 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
+from tenacity import retry, wait_exponential, stop_after_attempt
+
 def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
     # LLM mutation using agent's mutation chromosome as instructions
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
@@ -215,7 +217,6 @@ def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint
         print(f"Mutate instructions: {agent['mutation_chromosome']}")
 
     # Retry up to 3 times with exponential backoff
-    from tenacity import retry, wait_exponential, stop_after_attempt
     @retry(wait=wait_exponential(multiplier=1, min=1, max=10), 
            stop=stop_after_attempt(3),
            reraise=True)
@@ -239,10 +240,12 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 
 def _build_mutation_prompt(agent: dict) -> str:
     """Construct mutation prompt string per spec.md requirements"""
-    return f"""
-    Using these mutation instructions: {agent['mutation_chromosome']}
-    Modify this DNA: {agent["chromosome"]}
-    Provide mutated version that increases fitness:""".strip()
+    # Directly use mutation chromosome as instructions per spec.md
+    return (
+        f"{agent['mutation_chromosome']}\n"
+        f"Original DNA: {agent['chromosome']}\n"
+        "Mutated version:"
+    ).strip()
 
 def _process_llm_response(response, cli_args) -> str:
     """Process LLM response into valid chromosome"""
