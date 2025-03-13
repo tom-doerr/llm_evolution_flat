@@ -22,6 +22,11 @@ lm = dspy.LM(
 )
 dspy.configure(lm=lm)
 
+# Test mock configuration
+if __name__ == "__main__" and "pytest" in sys.modules:
+    lm = dspy.LM("mock_model")
+    dspy.configure(lm=lm, test_mode=True)
+
 # Validate configuration
 assert isinstance(lm, dspy.LM), "LM configuration failed"
 assert "gemini-2.0-flash" in lm.model, "Model must match spec.md"
@@ -663,7 +668,6 @@ def log_population(stats: dict) -> None:
                 f"{stats.get('population_size', 0)}\t"
                 f"{stats.get('current_mean', 0.0):.1f}\t"
                 f"{stats.get('best_core', '')[:23]}\n")
-        )
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
