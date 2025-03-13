@@ -368,23 +368,31 @@ def evolution_loop(population: List[dict], max_population: int, generation: int 
     fitness_window = []
     
     for generation in itertools.count(0):  # Track generation for logging
-        # Trim population using sliding window of candidates
-        if len(population) > max_population:
-            population = trim_population(population[-WINDOW_SIZE:], max_population)
-        
-        # Evolve population continuously without generations
-        parents = select_parents(population)
-        children = generate_children(parents, population)
-        population = parents + children  # Combine rather than replace
-        population = trim_population(population, max_population)
+        population = _trim_population_if_needed(population, max_population)
+        population = _evolve_population(population, max_population)
         
         # Track mutation rate as percentage of new agents
         mutation_rate = sum(1 for a in population if a.get('mutation_source')) / len(population) if population else 0.0
         stats['mutation_rate'] = mutation_rate
         
-        # Update and track fitness statistics
-        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        population, fitness_window = _update_stats(population, fitness_window, generation)
         handle_generation_output(fitness_window, population)
+
+def _trim_population_if_needed(population: List[dict], max_pop: int) -> List[dict]:
+    """Trim population if exceeds max size using sliding window"""
+    if len(population) > max_pop:
+        return trim_population(population[-WINDOW_SIZE:], max_pop)
+    return population
+
+def _evolve_population(population: List[dict], max_pop: int) -> List[dict]:
+    """Handle one evolution cycle"""
+    parents = select_parents(population)
+    children = generate_children(parents, population)
+    return trim_population(parents + children, max_pop)
+
+def _update_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+    """Update and return new fitness statistics"""
+    return evaluate_population_stats(population, fitness_window, generation)
 
 
 
