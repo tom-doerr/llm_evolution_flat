@@ -22,7 +22,8 @@ CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
-HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1.0 avg switches
+HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1.0 avg switches per chrom
+# ^ Ensures ~1 random switch point anywhere in chromosome per spec
 HOTSPOT_SPACE_PROB = 0.25  # Higher space probability to align with spec
 
 # Validate hidden goal constants from spec.md
@@ -42,7 +43,7 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md requirements"
 
 # Test mock configuration 
 if __name__ == "__main__" and "pytest" in sys.modules:
-    lm = dspy.LM("mock/mock_model")  # Add provider prefix to mock model
+    lm = dspy.LM("mockprovider/mock_model")  # Add valid provider prefix
     dspy.configure(lm=lm, test_mode=True)
     assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
