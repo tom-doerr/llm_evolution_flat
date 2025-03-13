@@ -272,13 +272,19 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     recent_pop = (population[-WINDOW_SIZE:] or population)[:100]
     valid_candidates = [a for a in recent_pop if validate_mating_candidate(a, parent)]
     
-    # Select mate or use parent as fallback
-    if valid_candidates:
+    # Select mate with error handling and fallbacks
+    try:
+        if not valid_candidates:
+            raise ValueError("No valid mating candidates available")
+            
         # Get top 5 candidates by fitness
         mates = sorted(valid_candidates, key=lambda x: x['fitness']**2, reverse=True)[:5]
-        return create_agent(build_child_chromosome(parent, llm_select_mate(parent, mates)))
+        selected_mate = llm_select_mate(parent, mates)
+    except (ValueError, IndexError, KeyError) as e:
+        # Fallback to parent if any selection errors occur
+        selected_mate = parent  
     
-    return create_agent(build_child_chromosome(parent, parent))
+    return create_agent(build_child_chromosome(parent, selected_mate))
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
