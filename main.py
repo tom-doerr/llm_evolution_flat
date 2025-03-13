@@ -511,7 +511,7 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
 
-def log_and_display_stats(stats: dict, fitness_window: list, population: list, generation: int) -> None:
+def log_and_display_stats(population: list, fitness_window: list, generation: int) -> dict:
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
     current_fitness = [a["fitness"] for a in population]
@@ -576,7 +576,8 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
                     
                     if iterations % 10 == 0:
-                        _handle_iteration_stats(population, fitness_window, cli_args)
+                        stats = calculate_window_statistics(fitness_window)
+                        _handle_iteration_stats(stats, population, cli_args)
                         
                 except (ValueError, TypeError) as e:
                     print(f"Child creation failed: {e}")
