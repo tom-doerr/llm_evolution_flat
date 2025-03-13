@@ -1,6 +1,5 @@
 import random
 import string
-import itertools
 from typing import List
 
 import numpy as np
@@ -137,8 +136,8 @@ def initialize_population(pop_size: int) -> List[dict]:
     chromosomes = []
     
     # Create a diverse initial population with different 'a' densities
-    for i in range(pop_size):
-        # Vary 'a' probability across population (some with many 'a's, some with few)
+    for _ in range(pop_size):  # Fixed unused variable 'i'
+        # Vary 'a' probability across population 
         a_probability = random.uniform(0.1, 0.5)  # 10-50% 'a's
         
         # Create core with controlled 'a' density
