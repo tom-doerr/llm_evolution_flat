@@ -52,10 +52,11 @@ def score_chromosome(chromosome: str) -> dict:
     assert len(core) == 23, "Core segment must be 23 characters"
     
     # Calculate a_count and repeating pairs using optimized methods
+    a_count = core.count('a')
     repeats = sum(core[i] == core[i-1] for i in range(1, len(core)))
     
     return {
-        'a_density': a_count / 23,
+        'a_density': a_count / 23.0,
         'repeating_pairs': repeats / 22,
         'core_segment': core
     }
