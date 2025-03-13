@@ -28,6 +28,8 @@ lm = dspy.LM(
 dspy.configure(lm=lm)
 assert dspy.settings.lm is not None, "DSPy LM must be configured"
 
+import sys
+
 # Test mock configuration
 if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
@@ -295,7 +297,7 @@ def _fallback_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 
 def mutate(agent: dict) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    mutated = mutate_with_llm(agent)
+    mutated = mutate_with_llm(agent, cli_args)
     agent['mutations'] = agent.get('mutations', 0) + 1  # Track mutation count per agent
     return mutated
 
