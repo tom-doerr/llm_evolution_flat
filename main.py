@@ -516,23 +516,28 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     assert cli_args.threads >= 1, "Must have at least 1 thread"
     iterations = 0
     
-    # Initial evaluation
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
-        for future in concurrent.futures.as_completed(future_to_agent):
-            agent = future_to_agent[future]
-            try:
-                agent["fitness"] = future.result()
-            except Exception as e:
-                print(f"Agent evaluation failed: {str(e)}")
-                raise RuntimeError("Population evaluation failed") from e
+    # Continuous evaluation setup
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_threads)
+    futures = []
+    
+    # Submit initial batch of evaluations
+    for agent in population:
+        futures.append(executor.submit(evaluate_agent, agent))
     
     fitness_window = [a["fitness"] for a in population]
     
     # Print initial stats
     print(f"Initial population: {len(population)} agents")
-    print(f"Initial best fitness: {max(fitness_window) if fitness_window else 0}")
     print("Starting continuous evolution...")
+    
+    # Process initial evaluation results
+    for future in concurrent.futures.as_completed(futures):
+        agent = futures[future]
+        try:
+            agent["fitness"] = future.result()
+            fitness_window.append(agent["fitness"])
+        except Exception as e:
+            print(f"Agent evaluation failed: {str(e)}")
     
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -743,8 +748,7 @@ if __name__ == "__main__":
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
-                       help='Number of parallel threads (default: %(default)s)',
-                       choices=range(1, 21))  # Don't require flag for default
+                       help='Number of parallel threads (default: %(default)s)')
     parser.add_argument('--verbose', action='store_true',
                        help='Enable verbose output')
     args = parser.parse_args()
