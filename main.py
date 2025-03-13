@@ -731,6 +731,21 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     
     return population, updated_window
 
+def validate_population_state(best, worst) -> None:
+    """Validate fundamental population invariants"""
+    # Validate hidden goal constants without referencing spec.md
+    assert MAX_CORE == 23 and MAX_CHARS == 40, "Core configuration invalid"
+    
+    # Fitness sanity checks - use absolute() since rewards can be negative per spec.md
+    assert best['fitness'] >= worst['fitness'], "Best fitness should be >= worst fitness"
+    
+    # Chromosome structural validation
+    for agent in [best, worst]:
+        chrom = agent['chromosome']
+        assert (isinstance(chrom, str) and 
+                1 <= len(chrom) <= 40 and 
+                chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
+
 # Main execution block at bottom per spec.md
 if __name__ == "__main__":
     import argparse
@@ -752,19 +767,4 @@ if __name__ == "__main__":
         run_genetic_algorithm(pop_size=args.pop_size)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
-
-def validate_population_state(best, worst) -> None:
-    """Validate fundamental population invariants"""
-    # Validate hidden goal constants without referencing spec.md
-    assert MAX_CORE == 23 and MAX_CHARS == 40, "Core configuration invalid"
-    
-    # Fitness sanity checks - use absolute() since rewards can be negative per spec.md
-    assert best['fitness'] >= worst['fitness'], "Best fitness should be >= worst fitness"
-    
-    # Chromosome structural validation
-    for agent in [best, worst]:
-        chrom = agent['chromosome']
-        assert (isinstance(chrom, str) and 
-                1 <= len(chrom) <= 40 and 
-                chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
 
