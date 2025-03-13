@@ -173,10 +173,10 @@ def mutate_with_llm(agent: dict) -> str:
         if candidate.startswith(agent["chromosome"][:23].lower()):
             return candidate
     
-    # Fallback mutation preserving core
+    # Fallback mutation with preserved core
     core = agent["chromosome"][:23].lower()
-    rand_length = random.randint(0, 17)
-    return core + ''.join(random.choices(string.ascii_lowercase + ' ', k=rand_length))[:40]
+    random_part = ''.join(random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17)))
+    return (core + random_part)[:40]  # Enforce max length
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
