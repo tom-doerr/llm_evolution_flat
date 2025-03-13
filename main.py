@@ -127,16 +127,13 @@ def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromo = validate_chromosome(agent["chromosome"])
     
-    # Calculate fitness: a_count in core - length penalty
-    agent["fitness"] = (chromo[:23].count('a') 
-                        - max(len(chromo) - 23, 0))
-    
-    # Store metrics from score_chromosome
+    # Calculate and store metrics
     agent["metrics"] = score_chromosome(chromo)
     agent["metrics"].update({
         'a_count': chromo[:23].count('a'),
         'length_penalty': max(len(chromo) - 23, 0)
     })
+    agent["fitness"] = agent["metrics"]['a_count'] - agent["metrics"]['length_penalty']
     
     assert len(agent["metrics"]['core_segment']) == 23
     return agent["fitness"]
@@ -144,21 +141,21 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    # Generate cores with varied 'a' density and random suffixes
-    cores = (''.join(['a' if random.random() < random.uniform(0.1, 0.5) 
-                     else random.choice(string.ascii_lowercase) 
-                     for _ in range(23)]) for _ in range(pop_size))
+    chromosomes = []
+    for _ in range(pop_size):
+        a_prob = random.uniform(0.1, 0.5)
+        core = ''.join(
+            'a' if random.random() < a_prob 
+            else random.choice(string.ascii_lowercase) 
+            for _ in range(23)
+        )
+        suffix = ''.join(random.choices(string.ascii_lowercase, 
+                      k=random.randint(0, 7)))
+        chromosomes.append(core + suffix)
     
-    # Convert to list of chromosomes with optional suffixes
-    chromosomes = [
-        core + ''.join(random.choices(string.ascii_lowercase, 
-                     k=random.randint(0, 7)))
-        for core in cores
-    ]
-    
-    # Seed with all-a core if population large enough
     if pop_size > 5:
-        chromosomes[0] = 'a' * 23
+        chromosomes[0] = 'a' * 23 + ''.join(
+            random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
     
     return [create_agent(c) for c in chromosomes]
 
