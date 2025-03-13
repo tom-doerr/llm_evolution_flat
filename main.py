@@ -243,7 +243,7 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
             mutation_instructions=_build_mutation_prompt(agent)
         )
         return _process_llm_response(response, cli_args)
-    except (dspy.DSPyError, ValueError) as e:
+    except ValueError as e:
         if cli_args.verbose:
             print(f"LLM mutation error: {str(e)}")
         return None
