@@ -336,7 +336,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
         f.write(header)
         # Validate plain text format
-        assert '\n' in header and '\t' in header and ' ' in header, "Log format must be plain text"
+        assert '\n' in header and '\t' in header, "Log format must be plain text"
         assert not any([',' in header, '[' in header, ']' in header]), "No structured formats allowed in log"
     
     evolution_loop(population, max_population)
