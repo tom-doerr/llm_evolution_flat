@@ -156,20 +156,18 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    response = dspy.Predict(MutateSignature)(
-        chromosome=agent["chromosome"],
-        instructions=agent["mutation_chromosome"],  # Use directly per spec.md
-    )
-    
-    # Validate responses using pre-computed core
     core_segment = agent["chromosome"][:23].lower()
-    for completion in response.completions:
-        candidate = str(completion).strip()[:40].lower()
-        if candidate.startswith(core_segment):
-            return candidate
     
+    # Process LLM response and validate candidates
+    for completion in dspy.Predict(MutateSignature)(
+        chromosome=agent["chromosome"],
+        instructions=agent["mutation_chromosome"]
+    ).completions:
+        if (candidate := str(completion).strip()[:40].lower()).startswith(core_segment):
+            return candidate
+
     # Fallback mutation with core preservation
-    return f"{core_segment}{''.join(random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17)))}"[:40]
+    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17))}"[:40]
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
@@ -222,29 +220,26 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mates")
-    # Calculate weights using fitness squared per spec.md
-    weights = np.array([c['fitness']**2 + 1e-9 for c in valid_candidates], dtype=np.float64)
-    weights /= weights.sum()
-    assert abs(sum(weights) - 1.0) < 1e-6, f"Weights sum {sum(weights)} != ~1.0"
 
-    # Get LLM selection with validated candidates
+    # Calculate normalized weights in one step
+    weights = np.array([c['fitness']**2 + 1e-9 for c in valid_candidates], dtype=np.float64)
+    assert abs((weights_sum := weights.sum()) - 1.0) < 1e-6, f"Weights sum {weights_sum} != ~1.0"
+
+    # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
     ).selected_mate.lower()
-    
-    # Ensure we don't select same candidate multiple times
-    candidates = [c for c in valid_candidates 
-                 if c["chromosome"] != parent["chromosome"] and 
-                    result.lower() in c["chromosome"].lower()]
 
-    # Find best match with fallback to random valid candidate
+    # Check for direct matches first
     for candidate in valid_candidates:
         if candidate["chromosome"].lower().startswith(result):
             return candidate
-    return random.choice(valid_candidates)
+            
+    return random.choice([c for c in valid_candidates 
+                        if c["chromosome"] != parent["chromosome"]])
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
