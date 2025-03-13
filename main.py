@@ -25,8 +25,6 @@ lm = dspy.LM(
 )
 dspy.configure(lm=lm)
 
-import sys
-
 # Test mock configuration
 if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
@@ -543,9 +541,9 @@ def evolution_loop(population: List[dict]) -> None:
             agent = future_to_agent[future]
             try:
                 agent["fitness"] = future.result()
-            except (ValueError, TypeError) as e:
-                print(f"Agent evaluation failed: {e}")
-                raise  # Re-raise to avoid silent failures
+            except Exception as e:
+                print(f"Agent evaluation failed: {str(e)}")
+                raise RuntimeError("Population evaluation failed") from e
     
     fitness_window = [a["fitness"] for a in population]
     
@@ -751,12 +749,11 @@ def validate_population_state(best, worst) -> None:
                 chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
 
 # Main execution block at bottom per spec.md
+import argparse
+
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
-                       help='Initial population size (default: 1000)')
-    parser.add_argument('--problem', type=str, default='hidden',
                        help='Initial population size (default: 1000)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
