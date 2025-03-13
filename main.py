@@ -137,8 +137,9 @@ def initialize_population(pop_size: int) -> List[dict]:
     chromosomes = []
     for _ in range(pop_size):
         # Create core with some 'a's to give evolution a starting point
+        # Make sure weights match the population size (26 letters + 'a')
         core = ''.join(random.choices(['a'] + list(string.ascii_lowercase), 
-                                     weights=[3] + [1] * 25, 
+                                     weights=[3] + [1] * 26, 
                                      k=23))
         # Add random suffix
         suffix = ''.join(random.choices(string.ascii_lowercase, 
