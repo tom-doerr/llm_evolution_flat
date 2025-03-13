@@ -396,8 +396,9 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
 def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
+    generation = 0
     
-    for _ in itertools.count():  # Continuous evolution without generation tracking
+    while True:  # Truly continuous evolution per spec.md
         # Trim population using fitness² weighted sampling without replacement
         if len(population) > max_population:
             weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
@@ -411,10 +412,11 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
             population = [population[i] for i in selected_indices]
         
         # Evaluate and generate next generation
-        population, fitness_window = evaluate_population_stats(population, fitness_window, _)
-        _ = calculate_window_statistics(fitness_window)  # Stats used in logging
+        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        stats = calculate_window_statistics(fitness_window)  # Stats used in logging
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
+        generation += 1
 
 
 
@@ -554,11 +556,12 @@ def validate_population_state(best, worst) -> None:
             chrom[:23].islower()
         ), f"Invalid chromosome in {agent}"
     
-    # Validate core segment metrics
+    # Validate core segment structure
     assert (
         len(best['metrics']['core_segment']) == 23 and
         best['chromosome'][:23].islower() and
-        ' ' not in best['chromosome']
+        ' ' not in best['chromosome'] and
+        best['chromosome'][:23].count('a') >= 10  # Minimum a-count for valid core
     ), "Core segment validation failed"
     
     # Validate mutation rate parameters are within sane bounds
