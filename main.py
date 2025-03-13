@@ -638,7 +638,7 @@ def display_generation_stats(stats: dict) -> None:
     
     console.print(Panel(
         f"[bold]Gen {stats.get('generation', 0)}[/] "
-        f"Best: {stats.get('best', 0.0):.1f} [μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}]\n"
+        f"Best: {stats.get('best', 0.0):.1f} [μ:{stats.get('current_mean', 0.0):.1f} M:{stats.get('median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}]\n"
         f"Core: {best_core[:10]}... (a's:{a_count}/23) "
         f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
