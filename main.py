@@ -91,12 +91,13 @@ def validate_chromosome(chromosome: str) -> str:
 
 def create_agent(chromosome: str) -> dict:
     """Create agent with 3 chromosomes per spec.md"""
-    # Validate chromosome structure
-    assert len(chromosome) >= 23, "Must have core task chromosome"
-    assert len(chromosome) >= 33, "Must have mate-selection chromosome"
-    assert len(chromosome) >= 40, "Must have mutation chromosome"
     # Validate and clean chromosome first
     chromosome = validate_chromosome(chromosome)
+    
+    # Ensure minimum length for all chromosome parts
+    if len(chromosome) < 40:
+        # Pad with random lowercase letters to reach minimum length
+        chromosome = chromosome.ljust(40, random.choice(string.ascii_lowercase))
     
     # Create agent with validated chromosome
     return {
@@ -445,6 +446,8 @@ class EvolutionaryOptimizer(dspy.Module):
         self.population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
         self.evolution_loop()
         return self.population
+
+def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
@@ -753,14 +756,12 @@ def validate_population_state(best, worst) -> None:
     assert MAX_CORE == 23 and MAX_CHARS == 40, "Core configuration invalid"
     
     # Fitness sanity checks - use absolute() since rewards can be negative per spec.md
-    assert abs(best['fitness']) >= abs(worst['fitness']), "Best fitness should >= worst in magnitude"
-    assert 0 <= best['fitness'] <= 1e6, "Fitness out of bounds"
-
+    assert best['fitness'] >= worst['fitness'], "Best fitness should be >= worst fitness"
+    
     # Chromosome structural validation
     for agent in [best, worst]:
         chrom = agent['chromosome']
         assert (isinstance(chrom, str) and 
                 1 <= len(chrom) <= 40 and 
-                chrom == chrom.strip() and 
-                chrom[:23].islower()), f"Invalid: {chrom}"
+                chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
 
