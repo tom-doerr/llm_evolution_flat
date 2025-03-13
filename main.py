@@ -191,7 +191,7 @@ def _select_weighted_parents(population: List[dict], weights: np.array) -> List[
 
 
 class MutateSignature(dspy.Signature):
-    """Mutate chromosomes while preserving first 23 characters and increasing 'a' density."""
+    """Mutate chromosomes while preserving first 23 characters exactly and increasing 'a' density in subsequent positions. Keep total length under 40 characters."""
     chromosome = dspy.InputField(desc="Current chromosome to mutate")
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
@@ -502,7 +502,8 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
 
-def log_and_display_stats(population: list, fitness_window: list, generation: int) -> dict:
+def log_and_display_stats(stats: dict) -> None:
+    """Handle periodic logging and display"""
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
     current_fitness = [a["fitness"] for a in population]
