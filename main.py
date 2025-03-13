@@ -385,16 +385,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
         population = trim_population(population, max_population)
         
         # Update and track fitness statistics
-        population = evaluate_population(population)
-        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
-        stats = calculate_window_statistics(fitness_window)
-        stats.update({
-            'generation': generation,
-            'population_size': len(population),
-            'diversity': calculate_diversity(population),
-            'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"]
-        })
-        handle_generation_output(stats, population)
+        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        handle_generation_output(fitness_window, population)
 
 
 
