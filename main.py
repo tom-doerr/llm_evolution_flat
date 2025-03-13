@@ -214,8 +214,15 @@ def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint
     if cli_args.verbose:
         print(f"Mutate instructions: {agent['mutation_chromosome']}")
 
-    # TODO: Implement retry logic for robust LLM mutations
-    return _try_llm_mutation(agent, cli_args)
+    # Retry up to 3 times with exponential backoff
+    from tenacity import retry, wait_exponential, stop_after_attempt
+    @retry(wait=wait_exponential(multiplier=1, min=1, max=10), 
+           stop=stop_after_attempt(3),
+           reraise=True)
+    def _retryable_mutation():
+        return _try_llm_mutation(agent, cli_args)
+    
+    return _retryable_mutation()
 
 def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     """Attempt LLM-based mutation and return valid result or None"""
