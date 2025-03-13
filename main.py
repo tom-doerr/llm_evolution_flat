@@ -623,12 +623,9 @@ def log_population(stats: dict) -> None:
             f"{stats.get('median', 0.0):.1f}\t" 
             f"{stats.get('std', 0.0):.1f}\t"
             f"{stats.get('best', 0.0):.1f}\t"
-            f"{stats.get('mean', 0.0):.1f}\t"
-            f"{stats.get('median', 0.0):.1f}\t" 
-            f"{stats.get('std', 0.0):.1f}\t"
-            f"{stats.get('best_core', '')[:23]}\t"
-            f"{stats.get('mutation_rate', 0.0):.1f}\t"
-            f"{stats.get('crossover_rate', 0.0):.1f}\n"
+            f"{stats.get('worst', 0.0):.1f}\t"
+            f"{stats.get('diversity', 0.0):.2f}\t"
+            f"{stats.get('best_core', '')[:23]}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
