@@ -177,9 +177,11 @@ MAX_CORE = 23  # From spec.md hidden goal
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
 assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
-def mutate(agent: dict) -> str: 
+def mutate(agent: dict) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
-    return mutate_with_llm(agent)
+    mutated = mutate_with_llm(agent)
+    agent['mutations'] = agent.get('mutations', 0) + 1  # Track mutation count per agent
+    return mutated
 
 
 def validate_mutation(chromosome: str) -> bool:
@@ -446,14 +448,12 @@ def evaluate_population(population: List[dict]) -> List[dict]:
 def update_population_stats(fitness_window: list, population: list) -> dict:
     """Helper to calculate population statistics"""
     stats = calculate_window_statistics(fitness_window)
-    # Update population stats
-    best = max(a['fitness'] for a in population)
-    worst = min(a['fitness'] for a in population)
     stats.update({
         'diversity': calculate_diversity(population),
         'population_size': len(population),
-        'best': best,
-        'worst': worst
+        'best': max(a['fitness'] for a in population) if population else 0.0,
+        'worst': min(a['fitness'] for a in population) if population else 0.0,
+        'mutation_rate': sum(a.get('mutations', 0) for a in population) / len(population) if population else 0.0
     })
     return stats
 
