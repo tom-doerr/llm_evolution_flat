@@ -522,9 +522,9 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
         'generation': generation,  # Now using the passed generation number
         'population_size': len(population),
         'diversity': calculate_diversity(population),
-        'best': window_stats['best'],
+        'best': stats['best'],
         'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
-        'worst': window_stats['worst'],
+        'worst': stats['worst'],
     }
     handle_generation_output(stats, population)
     
