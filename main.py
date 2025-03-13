@@ -175,7 +175,10 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 def _calculate_parent_weights(fitness: np.array) -> np.array:
     """Calculate normalized selection weights using fitness² * Pareto"""
-    weights = (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(fitness)) + 1)
+    # Enhanced per spec.md: Use fitness^2 * Pareto distribution weights
+    fitness_scores = np.abs(fitness) ** 2
+    pareto_samples = np.random.pareto(PARETO_SHAPE, len(fitness)) + 1
+    weights = fitness_scores * pareto_samples
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
     total = weights.sum()
     return weights / total if total > 0 else np.ones_like(weights) / len(weights)
@@ -624,7 +627,8 @@ def display_generation_stats(stats: dict) -> None:
     # Removed unused variable
     
     console.print(
-        f"[bold]Gen {stats.get('generation', 0)}[/] | "
+        f"[bold]Gen {stats.get('generation', 0):03}[/] | "
+        f"⏱ {time.strftime('%H:%M:%S')} | "
         f"🏆 [green]{stats.get('best', 0.0):.1f}[/] | "
         f"📊 μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
         f"👥 [bold yellow]{stats.get('population_size', 0):,}[/]/[dim]{MAX_POPULATION:,}[/] | "
