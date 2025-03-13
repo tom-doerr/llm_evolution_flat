@@ -19,7 +19,7 @@ assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
 # Configure DSPy with OpenRouter and timeout
 lm = dspy.LM(
-    "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
+    "openrouter/google/gemini-2.0-flash-001", max_tokens=80, timeout=10, cache=False
 )
 dspy.configure(lm=lm)
 
@@ -828,7 +828,8 @@ if __name__ == "__main__":
     WINDOW_SIZE = args.window_size
     
     try:
-        run_genetic_algorithm(pop_size=args.pop_size)
+        optimizer = EvolutionaryOptimizer()
+        optimizer.forward(population_size=args.pop_size)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
