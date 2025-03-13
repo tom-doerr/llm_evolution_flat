@@ -173,12 +173,9 @@ def mutate_with_llm(agent: dict) -> str:
 
     # Validate mutations preserve core 'a' count and structure
     core_a_count = agent["chromosome"][:23].count('a')
-    # Look for first valid mutation response
     for r in response.completions:
         candidate = str(r).strip()[:40].lower()
-        if (len(candidate) >= 23 and
-            candidate.startswith(agent["chromosome"][:23].lower()) and
-            candidate[:23].count('a') >= core_a_count):
+        if candidate.startswith(agent["chromosome"][:23].lower()):
             return candidate
     
     # Fallback mutation if no valid responses - preserve core and randomize rest
