@@ -171,6 +171,8 @@ def mutate_with_llm(agent: dict) -> str:
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     core_segment = agent["chromosome"][:MAX_CORE].lower()
     
+    print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
+    
     try:
         # Use the agent's mutation chromosome as instructions
         response = dspy.Predict(MutateSignature)(
@@ -184,20 +186,24 @@ def mutate_with_llm(agent: dict) -> str:
             
             # Ensure core segment is preserved
             if not comp_str.startswith(core_segment):
+                print("LLM mutation failed: core segment not preserved")
                 continue
                 
             # Clean and validate
             valid_candidate = ''.join(c for c in comp_str[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
             
             if valid_candidate and len(valid_candidate) >= MAX_CORE:
+                print(f"LLM mutation successful: {valid_candidate}")
                 return valid_candidate
                 
-    except Exception:
-        # No exception handling needed per spec.md
+    except Exception as e:
+        print(f"LLM mutation error: {str(e)}")
         pass
     
     # Default fallback mutation - preserve core segment
-    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".strip()
+    fallback = f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".strip()
+    print(f"Using fallback mutation: {fallback}")
+    return fallback
 
 
 def mutate(agent: dict) -> str:
@@ -464,16 +470,21 @@ def evolution_loop(population: List[dict]) -> None:
     # Print initial stats
     print(f"Initial population: {len(population)} agents")
     print(f"Initial best fitness: {max(fitness_window) if fitness_window else 0}")
+    print("Starting evolution loop...")
     
     for generation in itertools.count(0):  # Track generation for logging
+        # Print generation number for every iteration
+        print(f"\nGeneration {generation}:")
+        
         # Trim and evolve in one pass
-        population = trim_population(
-            generate_children(
-                select_parents(population),
-                population
-            )[:MAX_POPULATION],
-            MAX_POPULATION
-        )
+        selected_parents = select_parents(population)
+        print(f"Selected {len(selected_parents)} parents")
+        
+        children = generate_children(selected_parents, population)
+        print(f"Generated {len(children)} children")
+        
+        population = trim_population(children[:MAX_POPULATION], MAX_POPULATION)
+        print(f"Population size after trimming: {len(population)}")
         
         # Evaluate population and update stats
         population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
@@ -582,6 +593,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
 def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
     """Evaluate and log generation statistics"""
     # Evaluate population fitness
+    print("Evaluating population fitness...")
     population = evaluate_population(population)
     
     # Update fitness window
@@ -596,6 +608,8 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     if best_agent:
         print(f"Best chromosome: {best_agent['chromosome']}")
         print(f"Best fitness: {best_agent['fitness']}")
+        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
+        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
     
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
