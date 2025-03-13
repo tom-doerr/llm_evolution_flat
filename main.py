@@ -2,6 +2,7 @@ import concurrent.futures
 import random
 import string
 import time
+import argparse
 from typing import List
 
 import numpy as np
@@ -231,7 +232,7 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
             chromosome=agent["chromosome"],
             mutation_instructions=_build_mutation_prompt(agent)
         )
-        return _process_llm_response(response)
+        return _process_llm_response(response, cli_args)
     except (dspy.DSPyError, ValueError) as e:
         if cli_args.verbose:
             print(f"LLM mutation error: {str(e)}")
@@ -256,7 +257,7 @@ def _process_llm_response(response, cli_args) -> str:
         candidate = str(comp).strip().lower()[:MAX_CHARS]
         candidate = ''.join(c for c in candidate if c.isalpha() or c == ' ').strip()
         if len(candidate) >= MAX_CORE and validate_mutation(candidate):
-            if cli_args.verbose:
+            if cli_args and cli_args.verbose:
                 print(f"LLM mutation successful: {candidate}")
             return candidate
     return None
