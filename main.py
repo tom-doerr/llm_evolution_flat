@@ -535,12 +535,30 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     
     return [population[i] for i in selected_indices]
 
-def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
-    """Continuous evolution loop without discrete generations
-    Renamed args to cli_args to avoid redefined-outer-name conflict"""
+def evaluate_initial_population(population: List[dict], num_threads: int) -> List[float]:
+    """Evaluate initial population with thread pool"""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
+        return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
+
+def log_and_display_stats(iterations: int, population: List[dict], fitness_window: list) -> None:
+    """Handle periodic logging and display"""
+    stats = calculate_window_statistics(fitness_window)
+    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
     
+    stats.update({
+        'generation': iterations,
+        'population_size': len(population),
+        'diversity': calculate_diversity(population),
+        'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
+    })
+    
+    handle_generation_output(stats, population)
+
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
+    """Continuous evolution loop without discrete generations"""
     fitness_window = []
-    num_threads = args.threads
+    num_threads = cli_args.threads  # Fixed redefined-outer-name
     iterations = 0
     
     # Initial evaluation of population
