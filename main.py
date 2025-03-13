@@ -207,6 +207,10 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
+from retry import retry
+from retry.api import retry_call  # For different calling style
+from tenacity import wait_exponential, stop_after_attempt
+
 def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
     # LLM mutation using agent's mutation chromosome as instructions
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
@@ -215,8 +219,8 @@ def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint
         print(f"Mutate instructions: {agent['mutation_chromosome']}")
 
     # Retry up to 3 times with exponential backoff
-    @retry(wait=wait_exponential(multiplier=1, min=1, max=10), 
-           stop=stop_after_attempt(3),
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), 
+           stop=stop_after_attempt(2),
            reraise=True)
     def _retryable_mutation():
         return _try_llm_mutation(agent, cli_args)
