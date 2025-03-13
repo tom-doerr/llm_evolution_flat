@@ -408,7 +408,7 @@ def log_population(stats: dict) -> None:
             f"{stats['best']:.1f}\t"
             f"{stats['worst']:.1f}\t"
             f"{stats['diversity']:.3f}\t"
-            f"{stats['best_core'][:23]}\n"  # Core segment from spec.md
+            f"{stats['best_core'][:23]}\n"  # Exactly 23 chars per spec.md core
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
@@ -436,14 +436,9 @@ def extreme_values(population: List[dict]) -> dict:
     }
 
 def calculate_diversity(population: List[dict]) -> float:
-    """Calculate population diversity using pairwise differences"""
-    if len(population) <= 1:
-        return 0.0
-    
+    """Calculate population diversity as ratio of unique chromosomes"""
     unique_count = len({a["chromosome"] for a in population})
-    if unique_count == 1:
-        return 0.0
-    return 1.0 - (1.0 / (unique_count * (unique_count - 1) // 2)) if unique_count > 1 else 0.0
+    return unique_count / len(population) if population else 0.0
 
 
 
