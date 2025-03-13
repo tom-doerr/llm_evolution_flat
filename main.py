@@ -525,14 +525,14 @@ def log_and_display_stats(iterations: int, population: List[dict], fitness_windo
     
     handle_generation_output(stats, population)
 
-def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:  # pylint: disable=too-many-statements
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
     fitness_window = []
-    num_threads = cli_args.threads  # Fixed redefined-outer-name
+    num_threads = cli_args.threads
     assert cli_args.threads >= 1, "Must have at least 1 thread"
     iterations = 0
     
-    # Initial evaluation of population
+    # Initial evaluation
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         for future in concurrent.futures.as_completed(future_to_agent):
@@ -604,13 +604,15 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     # Display and log stats
                     handle_generation_output(stats, population)
                     
-                    # Print best chromosome for debugging
+                    # Debug output
                     if cli_args.verbose and best_agent:
-                        if cli_args.verbose and best_agent:
-                            print(f"Best chromosome: {best_agent['chromosome']}")
-                        print(f"Best fitness: {best_agent['fitness']}")
-                        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
-                        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
+                        debug_info = [
+                            f"Best chromosome: {best_agent['chromosome']}",
+                            f"Best fitness: {best_agent['fitness']}",
+                            f"A's in core: {best_agent['chromosome'][:23].count('a')}",
+                            f"Length after core: {len(best_agent['chromosome']) - 23}"
+                        ]
+                        print("\n".join(debug_info))
                 
                 # Small delay to prevent CPU overload
                 time.sleep(0.01)
