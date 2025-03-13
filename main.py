@@ -256,11 +256,14 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
+    if not chromosome:
+        return []
+        
     hotspots = [
         i for i, c in enumerate(chromosome)
         if c in HOTSPOT_CHARS  # Punctuation always included
         or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)  # Space check
-        or random.random() < 1/len(chromosome)  # Base chance
+        or random.random() < HOTSPOT_ANYWHERE_PROB  # Use constant from config
     ]
     
     # Ensure minimum hotspots per spec
