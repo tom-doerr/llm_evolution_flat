@@ -146,14 +146,15 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    def generate_initial_chromosome():
-        core = ''.join('a' if random.random() < random.uniform(0.1, 0.5) else 
-                      random.choice(string.ascii_lowercase) for _ in range(23))
-        suffix = ''.join(random.choices(string.ascii_lowercase, 
+    chromosomes = [
+        ''.join(
+            'a' if random.random() < random.uniform(0.1, 0.5) 
+            else random.choice(string.ascii_lowercase) 
+            for _ in range(23)
+        ) + ''.join(random.choices(string.ascii_lowercase, 
                       k=random.randint(0, 7)))
-        return core + suffix
-    
-    chromosomes = [generate_initial_chromosome() for _ in range(pop_size)]
+        for _ in range(pop_size)
+    ]
     
     if pop_size > 5:
         chromosomes[0] = 'a' * 23 + ''.join(
