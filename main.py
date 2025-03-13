@@ -158,11 +158,14 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Combined extraction and validation of mutation params
     mc = agent["mutation_chromosome"]
-    # Extract and clamp temperature/top_p from mutation chromosome
-    temperature = min(2.0, max(0.0, float(mc[0:3] or '0.7')))
-    top_p = min(1.0, max(0.0, float(mc[3:7] or '0.9')))
+    # Extract and clamp params from mutation chromosome
+    temp_top = (
+        float(mc[0:3] or '0.7'),
+        float(mc[3:7] or '0.9')
+    )
+    temperature = min(2.0, max(0.0, temp_top[0]))
+    top_p = min(1.0, max(0.0, temp_top[1]))
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
@@ -170,9 +173,6 @@ def mutate_with_llm(agent: dict) -> str:
         temperature=temperature,
         top_p=top_p,
     )
-
-    # Validate mutations preserve core 'a' count and structure
-    core_a_count = agent["chromosome"][:23].count('a')
     for r in response.completions:
         candidate = str(r).strip()[:40].lower()
         if candidate.startswith(agent["chromosome"][:23].lower()):
@@ -224,7 +224,7 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
 class MateSelectionSignature(dspy.Signature):
     """Select mate using DNA-loaded candidates and mate-selection chromosome (spec.md mating)"""
     mate_selection_chromosome = dspy.InputField(desc="Mate-selection chromosome/prompt of parent agent") 
-    candidate_chromosomes = dspy.InputField(desc="Potential mates filtered by validation")
+    candidate_chromosomes = dspy.InputField(desc="Validated potential mates")
     selected_mate = dspy.OutputField(desc="Chromosome of selected mate from candidates list")
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
