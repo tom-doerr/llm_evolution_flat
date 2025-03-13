@@ -228,11 +228,6 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mates")
-
-    # Single weight calculation with numeric stability
-    raw_weights = [a['fitness']**2 + 1e-9 for a in valid_candidates]
-    sum_weights = sum(raw_weights) + 1e-9  # Prevent division by zero
-    weights = [w/sum_weights for w in raw_weights]
     assert abs(sum(weights) - 1.0) < 1e-6, "Weights must sum to ~1.0"
 
     # Get LLM selection with validated candidates
