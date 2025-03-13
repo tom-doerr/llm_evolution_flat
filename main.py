@@ -691,7 +691,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     return stats
 
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, cli_args: argparse.Namespace, iterations: int) -> tuple:
+def evaluate_population_stats(population: List[dict], fitness_window: list, cli_args: argparse.Namespace, generation: int) -> tuple:
     """Evaluate and log generation statistics"""
     # Evaluate population fitness
     print("Evaluating population fitness...")
