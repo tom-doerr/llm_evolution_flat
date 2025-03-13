@@ -74,7 +74,8 @@ def score_chromosome(chromosome: str) -> dict:
 def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     chromosome = _clean_input(chromosome)
-    return _ensure_min_length(chromosome)
+    chromosome = _ensure_min_length(chromosome)
+    return chromosome[:MAX_CHARS]  # Enforce max length
 
 def _clean_input(chromosome: str) -> str:
     """Clean and normalize chromosome input"""
@@ -209,8 +210,8 @@ MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
 WINDOW_SIZE = 100  # Default, can be overridden by CLI
 MUTATION_RATE = 0.1  # Base mutation probability 
-HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per spec.md
-HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
+HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # More punctuation
+HOTSPOT_SPACE_PROB = 0.35  # Increased per spec.md space focus
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 # Total average switches = punctuation + spaces + anywhere = ~1.0
 HOTSPOT_ANYWHERE_PROB = 0.015  # Adjusted to account for punctuation/space probabilities
@@ -642,7 +643,9 @@ def log_population(stats: dict) -> None:
             f"{stats.get('best', 0.0):.1f}\t"
             f"{stats.get('worst', 0.0):.1f}\t"
             f"{stats.get('diversity', 0.0):.1f}\t"
-            f"{stats.get('best_core', '')[:23]}\n"
+            f"{stats.get('best_core', '')[:23]}\t"
+            f"{stats.get('mutation_rate', 0.0):.1f}\t"
+            f"{stats.get('crossover_rate', 0.0):.1f}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
