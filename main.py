@@ -88,7 +88,7 @@ def create_agent(chromosome: str) -> dict:
         "chromosome": original_chromo,
         "task_chromosome": original_chromo[:23].ljust(23, ' ')[:23],  # Enforce exact length
         "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower().strip(),
-        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7].strip(),
+        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7].strip()[:7],  # Enforce exact 7 char length
         "fitness": 0.0
     }
     # Added validation and whitespace stripping per spec.md chromosome separation requirements
@@ -326,9 +326,13 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     population = initialize_population(min(pop_size, max_population))[:max_population]
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
-    # Initialize log with header and truncate any existing content
+    # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
+        header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
+        f.write(header)
+        # Validate plain text format
+        assert '\n' in header and '\t' in header and ' ' in header, "Log format must be plain text"
+        assert not any([',' in header, '[' in header, ']' in header]), "No structured formats allowed in log"
     
     evolution_loop(population, max_population)
 
