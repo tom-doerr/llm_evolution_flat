@@ -366,7 +366,10 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
         children = generate_children(parents, population)
         population = parents + children  # Combine rather than replace
         population = trim_population(population, max_population)
-        # TODO: Add mutation rate tracking from spec.md
+        
+        # Track mutation rate as percentage of new agents
+        mutation_rate = sum(1 for a in population if a.get('mutation_source')) / len(population) if population else 0.0
+        stats['mutation_rate'] = mutation_rate
         
         # Update and track fitness statistics
         population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
@@ -392,6 +395,7 @@ def log_population(stats: dict) -> None:
             f"{stats['best']:.1f}\t"
             f"{stats['worst']:.1f}\t"
             f"{stats['diversity']:.3f}\t"
+            f"{stats.get('mutation_rate', 0.0):.1%}\t"
             f"{stats['best_core'][:23]}\n"  # Exactly 23 chars per spec.md core
         )
 
@@ -401,6 +405,7 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
         f"[bold]Gen {stats['generation']}[/]\n"
         f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f} (window)\n"
         f"Best: {stats['best']:.1f} Worst: {stats['worst']:.1f}\n"
+        f"Mutations: {stats.get('mutation_rate', 0.0):.1%}\n"
         f"Core: {stats['best_core']}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
