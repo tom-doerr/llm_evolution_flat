@@ -417,10 +417,10 @@ def validate_population_extremes(population: List[dict]) -> None:
 def run_evolution(population_size: int = 1000, cli_args: argparse.Namespace = None) -> list:
     """Run evolutionary optimization"""
     population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
-    evolution_loop(population, cli_args)
+    evolution_loop(population, cli_args, window_size=cli_args.window_size)
     return population
 
-def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace, window_size: int = 100) -> None:
+def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
@@ -755,7 +755,8 @@ def main():
     parser.add_argument('--window-size', type=int, default=100,
                       help='Sliding window size (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
-                      help='Parallel threads (default: 10)')
+                      help='Parallel threads (default: 10)',
+                      choices=range(1, 101))
     parser.add_argument('--verbose', action='store_true',
                       help='Enable verbose output')
     args = parser.parse_args()
