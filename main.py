@@ -158,11 +158,8 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Extract and clamp params in one tuple
+    # Extract mutation chromosome
     mc = agent["mutation_chromosome"]
-    params = (
-        min(2.0, max(0.0, float(mc[0:3] or 0.7))),
-        min(1.0, max(0.0, float(mc[3:7] or 0.9)))
     )
     
     response = dspy.Predict(MutateSignature)(
@@ -237,13 +234,18 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     sum_weights = sum(raw_weights) + 1e-9  # Prevent division by zero
     weights = [w/sum_weights for w in raw_weights]
 
-    # Get LLM selection with weighted candidates
+    # Get LLM selection with validated candidates
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
-        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],  # Fix typo in chromosome
+        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
     ).selected_mate.lower()
+    
+    # Ensure we don't select same candidate multiple times
+    candidates = [c for c in valid_candidates 
+                 if c["chromosome"] != parent["chromosome"] and 
+                    result.lower() in c["chromosome"].lower()]
 
     # Find best match with fallback to random valid candidate
     for candidate in valid_candidates:
