@@ -590,15 +590,18 @@ def log_population(stats: dict) -> None:
     with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
         f.write(
-            f"{stats.get('generation', 0)}\t" 
+            f"{stats.get('generation', 0)}\t"
             f"{stats.get('population_size', 0)}\t"
             f"{stats.get('mean', 0.0):.1f}\t"
-            f"{stats.get('median', 0.0):.1f}\t" 
+            f"{stats.get('median', 0.0):.1f}\t"
             f"{stats.get('std', 0.0):.1f}\t"
             f"{stats.get('best', 0.0):.1f}\t"
             f"{stats.get('worst', 0.0):.1f}\t"
             f"{stats.get('diversity', 0.0):.2f}\t"
             f"{stats.get('best_core', '')[:23]}\t"
+            f"{stats.get('crossovers', 0)}\t"
+            f"{stats.get('mutations', 0)}\t"
+            f"{stats.get('thread_util', 0.0):.1f}\t"
             f"{stats.get('mutation_rate', 0.0):.2f}\t"
             f"{stats.get('threads', 1)}\t"
             f"{stats.get('a_count', 0)}\t"
@@ -614,11 +617,13 @@ def display_generation_stats(stats: dict) -> None:
     # Removed unused variable
     
     console.print(
-        f"Gen {stats.get('generation', 0)} | "
-        f"Best: {stats.get('best', 0.0):.1f} | "
-        f"μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
-        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,} | "
-        f"Best A's: {stats.get('a_count', 0)}/23"
+        f"[bold]Gen {stats.get('generation', 0)}[/] | "
+        f"🏆 [green]{stats.get('best', 0.0):.1f}[/] | "
+        f"📊 μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
+        f"👥 [yellow]{stats.get('population_size', 0):,}[/]/[dim]{MAX_POPULATION:,}[/] | "
+        f"🧬 {stats.get('diversity', 0.0):.0%} | "
+        f"🔀 {stats.get('mutation_rate', 0.0):.1f}/agt | "
+        f"🧵 {stats.get('threads', 1)}"
     )
     
     # Print a separator for better readability
