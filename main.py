@@ -447,14 +447,10 @@ def calculate_diversity(population: List[dict]) -> float:
     if len(population) <= 1:
         return 0.0
     
-    # Use set for unique chromosomes and combination count
-    unique_chromosomes = {a["chromosome"] for a in population}
-    if len(unique_chromosomes) == 1:
+    unique_count = len({a["chromosome"] for a in population})
+    if unique_count == 1:
         return 0.0
-    
-    # Calculate diversity using combination formula
-    n = len(unique_chromosomes)
-    return 1.0 - (1.0 / (n * (n - 1) / 2)) if n > 1 else 0.0
+    return 1.0 - (1.0 / (unique_count * (unique_count - 1) // 2)) if unique_count > 1 else 0.0
 
 
 
@@ -462,11 +458,12 @@ def calculate_diversity(population: List[dict]) -> float:
 
 def evaluate_population(population: List[dict]) -> List[dict]:
     """Evaluate entire population's fitness with generation weighting"""
-    return [
-        agent.update({"fitness": evaluate_agent(agent)}) or agent
-        for agent in population
-        if validate_chromosome(agent["chromosome"])
-    ]
+    evaluated = []
+    for agent in population:
+        if validate_chromosome(agent["chromosome"]):
+            agent["fitness"] = evaluate_agent(agent)
+            evaluated.append(agent)
+    return evaluated
 
 def update_population_stats(fitness_window: list, population: list) -> dict:
     """Helper to calculate population statistics"""
