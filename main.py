@@ -500,13 +500,15 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
 def log_and_display_stats(generation: int, population: List[dict], fitness_window: list) -> None:
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
-    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
+    current_fitness = [a["fitness"] for a in population]
     
     stats.update({
         'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
-        'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
+        'current_best': max(current_fitness) if population else 0.0,
+        'current_worst': min(current_fitness) if population else 0.0,
+        'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"] if population else "",
     })
     
     handle_generation_output(stats, population)
@@ -595,8 +597,8 @@ def log_population(stats: dict) -> None:
             f"{stats.get('mean', 0.0):.1f}\t"
             f"{stats.get('median', 0.0):.1f}\t"
             f"{stats.get('std', 0.0):.1f}\t"
-            f"{stats.get('best', 0.0):.1f}\t"
-            f"{stats.get('worst', 0.0):.1f}\t"
+            f"{stats.get('current_best', 0.0):.1f}\t"
+            f"{stats.get('current_worst', 0.0):.1f}\t"
             f"{stats.get('diversity', 0.0):.2f}\t"
             f"{stats.get('best_core', '')[:23]}\t"
             f"{stats.get('crossovers', 0)}\t"
