@@ -229,15 +229,15 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    # Validate candidates in one pass
+    # Get validated candidates with weights
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mates")
-
-    # Calculate normalized weights in one step
-    weights = [c['fitness']**2 + 1e-6 for c in valid_candidates]
+        
+    # Calculate weights in single comprehension
+    weights = [(c['fitness']**2 + 1e-6) for c in valid_candidates]
     sum_weights = sum(weights)
-    weights = [w / sum_weights for w in weights]
+    weights = [w/sum_weights for w in weights]
     assert sum_weights > 0, "All candidate weights are zero"
 
     # Get LLM selection with weighted candidates
@@ -400,7 +400,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
-    for generation in itertools.count(0):
+    for _ in itertools.count():  # Generation counter not used per spec.md's continuous evolution
         # Trim population using fitness² weighted sampling without replacement (spec.md)
         if len(population) > max_population:
             weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
@@ -413,11 +413,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
             )
             population = [population[i] for i in selected_indices]
         
-        # Evaluate and update population
-        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
-        stats = calculate_window_statistics(fitness_window)
-        
-        # Generate next generation
+        # Evaluate and generate next generation
+        population, fitness_window = evaluate_population_stats(population, fitness_window, 0)  # Generation number not used
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
 
@@ -521,7 +518,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:  # pylint: disable=too-many-arguments
+def evaluate_population_stats(population: List[dict], fitness_window: list, _generation: int) -> tuple:  # pylint: disable=too-many-arguments
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
