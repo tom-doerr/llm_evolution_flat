@@ -231,7 +231,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         raise ValueError("No valid mates")
         
     # Calculate weights in single step
-    weights = [(c['fitness']**2 + 1e-6 for c in valid_candidates]
+    weights = [(c['fitness']**2 + 1e-6) for c in valid_candidates]
     norm_weights = [w/sum(weights) for w in weights]
     assert sum(weights) > 0, "All candidate weights are zero"
 
