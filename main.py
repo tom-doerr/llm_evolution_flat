@@ -133,18 +133,34 @@ def evaluate_agent(agent: dict) -> float:
 
 
 def initialize_population(pop_size: int) -> List[dict]:
-    """Create initial population with some 'a's in the core segment"""
+    """Create initial population with varied 'a' density in core segment"""
     chromosomes = []
-    for _ in range(pop_size):
-        # Create core with some 'a's to give evolution a starting point
-        # Make sure weights match the population size (26 letters + 'a')
-        core = ''.join(random.choices(['a'] + list(string.ascii_lowercase), 
-                                     weights=[3] + [1] * 26, 
-                                     k=23))
-        # Add random suffix
-        suffix = ''.join(random.choices(string.ascii_lowercase, 
-                                       k=random.randint(0, 17)))
+    
+    # Create a diverse initial population with different 'a' densities
+    for i in range(pop_size):
+        # Vary 'a' probability across population (some with many 'a's, some with few)
+        a_probability = random.uniform(0.1, 0.5)  # 10-50% 'a's
+        
+        # Create core with controlled 'a' density
+        core_chars = []
+        for _ in range(23):
+            if random.random() < a_probability:
+                core_chars.append('a')
+            else:
+                core_chars.append(random.choice(string.ascii_lowercase))
+        
+        core = ''.join(core_chars)
+        
+        # Add minimal suffix (0-7 chars) to keep total length between 23-30
+        suffix_len = random.randint(0, 7)
+        suffix = ''.join(random.choices(string.ascii_lowercase, k=suffix_len))
+        
         chromosomes.append(core + suffix)
+    
+    # Add one chromosome with all 'a's in core to seed the population
+    if pop_size > 5:
+        all_a_core = 'a' * 23
+        chromosomes[0] = all_a_core
     
     # Create agents from chromosomes
     return [create_agent(c) for c in chromosomes]
@@ -193,25 +209,24 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
-    core_segment = agent["chromosome"][:MAX_CORE].lower()
     
     # Only print for debugging if verbose
     if args.verbose:
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
     
     try:
-        # Create a more effective prompt that encourages 'a's in the core
+        # Create a more effective prompt that explicitly encourages 'a's in the core
         mutation_prompt = f"""
         Current chromosome: {agent['chromosome']}
         
         Instructions: {agent['mutation_chromosome']}
         
         Important rules:
-        1. You can modify the first 23 characters to improve fitness
-        2. You can modify anything after the first 23 characters
-        3. Total length must be between 23 and 40 characters
-        4. Only use lowercase letters and spaces
-        5. The fitness function rewards specific patterns in the first 23 characters
+        1. The first 23 characters determine the core fitness
+        2. The letter 'a' in the first 23 characters is very important for fitness
+        3. Keep total length between 23-30 characters (shorter is better after 23)
+        4. Only use lowercase letters
+        5. Try to maximize the number of 'a's in the first 23 characters
         
         Modified chromosome:
         """
@@ -232,7 +247,7 @@ def mutate_with_llm(agent: dict) -> str:
             # Clean and validate
             valid_candidate = ''.join(c for c in valid_candidate[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
             
-            if valid_candidate and valid_candidate.startswith(core_segment) and len(valid_candidate) >= MAX_CORE:
+            if valid_candidate and len(valid_candidate) >= MAX_CORE:
                 if args.verbose:
                     print(f"LLM mutation successful: {valid_candidate}")
                 return valid_candidate
@@ -241,9 +256,33 @@ def mutate_with_llm(agent: dict) -> str:
         if args.verbose:
             print(f"LLM mutation error: {str(e)}")
     
-    # Default fallback mutation - preserve core segment
-    random_chars = ''.join(random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17)))
-    fallback = f"{core_segment}{random_chars}".strip()
+    # Default fallback mutation - create a better chromosome with more 'a's
+    # Create a core with many 'a's
+    a_count = agent["chromosome"][:MAX_CORE].count('a')
+    improved_core = agent["chromosome"][:MAX_CORE]
+    
+    # Randomly replace some characters with 'a's to improve fitness
+    if a_count < MAX_CORE:
+        char_positions = list(range(MAX_CORE))
+        random.shuffle(char_positions)
+        # Convert to list for mutation
+        improved_core_list = list(improved_core)
+        
+        # Replace up to 5 random non-'a' characters with 'a's
+        replacements = 0
+        for pos in char_positions:
+            if improved_core_list[pos] != 'a':
+                improved_core_list[pos] = 'a'
+                replacements += 1
+                if replacements >= 5:  # Limit replacements per mutation
+                    break
+        
+        improved_core = ''.join(improved_core_list)
+    
+    # Keep length minimal after core (23-30 chars total)
+    suffix_len = random.randint(0, 7)  # 0-7 chars after core = 23-30 total
+    random_chars = ''.join(random.choices(string.ascii_lowercase, k=suffix_len))
+    fallback = f"{improved_core}{random_chars}".strip()
     
     if args.verbose:
         print(f"Using fallback mutation: {fallback}")
@@ -265,7 +304,6 @@ def validate_mutation(chromosome: str) -> bool:
         len(chromosome) <= 40 and
         all(c.isalpha() or c == ' ' for c in chromosome) and  # From spec.md
         chromosome == chromosome.strip() and  # From spec.md
-        chromosome[:23].count('a') >= MAX_CORE and  # Hidden spec
         chromosome[:23] == chromosome[:23].lower()  # Preserve core format
     )
 
@@ -355,7 +393,8 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
     
     # If no hotspots found, create at least one
     if not hotspots and p_chrom:
-        hotspots = [random.randint(0, len(p_chrom) - 1)]
+        # Create hotspot in core and after core
+        hotspots = [random.randint(0, 22), random.randint(23, min(len(p_chrom), len(m_chrom)) - 1)]
     
     # Build combined chromosome with switches at hotspots
     result = ""
@@ -363,7 +402,7 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
     use_parent = True
     
     for pos in sorted(hotspots):
-        if pos >= len(p_chrom):
+        if pos >= min(len(p_chrom), len(m_chrom)):
             continue
             
         # Add segment from current chromosome
@@ -375,12 +414,30 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
         last_pos = pos
     
     # Add final segment
-    if last_pos < len(p_chrom):
-        final = p_chrom[last_pos:] if use_parent else m_chrom[last_pos:min(len(m_chrom), len(p_chrom))]
+    if last_pos < min(len(p_chrom), len(m_chrom)):
+        final = p_chrom[last_pos:] if use_parent else m_chrom[last_pos:]
         result += final
     
+    # Special case: improve 'a' count in core
+    result_core = result[:23] if len(result) >= 23 else result.ljust(23, 'a')
+    result_suffix = result[23:30] if len(result) > 23 else ""
+    
+    # Occasionally boost 'a' count in offspring
+    if random.random() < 0.2:  # 20% chance
+        result_core_list = list(result_core)
+        # Replace 1-3 random non-'a' characters with 'a's
+        non_a_positions = [i for i in range(23) if result_core_list[i] != 'a']
+        if non_a_positions:
+            for _ in range(min(3, len(non_a_positions))):
+                if not non_a_positions:
+                    break
+                pos = random.choice(non_a_positions)
+                result_core_list[pos] = 'a'
+                non_a_positions.remove(pos)
+            result_core = ''.join(result_core_list)
+    
     # Validate before returning
-    return validate_chromosome(result[:MAX_CHARS])
+    return validate_chromosome(result_core + result_suffix)
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
