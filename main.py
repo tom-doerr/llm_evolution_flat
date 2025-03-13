@@ -488,7 +488,21 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
         p=weights
     )
     
-    return [population[i] for i in selected_indices]
+    selected = [population[i] for i in selected_indices]
+    
+    # Sort by fitness descending as priority
+    selected.sort(key=lambda x: x['fitness'], reverse=True)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    deduped = []
+    for agent in selected:
+        chromo = agent['chromosome']
+        if chromo not in seen:
+            seen.add(chromo)
+            deduped.append(agent)
+    
+    return deduped[:max_size]
 
 def evaluate_initial_population(population: List[dict], num_threads: int) -> List[float]:
     """Evaluate initial population with thread pool"""
