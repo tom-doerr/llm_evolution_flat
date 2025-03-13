@@ -23,6 +23,7 @@ lm = dspy.LM(
 dspy.configure(lm=lm)
 
 # Test mock configuration
+import sys
 if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
     dspy.configure(lm=lm, test_mode=True)
@@ -207,7 +208,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict) -> str:
+def mutate_with_llm(agent: dict, args) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -225,7 +226,7 @@ def _try_llm_mutation(agent: dict) -> str:
             mutation_instructions=_build_mutation_prompt(agent)
         )
         return _process_llm_response(response)
-    except (dspy.DSPyException, ValueError) as e:
+    except (dspy.DSPyError, ValueError) as e:
         if args.verbose:
             print(f"LLM mutation error: {str(e)}")
         return None
@@ -664,7 +665,12 @@ def log_population(stats: dict) -> None:
         f.write(f"{stats.get('generation', 0)}\t"
                 f"{stats.get('population_size', 0)}\t"
                 f"{stats.get('current_mean', 0.0):.1f}\t"
-                f"{stats.get('best_core', '')[:10]}...{stats.get('best_core', '')[-10:]}\n")  # Truncated core display
+                f"{stats.get('current_median', 0.0):.1f}\t"
+                f"{stats.get('current_std', 0.0):.1f}\t"
+                f"{stats.get('best', 0.0):.1f}\t"
+                f"{stats.get('worst', 0.0):.1f}\t"
+                f"{stats.get('diversity', 0.0):.2f}\t"
+                f"{stats.get('best_core', '')}\n")
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
