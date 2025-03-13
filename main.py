@@ -345,6 +345,7 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
+    max_size = min(max_size, MAX_POPULATION)  # Hard cap from spec.md
     if len(population) <= max_size:
         return population
     
@@ -418,6 +419,7 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
         f"Mutations: {stats.get('mutation_rate', 0.0):.1%}\n"
         f"Core: {stats['best_core']}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
+        subtitle=f"[Population evolution: +{len(children)}/-{len(population)-len(trimmed)}]"
         title="Evolution Progress",
         style="blue"
     ))
