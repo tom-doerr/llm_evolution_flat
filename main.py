@@ -353,7 +353,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     if valid_candidates:
         mate = llm_select_mate(parent, valid_candidates)
         child = create_agent(build_child_chromosome(parent, mate))
-        child["mutation_source"] = f"crossover:{parent['mutation_chromosome']}"
+        child["mutation_source"] = f"crossover:{mate['mate_selection_chromosome']}"
         return child
     
     child = create_agent(build_child_chromosome(parent, parent))
