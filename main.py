@@ -706,8 +706,8 @@ def main():
                       help='Initial population size (default: 1000)',
                       choices=range(1, MAX_POPULATION+1))
     parser.add_argument('--problem', type=str, default='hidden',
-                      choices=['hidden', 'other'],
-                      help='Problem type to optimize (default: hidden)')
+                      choices=['hidden', 'other', 'custom'],
+                      help='Problem type to optimize (default: hidden). Use "custom" for user-defined problems')
     parser.add_argument('--max-runtime', type=int, default=3600,
                       help='Maximum runtime in seconds (default: 1 hour)') 
     parser.add_argument('--window-size', type=int, default=100,
