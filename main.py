@@ -648,8 +648,9 @@ def display_generation_stats(stats: dict) -> None:
     console.print(
         f"Gen {stats.get('generation', 0)} | "
         f"Best: {stats.get('best', 0.0):.1f} | "
-        f"μ:{stats.get('current_mean', 0.0):.1f} | "
-        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}"
+        f"μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
+        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,} | "
+        f"Best A's: {stats.get('a_count', 0)}/23"
     )
     
     # Print a separator for better readability
