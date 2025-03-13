@@ -690,7 +690,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     return stats
 
 
-def evaluate_population_stats(population: List[dict], fitness_window: list) -> tuple:
+def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int, args: argparse.Namespace) -> tuple:
     """Evaluate and log generation statistics"""
     # Evaluate population fitness
     print("Evaluating population fitness...")
@@ -706,7 +706,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list) -> t
     
     # Print best chromosome for debugging
     if best_agent:
-        if cli_args.verbose:
+        if args.verbose:
             print(f"Best chromosome: {best_agent['chromosome']}")
             print(f"Best fitness: {best_agent['fitness']}")
             print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
