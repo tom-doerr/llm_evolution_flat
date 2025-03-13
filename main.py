@@ -225,10 +225,13 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    # Get validated candidates with weights
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mates")
+    
+    # Calculate weights once and use for both paths
+    sum_weights = sum(a['fitness']**2 for a in valid_candidates)
+    weights = [a['fitness']**2/sum_weights for a in valid_candidates]
 
     # Calculate normalized weights in single step
     sum_weights = sum(a['fitness']**2 + 1e-6 for a in valid_candidates)
