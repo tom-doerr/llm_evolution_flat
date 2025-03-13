@@ -160,9 +160,9 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     # Combined extraction and validation of mutation params
     mc = agent["mutation_chromosome"]
-    # Extract and validate mutation params
-    temperature = max(0.0, min(2.0, float(mc[0:3] or '0.7')))
-    top_p = max(0.0, min(1.0, float(mc[3:7] or '0.9')))
+    # Extract and clamp temperature/top_p from mutation chromosome
+    temperature = min(2.0, max(0.0, float(mc[0:3] or '0.7')))
+    top_p = min(1.0, max(0.0, float(mc[3:7] or '0.9')))
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
