@@ -387,7 +387,7 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     children = [
         (crossover(random.choice(selected_parents), population) 
          if random.random() < 0.9 else 
-         create_agent(mutate(random.choice(selected_parents), cli_args)))  # pylint: disable=no-value-for-parameter
+         create_agent(mutate(random.choice(selected_parents), cli_args)))
         for _ in range(MAX_POPULATION - len(selected_parents))
     ]
     return children[:MAX_POPULATION]
@@ -423,8 +423,8 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Initialize log with header and truncate any existing content per spec.md
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # Actually empty the file per spec.md
+    with open("evolution.log", "w", encoding="utf-8"):
+        pass  # Empty the file per spec.md
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
         f.write(header)
         # Validate plain text format
@@ -588,26 +588,16 @@ def _handle_iteration_stats(stats: dict) -> None:
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "w", encoding="utf-8") as f:
-        f.truncate(0)  # Empty file on startup
+    with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
         f.write(
-            f"{stats.get('generation', 0)}\t"
-            f"{stats.get('population_size', 0)}\t"
-            f"{stats.get('mean', 0.0):.1f}\t"
-            f"{stats.get('median', 0.0):.1f}\t"
-            f"{stats.get('std', 0.0):.1f}\t"
-            f"{stats.get('current_best', 0.0):.1f}\t"
-            f"{stats.get('current_worst', 0.0):.1f}\t"
-            f"{stats.get('diversity', 0.0):.2f}\t"
-            f"{stats.get('best_core', '')[:23]}\t"
-            f"{stats.get('crossovers', 0)}\t"
-            f"{stats.get('mutations', 0)}\t"
-            f"{stats.get('thread_util', 0.0):.1f}\t"
-            f"{stats.get('mutation_rate', 0.0):.2f}\t"
-            f"{stats.get('threads', 1)}\t"
-            f"{stats.get('a_count', 0)}\t"
-            f"{stats.get('threads', 1)}\n"
+            f"Generation: {stats.get('generation', 0)}\n"
+            f"Population: {stats.get('population_size', 0)}\n"
+            f"Mean fitness: {stats.get('mean', 0.0):.1f}\n"
+            f"Best fitness: {stats.get('best', 0.0):.1f}\n"
+            f"Core segment: {stats.get('best_core', '')[:23]}\n"
+            f"Mutations: {stats.get('mutations', 0)}\n"
+            f"Threads: {stats.get('threads', 1)}\n\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
