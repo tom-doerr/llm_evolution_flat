@@ -48,6 +48,26 @@ do
         echo "No syntax errors detected." >> issues.txt.tmp
     fi
     
+    # Run pytest and capture results
+    echo -e "\nRunning pytest..." >> issues.txt.tmp
+    PYTEST_RESULT=$(pytest -v 2>&1)
+    PYTEST_EXIT_CODE=$?
+    
+    if [ $PYTEST_EXIT_CODE -eq 0 ]; then
+        echo -e "All tests passed!\n" >> issues.txt.tmp
+        echo "$PYTEST_RESULT" | tail -n 10 >> issues.txt.tmp
+    else
+        echo -e "Some tests failed!\n" >> issues.txt.tmp
+        echo "$PYTEST_RESULT" >> issues.txt.tmp
+        
+        # Extract failing test information if available
+        FAILING_TESTS=$(echo "$PYTEST_RESULT" | grep -B 1 -A 3 "FAILED")
+        if [ ! -z "$FAILING_TESTS" ]; then
+            echo -e "\nFailing tests summary:" >> issues.txt.tmp
+            echo "$FAILING_TESTS" >> issues.txt.tmp
+        fi
+    fi
+    
     mv issues.txt.tmp issues.txt
     echo "Code quality check results saved to issues.txt"
     
