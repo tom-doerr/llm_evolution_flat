@@ -643,15 +643,12 @@ def display_generation_stats(stats: dict) -> None:
     best_core = stats.get('best_core', '')
     a_count = best_core.count('a') if best_core else 0
     
-    console.print(Panel(
-        f"[bold]Gen {stats.get('generation', 0)}[/] "
-        f"Best: {stats.get('best', 0.0):.1f} [μ:{stats.get('current_mean', 0.0):.1f} M:{stats.get('median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}]\n"
-        f"Core: {best_core[:10]}... (a's:{a_count}/23) "
-        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
-        title="Evolution Progress",
-        style="blue",
-        width=80
-    ))
+    console.print(
+        f"Gen {stats.get('generation', 0)} | "
+        f"Best: {stats.get('best', 0.0):.1f} | "
+        f"μ:{stats.get('current_mean', 0.0):.1f} | "
+        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}"
+    )
     
     # Print a separator for better readability
     console.print("─" * 80)
@@ -745,25 +742,29 @@ def validate_population_state(best, worst) -> None:
                 1 <= len(chrom) <= 40 and 
                 chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
 
-if __name__ == "__main__":
+def main():
+    """CLI entry point for evolutionary optimizer"""
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
-                       help='Initial population size (default: 1000)')
+                      help='Initial population size (default: 1000)')
     parser.add_argument('--max-runtime', type=int, default=3600,
-                       help='Maximum runtime in seconds (default: 1 hour)')
+                      help='Maximum runtime in seconds (default: 1 hour)') 
     parser.add_argument('--window-size', type=int, default=100,
-                       help='Sliding window size for statistics (default: 100)')
+                      help='Sliding window size (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
-                       help='Number of parallel threads (default: %(default)s)')
+                      help='Parallel threads (default: 10)')
     parser.add_argument('--verbose', action='store_true',
-                       help='Enable verbose output')
+                      help='Enable verbose output')
     args = parser.parse_args()
     
-    # Set global window size from args
+    global WINDOW_SIZE
     WINDOW_SIZE = args.window_size
     
     try:
         run_genetic_algorithm(args.pop_size, args)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
+
+if __name__ == "__main__":
+    main()
 
