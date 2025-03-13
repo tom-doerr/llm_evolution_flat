@@ -40,7 +40,7 @@ def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last WINDOW_SIZE evaluations"""
     if not fitness_window:
         return {'mean': 0.0, 'median': 0.0, 'std': 0.0, 'best': 0.0, 'worst': 0.0}
-    assert len(fitness_window) <= WINDOW_SIZE, f"Window size exceeds {WINDOW_SIZE}"
+    assert len(fitness_window) <= WINDOW_SIZE, f"Window size exceeds configured {WINDOW_SIZE}"
     window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
     stats = {
         'mean': float(np.nanmean(window_arr)),
@@ -763,7 +763,8 @@ if __name__ == "__main__":
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
                        help='Number of parallel threads (default: 10)',
-                       choices=range(1, 21))  # Limit 1-20 threads per spec
+                       choices=range(1, 21),
+                       required=True)  # Enforce default per spec.md
     parser.add_argument('--verbose', action='store_true',
                        help='Enable verbose output')
     args = parser.parse_args()
