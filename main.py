@@ -169,22 +169,22 @@ def select_parents(population: List[dict]) -> List[dict]:
         return []
 
     fitness = np.array([a['fitness'] for a in population], dtype=np.float64)
-    # Stronger fitness pressure per spec with negative handling
-    weights = (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
+    weights = _calculate_parent_weights(fitness)
     
-    if weights.sum() > 0:
-        weights /= weights.sum()
-    else:  # Handle all-zero weights case
-        weights = np.ones_like(weights) / len(weights)
+    return _select_weighted_parents(population, weights)
 
-    rng = np.random.default_rng()
-    selected_indices = rng.choice(
-        len(population),
-        size=min(len(population), MAX_POPULATION//2),
-        replace=False,
-        p=weights
-    )
+def _calculate_parent_weights(fitness: np.array) -> np.array:
+    """Calculate normalized selection weights using fitness² * Pareto"""
+    weights = (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(fitness)) + 1)
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
+    total = weights.sum()
+    return weights / total if total > 0 else np.ones_like(weights) / len(weights)
+
+def _select_weighted_parents(population: List[dict], weights: np.array) -> List[dict]:
+    """Select parents using weighted sampling without replacement"""
+    count = min(len(population), MAX_POPULATION//2)
+    indices = np.random.choice(len(population), size=count, replace=False, p=weights)
+    return [population[i] for i in indices]
         
     return [population[i] for i in selected_indices]
 
@@ -426,7 +426,7 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        f.truncate(0)  # Explicitly empty the file per spec.md
+        pass  # Actually empty the file per spec.md
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
         f.write(header)
         # Validate plain text format
