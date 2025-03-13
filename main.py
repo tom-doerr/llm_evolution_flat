@@ -117,20 +117,18 @@ def evaluate_agent(agent: dict) -> float:
     chromo = validate_chromosome(agent["chromosome"])
     metrics = score_chromosome(chromo)
     
-    # Hidden goal: maximize 'a's in first 23 chars, minimize length after that
-    a_count = chromo[:23].count('a')
-    penalty = len(chromo) - 23 if len(chromo) > 23 else 0
+    # Calculate fitness: a_count in core - length penalty
+    core_segment = chromo[:23]
+    agent["fitness"] = core_segment.count('a') - max(len(chromo) - 23, 0)
     
-    # Calculate fitness
-    agent["fitness"] = a_count - penalty
-    
-    # Add more detailed metrics for debugging
-    metrics['a_count'] = a_count
-    metrics['length_penalty'] = penalty
-    
-    assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
+    # Store metrics
+    metrics.update({
+        'a_count': core_segment.count('a'),
+        'length_penalty': max(len(chromo) - 23, 0)
+    })
     agent["metrics"] = metrics
     
+    assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
     return agent["fitness"]
 
 
