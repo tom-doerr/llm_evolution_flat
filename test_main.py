@@ -6,7 +6,7 @@ import dspy
 
 @pytest.fixture
 def mock_lm():
-    lm = dspy.LM("mock/model")  # Must follow provider/model format
+    lm = dspy.LM("mock/mock_model")  # Add provider prefix to mock model
     lm.return_value = MagicMock()
     return lm
 
