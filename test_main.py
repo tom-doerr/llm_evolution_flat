@@ -51,3 +51,9 @@ class EvolutionOptimizer(dspy.Module):
         super().__init__()
         self.population_size = population_size
         self.generate_metric = dspy.Predict("chromosome -> mutated_chromosome")
+        
+    def forward(self, population):
+        """Run one evolution step"""
+        parents = select_parents(population)
+        children = generate_children(parents, population, argparse.Namespace(verbose=False, threads=1))
+        return trim_population(parents + children, self.population_size)

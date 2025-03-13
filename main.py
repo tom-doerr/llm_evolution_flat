@@ -359,7 +359,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights using fitness^2 * Pareto distribution per spec
     weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
@@ -589,7 +589,7 @@ def log_population(stats: dict) -> None:
             f"Population: {stats.get('population_size', 0)}\n"
             f"Mean fitness: {stats.get('mean', 0.0):.1f}\n"
             f"Best fitness: {stats.get('best', 0.0):.1f}\n"
-            f"Core segment: {stats.get('best_core', '')[:23]}\n"
+            f"Core: {stats.get('best_core', '')[:23]}[...]\n"  # Truncate and indicate truncation
             f"Mutations: {stats.get('mutations', 0)}\n"
             f"Threads: {stats.get('threads', 1)}\n\n"
         )
@@ -721,8 +721,8 @@ def main():
     
     try:
         # Single call with validation
-        assert 1 <= args.pop_size <= main.MAX_POPULATION, \
-            f"Population size must be between 1 and {main.MAX_POPULATION}"
+        assert 1 <= args.pop_size <= MAX_POPULATION, \
+            f"Population size must be between 1 and {MAX_POPULATION}"
         run_genetic_algorithm(args.pop_size, args)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
