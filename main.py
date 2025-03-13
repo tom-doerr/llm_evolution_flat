@@ -118,9 +118,10 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with random chromosomes"""
-    # Start with random chromosomes with 'a's in the core segment
+    # Start with random chromosomes
     chromosomes = [
-        "a" * 23 + "".join(random.choices(string.ascii_lowercase + " ", k=17))
+        ''.join(random.choices(string.ascii_lowercase, k=23)) + 
+        ''.join(random.choices(string.ascii_lowercase + " ", k=random.randint(0, 17)))
         for _ in range(pop_size)
     ]
     # Parallel create agents
@@ -201,7 +202,8 @@ def mutate_with_llm(agent: dict) -> str:
         pass
     
     # Default fallback mutation - preserve core segment
-    fallback = f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".strip()
+    random_chars = ''.join(random.choices(string.ascii_lowercase + ' ', k=17))
+    fallback = f"{core_segment}{random_chars}".strip()
     print(f"Using fallback mutation: {fallback}")
     return fallback
 
@@ -461,10 +463,23 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
 
 def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop without generation concept"""
+    import concurrent.futures
+    import time
+    
     fitness_window = []
+    num_threads = 10  # Default from spec.md
     
     # Initial evaluation of population
-    population = evaluate_population(population)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Evaluate initial population in parallel
+        future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
+        for future in concurrent.futures.as_completed(future_to_agent):
+            agent = future_to_agent[future]
+            try:
+                agent["fitness"] = future.result()
+            except Exception as e:
+                print(f"Agent evaluation failed: {e}")
+    
     fitness_window = [a["fitness"] for a in population]
     
     # Print initial stats
@@ -480,14 +495,46 @@ def evolution_loop(population: List[dict]) -> None:
         selected_parents = select_parents(population)
         print(f"Selected {len(selected_parents)} parents")
         
-        children = generate_children(selected_parents, population)
+        # Generate children in parallel
+        children = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = []
+            for _ in range(MAX_POPULATION - len(selected_parents)):
+                if random.random() < 0.9:
+                    futures.append(executor.submit(
+                        crossover, random.choice(selected_parents), population
+                    ))
+                else:
+                    parent = random.choice(selected_parents)
+                    futures.append(executor.submit(
+                        lambda p: create_agent(mutate(p)), parent
+                    ))
+            
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    child = future.result()
+                    children.append(child)
+                except Exception as e:
+                    print(f"Child generation failed: {e}")
+        
         print(f"Generated {len(children)} children")
         
         population = trim_population(children[:MAX_POPULATION], MAX_POPULATION)
         print(f"Population size after trimming: {len(population)}")
         
-        # Evaluate population and update stats
-        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        # Evaluate population in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
+            for future in concurrent.futures.as_completed(future_to_agent):
+                agent = future_to_agent[future]
+                try:
+                    agent["fitness"] = future.result()
+                except Exception as e:
+                    print(f"Agent evaluation failed: {e}")
+        
+        # Update fitness window
+        new_fitness = [a["fitness"] for a in population]
+        fitness_window = update_fitness_window(fitness_window, new_fitness)
         
         # Calculate complete stats for display and logging
         stats = calculate_window_statistics(fitness_window)
@@ -504,7 +551,6 @@ def evolution_loop(population: List[dict]) -> None:
         handle_generation_output(stats, population)
         
         # Add a small delay to prevent CPU overload
-        import time
         time.sleep(0.1)
 
 
@@ -630,6 +676,8 @@ if __name__ == "__main__":
                        help='Initial population size (default: 1000)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
+    parser.add_argument('--threads', type=int, default=10,
+                       help='Number of parallel threads (default: 10)')
     args = parser.parse_args()
     
     # Set global window size from args
