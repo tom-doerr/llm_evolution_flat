@@ -664,7 +664,7 @@ def log_population(stats: dict) -> None:
         f.write(f"{stats.get('generation', 0)}\t"
                 f"{stats.get('population_size', 0)}\t"
                 f"{stats.get('current_mean', 0.0):.1f}\t"
-                f"{stats.get('best_core', '')[:23]}\n")
+                f"{stats.get('best_core', '')[:10]}...{stats.get('best_core', '')[-10:]}\n")  # Truncated core display
 
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
