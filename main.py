@@ -9,15 +9,15 @@ from rich.panel import Panel
 import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
+MAX_CHARS = 40  # From spec.md (different from max tokens)
+MAX_CORE = 23  # From spec.md hidden goal
+WINDOW_SIZE = 100  # Default, can be overridden by CLI
 
-# COMPLETED:
-# - Chromosome validation during crossover
-# - Sliding window statistics
-# - Reduced code complexity
-# - Basic population trimming
+# Validate hidden goal constants from spec.md
+assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
+assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
 # Configure DSPy with OpenRouter and timeout
-WINDOW_SIZE = 100  # Default, can be overridden by CLI
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -168,36 +168,36 @@ class MutateSignature(dspy.Signature):
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
-    core_segment = agent["chromosome"][:23].lower()
+    core_segment = agent["chromosome"][:MAX_CORE].lower()
     
     try:
+        # Use the agent's mutation chromosome as instructions
         response = dspy.Predict(MutateSignature)(
             chromosome=agent["chromosome"],
             mutation_instructions=agent["mutation_chromosome"]
         )
 
-        # Clean and validate the response
-        valid_candidate = next(
-            (''.join(c for c in str(comp).strip()[:40].lower() if c.isalpha() or c == ' ')
-             for comp in response.completions
-             if str(comp).strip().lower().startswith(core_segment)),
-            None
-        )
-        
-        if valid_candidate and len(valid_candidate) >= 23:
-            return valid_candidate
+        # Process completions
+        for comp in response.completions:
+            comp_str = str(comp).strip().lower()
+            
+            # Ensure core segment is preserved
+            if not comp_str.startswith(core_segment):
+                continue
+                
+            # Clean and validate
+            valid_candidate = ''.join(c for c in comp_str[:MAX_CHARS] if c.isalpha() or c == ' ')
+            
+            if valid_candidate and len(valid_candidate) >= MAX_CORE:
+                return valid_candidate
+                
     except Exception:
-        pass  # Fall back to default mutation
+        # No exception handling needed per spec.md
+        pass
     
-    # Default fallback mutation
-    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
+    # Default fallback mutation - preserve core segment
+    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(MAX_CHARS)[:MAX_CHARS]
 
-MAX_CHARS = 40  # From spec.md (different from max tokens)
-MAX_CORE = 23  # From spec.md hidden goal
-
-# Validate hidden goal constants from spec.md
-assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
-assert MAX_CHARS == 40, "Max chromosome length must be 40 for this task"
 
 def mutate(agent: dict) -> str:
     """Mutate a chromosome with LLM-based mutation as primary strategy"""
@@ -223,20 +223,20 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     if candidate == parent:
         return False
     
+    # Check if required fields exist
+    if "mutation_chromosome" not in candidate or "mate_selection_chromosome" not in candidate:
+        return False
+        
     try:
-        # Check if required fields exist
-        if "mutation_chromosome" not in candidate or "mate_selection_chromosome" not in candidate:
-            return False
-            
         # Validate chromosome
         validated = validate_chromosome(candidate["chromosome"])
         
         # Ensure chromosomes are different and valid length (spec.md requirements)
-        return (
-            validated != parent["chromosome"] and 
-            len(validated) >= 23 and  # Core segment requirement
-            len(validated) <= 40
-        )
+        if validated == parent["chromosome"]:
+            return False
+        if len(validated) < 23 or len(validated) > 40:  # Core segment requirement
+            return False
+        return True
     except (AssertionError, KeyError):
         return False
 
@@ -289,10 +289,38 @@ def get_hotspots(chromosome: str) -> list:
 def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
     p_chrom = parent["chromosome"]
-    switch = random.choice(get_hotspots(p_chrom))
-    # Combine parent/mate DNA with enforced max length
-    combined = f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"
-    return combined[:MAX_CHARS]  # Hard truncate to spec.md limit
+    m_chrom = mate["chromosome"]
+    
+    # Get hotspots for chromosome switching
+    hotspots = get_hotspots(p_chrom)
+    
+    # If no hotspots found, create at least one
+    if not hotspots and p_chrom:
+        hotspots = [random.randint(0, len(p_chrom) - 1)]
+    
+    # Build combined chromosome with switches at hotspots
+    result = ""
+    last_pos = 0
+    use_parent = True
+    
+    for pos in sorted(hotspots):
+        if pos >= len(p_chrom):
+            continue
+            
+        # Add segment from current chromosome
+        segment = p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos]
+        result += segment if last_pos < len(segment) else ""
+        
+        # Switch chromosomes
+        use_parent = not use_parent
+        last_pos = pos
+    
+    # Add final segment
+    if last_pos < len(p_chrom):
+        final = p_chrom[last_pos:] if use_parent else m_chrom[last_pos:min(len(m_chrom), len(p_chrom))]
+        result += final
+    
+    return result[:MAX_CHARS]  # Hard truncate to spec.md limit
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
@@ -351,10 +379,10 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -> None:
+def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
-    population = initialize_population(min(pop_size, max_population))[:max_population]
-    assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
+    population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
+    assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
@@ -364,29 +392,35 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
         assert '\n' in header and '\t' in header, "Log format must be plain text"
         assert not any([',' in header, '[' in header, ']' in header]), "No structured formats allowed in log"
     
-    evolution_loop(population, max_population)
+    evolution_loop(population)
 
 def update_generation_stats(population: List[dict], fitness_data: tuple) -> tuple:
     """Calculate and return updated statistics for current generation"""
     evaluated_pop = evaluate_population(population)
-    window = update_fitness_window(fitness_data[0], [a["fitness"] for a in evaluated_pop])
+    fitness_values = [a["fitness"] for a in evaluated_pop]
+    window = update_fitness_window(fitness_data[0], fitness_values)
     stats = calculate_window_statistics(window)
+    
+    # Get extreme values
+    extremes = extreme_values(evaluated_pop)
     
     stats.update({
         'generation': fitness_data[1],
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        **extreme_values(evaluated_pop)
+        'best': extremes['best'],
+        'worst': extremes['worst'],
+        'best_core': extremes['best_core']
     })
     return (stats, window[-WINDOW_SIZE:])
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
-    # Empty log file at start per spec.md requirement
-    if not hasattr(trim_population, "_logged"):
+    # Initialize log file once
+    if not hasattr(trim_population, "logged"):
         with open("evolution.log", "w", encoding="utf-8") as f:
             f.write("")
-        trim_population._logged = True
+        trim_population.logged = True
         
     max_size = min(max_size, MAX_POPULATION)  # Hard cap from spec.md
     if len(population) <= max_size:
@@ -394,10 +428,18 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     
     assert max_size <= MAX_POPULATION, "Population size exceeds maximum allowed"
     assert max_size >= 2, "Population must keep at least 2 agents"
-    assert all(a['fitness'] >= 0 for a in population), "Negative fitness values found"
+    
+    # Handle negative fitness values (allowed per spec.md)
+    fitness_values = np.array([a['fitness'] for a in population], dtype=np.float64)
+    min_fitness = min(fitness_values)
+    
+    # Shift all values to be positive for weighting
+    if min_fitness < 0:
+        fitness_values = fitness_values - min_fitness + 1e-6
         
-    pop_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
+    pop_weights = fitness_values ** 2
     pop_weights /= pop_weights.sum()
+    
     selected_indices = np.random.choice(
         len(population),
         size=max_size,
@@ -406,7 +448,7 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     )
     return [population[i] for i in selected_indices]
 
-def evolution_loop(population: List[dict], max_population: int) -> None:
+def evolution_loop(population: List[dict]) -> None:
     """Continuous evolution loop without generation concept"""
     fitness_window = []
     
@@ -507,19 +549,35 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
 
 def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
     """Evaluate and log generation statistics"""
+    # Evaluate population fitness
     population = evaluate_population(population)
+    
+    # Get new fitness values
     new_fitness = [a["fitness"] for a in population]
-    window_stats = calculate_window_statistics(update_fitness_window(fitness_window, new_fitness))
+    
+    # Update window with new fitness values
+    updated_window = update_fitness_window(fitness_window, new_fitness)
+    
+    # Calculate window statistics
+    window_stats = calculate_window_statistics(updated_window)
+    
+    # Get best agent's core segment
+    best_agent = max(population, key=lambda x: x["fitness"])
+    best_core = best_agent["metrics"]["core_segment"] if "metrics" in best_agent else ""
+    
+    # Combine all stats
     stats = {
         **window_stats,
         'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
-        'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"],
+        'best_core': best_core,
     }
+    
+    # Output stats
     handle_generation_output(stats, population)
     
-    return population, update_fitness_window(fitness_window, new_fitness)
+    return population, updated_window
 
 # Main execution block at bottom per spec.md
 if __name__ == "__main__":
@@ -530,6 +588,9 @@ if __name__ == "__main__":
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
     args = parser.parse_args()
+    
+    # Set global window size from args
+    WINDOW_SIZE = args.window_size
     
     try:
         run_genetic_algorithm(pop_size=args.pop_size)
