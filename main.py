@@ -14,6 +14,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
 WINDOW_SIZE = 100  # Default, can be overridden by CLI
+# pylint: disable=too-many-locals,too-many-statements,too-many-nested-blocks
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -133,26 +134,22 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    def generate_core(a_prob: float) -> str:
-        """Generate core segment with given 'a' probability"""
-        return ''.join(['a' if random.random() < a_prob 
-                      else random.choice(string.ascii_lowercase) 
-                      for _ in range(23)])
-
-    # Create population with varied 'a' densities and random suffixes
+    # Generate cores with varied 'a' density and random suffixes
+    cores = (''.join(['a' if random.random() < random.uniform(0.1, 0.5) 
+                     else random.choice(string.ascii_lowercase) 
+                     for _ in range(23)]) for _ in range(pop_size))
+    
+    # Convert to list of chromosomes with optional suffixes
     chromosomes = [
-        (generate_core(random.uniform(0.1, 0.5))  # 10-50% 'a's
-         + ''.join(random.choices(string.ascii_lowercase, 
-                  k=random.randint(0, 7))))
-        for _ in range(pop_size)
+        core + ''.join(random.choices(string.ascii_lowercase, 
+                     k=random.randint(0, 7)))
+        for core in cores
     ]
     
-    # Add one chromosome with all 'a's in core to seed the population
+    # Seed with all-a core if population large enough
     if pop_size > 5:
-        all_a_core = 'a' * 23
-        chromosomes[0] = all_a_core
+        chromosomes[0] = 'a' * 23
     
-    # Create agents from chromosomes
     return [create_agent(c) for c in chromosomes]
 
 
@@ -208,7 +205,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=unused-argument
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=unused-argument,no-value-for-parameter
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
