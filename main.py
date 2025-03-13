@@ -17,7 +17,7 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 # - Basic population trimming
 
 # Configure DSPy with OpenRouter and timeout
-WINDOW_SIZE = 100  # Sliding window size from spec.md
+WINDOW_SIZE = 100  # Default, can be overridden by CLI
 lm = dspy.LM(
     "openrouter/google/gemini-2.0-flash-001", max_tokens=40, timeout=10, cache=False
 )
@@ -30,6 +30,8 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md"
 
 def calculate_window_statistics(fitness_window: list) -> dict:
     """Calculate statistics for sliding window of last WINDOW_SIZE evaluations"""
+    if not fitness_window:
+        return {'mean': 0.0, 'median': 0.0, 'std': 0.0, 'best': 0.0, 'worst': 0.0}
     assert len(fitness_window) <= WINDOW_SIZE, f"Window size exceeds {WINDOW_SIZE}"
     window_arr = np.array(fitness_window[-WINDOW_SIZE:], dtype=np.float64)
     stats = {
@@ -453,18 +455,6 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     })
     return stats
 
-# Main execution block at end per Python best practices
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
-    parser.add_argument('--pop-size', type=int, default=1000,
-                       help='Initial population size')
-    args = parser.parse_args()
-    
-    try:
-        run_genetic_algorithm(pop_size=args.pop_size)
-    except KeyboardInterrupt:
-        print("\nEvolution stopped by user. Exiting gracefully.")
 
 def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:  # pylint: disable=too-many-arguments
     """Evaluate and log generation statistics"""
@@ -481,6 +471,21 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     handle_generation_output(stats, population)
     
     return population, update_fitness_window(fitness_window, new_fitness)
+
+# Main execution block at bottom per spec.md
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
+    parser.add_argument('--pop-size', type=int, default=1000,
+                       help='Initial population size (default: 1000)')
+    parser.add_argument('--window-size', type=int, default=100,
+                       help='Sliding window size for statistics (default: 100)')
+    args = parser.parse_args()
+    
+    try:
+        run_genetic_algorithm(pop_size=args.pop_size)
+    except KeyboardInterrupt:
+        print("\nEvolution stopped by user. Exiting gracefully.")
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
