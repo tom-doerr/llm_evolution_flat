@@ -95,21 +95,20 @@ def _ensure_min_length(chromosome: str) -> str:
     return chromosome
 
 def create_agent(chromosome: str) -> dict:
-    """Create agent with 3 chromosomes per spec.md"""
-    # Validate and clean chromosome first
+    """Create agent with 3 specialized chromosomes"""
     chromosome = validate_chromosome(chromosome)
     
-    # Ensure minimum length for all chromosome parts
-    if len(chromosome) < 40:
-        # Pad with random lowercase letters to reach minimum length
-        chromosome = chromosome.ljust(40, random.choice(string.ascii_lowercase))
+    # Pad chromosome to ensure all three segments exist
+    padded_chromo = chromosome.ljust(40, random.choice(string.ascii_lowercase))
     
-    # Create agent with validated chromosome
     return {
-        "chromosome": chromosome,
-        "task_chromosome": chromosome[:23].ljust(23, ' ')[:23],  # Enforce exact length
-        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),
-        "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # Enforce exact 7 char length
+        "chromosome": padded_chromo,
+        # Core task-solving instructions (first 23 chars)
+        "task_chromosome": padded_chromo[:23].ljust(23, ' ')[:23],
+        # Mate selection strategy (next 10 chars)
+        "mate_selection_chromosome": padded_chromo[23:33].ljust(10, ' ')[:10].lower(),
+        # Mutation strategy (final 7 chars)
+        "mutation_chromosome": padded_chromo[33:40].ljust(7, ' ')[:7],
         "fitness": 0.0,
         "mutation_source": "initial",  # Track mutation origin per spec.md
         "metrics": {}  # Initialize metrics dictionary
@@ -172,7 +171,10 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 
 def select_parents(population: List[dict]) -> List[dict]:
-    """Select parents using Pareto distribution weighted by fitness^2 with weighted sampling without replacement"""
+    """Select parents using Pareto(fitness²) weighting per spec.md"""
+    # Implementation of spec.md required parent selection criteria:
+    # 1. Pareto distribution weighting by fitness^2
+    # 2. Weighted sampling without replacement
     if not population:
         return []
     
