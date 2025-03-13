@@ -263,8 +263,9 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with single character switch using parent/mate DNA"""
     p_chrom = parent["chromosome"]
     switch = random.choice(get_hotspots(p_chrom))
-    return (f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"[:MAX_CHARS] 
-            if switch else p_chrom)
+    # Combine parent/mate DNA with enforced max length
+    combined = f"{p_chrom[:switch]}{mate['chromosome'][switch]}{p_chrom[switch+1:]}"
+    return combined[:MAX_CHARS]  # Hard truncate to spec.md limit
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
