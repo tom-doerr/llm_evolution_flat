@@ -207,19 +207,22 @@ def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     # Per spec.md: candidates must differ and have valid chromosomes
     if candidate == parent:
         return False
-    # Validate mutation chromosome format
-    assert len(candidate["mutation_chromosome"]) == 7, "Mutation chromosome length invalid"
+    
     try:
-        # Validate mate selection chromosome exists and meets spec.md length
-        assert len(candidate["mate_selection_chromosome"]) == 10, "Invalid mate selection chromosome length"
+        # Check if required fields exist
+        if "mutation_chromosome" not in candidate or "mate_selection_chromosome" not in candidate:
+            return False
+            
+        # Validate chromosome
         validated = validate_chromosome(candidate["chromosome"])
+        
         # Ensure chromosomes are different and valid length (spec.md requirements)
         return (
             validated != parent["chromosome"] and 
             len(validated) >= 23 and  # Core segment requirement
             len(validated) <= 40
         )
-    except AssertionError:
+    except (AssertionError, KeyError):
         return False
 
 class MateSelectionSignature(dspy.Signature):
