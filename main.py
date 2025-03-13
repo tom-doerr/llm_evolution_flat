@@ -469,7 +469,7 @@ def run_genetic_algorithm(pop_size: int) -> None:
     
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
-        pass  # File is emptied by opening in write mode
+        f.truncate(0)  # Explicitly empty the file per spec.md
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
         f.write(header)
         # Validate plain text format
@@ -535,8 +535,9 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     
     return [population[i] for i in selected_indices]
 
-def evolution_loop(population: List[dict], args: argparse.Namespace) -> None:
-    """Continuous evolution loop without discrete generations"""
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
+    """Continuous evolution loop without discrete generations
+    Renamed args to cli_args to avoid redefined-outer-name conflict"""
     
     fitness_window = []
     num_threads = args.threads
