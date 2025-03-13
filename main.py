@@ -164,7 +164,6 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    # Extract mutation chromosome
     mc = agent["mutation_chromosome"]
     
     response = dspy.Predict(MutateSignature)(
