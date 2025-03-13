@@ -201,6 +201,11 @@ def select_parents(population: List[dict]) -> List[dict]:
             weights = np.ones_like(weights) / len(weights)
     return [population[i] for i in selected_indices]
 
+import numpy as np
+import dspy
+from rich.console import Console
+from rich.panel import Panel
+
 # Configuration constants from spec.md
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
@@ -266,7 +271,7 @@ def _process_llm_response(response, cli_args) -> str:
             return candidate
     return None
 
-def _fallback_mutation(agent: dict) -> str:
+def _fallback_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     """Create fallback mutation with improved core"""
     core = list(agent["chromosome"][:MAX_CORE])
     a_count = core.count('a')
@@ -281,7 +286,7 @@ def _fallback_mutation(agent: dict) -> str:
     suffix = ''.join(random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
     fallback = validate_chromosome(''.join(core) + suffix)
     
-    if args.verbose:
+    if cli_args.verbose:
         print(f"Using fallback mutation: {fallback}")
     return fallback
 
@@ -750,9 +755,6 @@ def validate_population_state(best, worst) -> None:
         assert (isinstance(chrom, str) and 
                 1 <= len(chrom) <= 40 and 
                 chrom == chrom.strip()), f"Invalid chromosome: {chrom}"
-
-# Main execution block at bottom per spec.md
-import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
