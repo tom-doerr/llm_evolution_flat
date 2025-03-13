@@ -46,9 +46,9 @@ if __name__ == "__main__" and "pytest" in sys.modules:
     dspy.configure(lm=lm, test_mode=True)
     assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
-# Validate configuration
-assert isinstance(lm, dspy.LM), "LM configuration failed"
-assert "gemini-2.0-flash" in lm.model, "Model must match spec.md"
+# Single validation point for LM configuration
+assert isinstance(lm, dspy.LM) and "gemini-2.0-flash" in lm.model, \
+    "LM configuration failed - must use gemini-2.0-flash per spec.md"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
@@ -111,20 +111,21 @@ def create_agent(chromosome: str) -> dict:
     """Create agent with 3 specialized chromosomes"""
     chromosome = validate_chromosome(chromosome)
     
-    # Pad chromosome to ensure all three segments exist
+    # Build specialized chromosome segments with clear separation
     padded_chromo = chromosome.ljust(40, random.choice(string.ascii_lowercase))
+    segments = {
+        "task_chromosome": (padded_chromo[:23].ljust(23, ' ')[:23], "Task solving instructions"),
+        "mate_selection_chromosome": (padded_chromo[23:33].ljust(10, ' ')[:10].lower(), "Mate selection strategy"),
+        "mutation_chromosome": (padded_chromo[33:40].ljust(7, ' ')[:7], "Mutation instructions")
+    }
     
     return {
         "chromosome": padded_chromo,
-        # Core task-solving instructions (first 23 chars)
-        "task_chromosome": padded_chromo[:23].ljust(23, ' ')[:23],
-        # Mate selection strategy (next 10 chars)
-        "mate_selection_chromosome": padded_chromo[23:33].ljust(10, ' ')[:10].lower(),
-        # Mutation strategy (final 7 chars)
-        "mutation_chromosome": padded_chromo[33:40].ljust(7, ' ')[:7],
+        **{k: v[0] for k,v in segments.items()},  # Extract just the DNA sequences
         "fitness": 0.0,
-        "mutation_source": "initial",  # Track mutation origin per spec.md
-        "metrics": {}  # Initialize metrics dictionary
+        "mutation_source": "initial",
+        "metrics": {},
+        "chromosome_info": {k: v[1] for k,v in segments.items()}  # Add purpose documentation
     }
 
 def evaluate_agent(agent: dict) -> float:
@@ -145,15 +146,14 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    # Generate chromosomes with varied a-density cores and random suffixes
-    chromosomes = [
-        ''.join([
-            'a' if random.random() < random.uniform(0.1, 0.5) 
-            else random.choice(string.ascii_lowercase) 
-            for _ in range(23)
-        ]) + ''.join(random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
-        for _ in range(pop_size)
-    ]
+    def generate_initial_chromosome():
+        core = ''.join('a' if random.random() < random.uniform(0.1, 0.5) else 
+                      random.choice(string.ascii_lowercase) for _ in range(23))
+        suffix = ''.join(random.choices(string.ascii_lowercase, 
+                      k=random.randint(0, 7)))
+        return core + suffix
+    
+    chromosomes = [generate_initial_chromosome() for _ in range(pop_size)]
     
     if pop_size > 5:
         chromosomes[0] = 'a' * 23 + ''.join(
