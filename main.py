@@ -191,7 +191,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, _cli_args: argparse.Namespace) -> str:  # pylint: disable=no-value-for-parameter
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -428,7 +428,7 @@ def run_evolution(population_size: int = 1000) -> list:
     evolution_loop(population)
     return population
 
-def run_genetic_algorithm(pop_size: int) -> None:
+def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
@@ -521,7 +521,7 @@ def log_and_display_stats(iterations: int, population: List[dict], fitness_windo
     
     handle_generation_output(stats, population)
 
-def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:  # pylint: disable=too-many-statements
     """Continuous evolution loop without discrete generations"""
     fitness_window = []
     num_threads = cli_args.threads  # Fixed redefined-outer-name
@@ -755,8 +755,7 @@ if __name__ == "__main__":
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
                        help='Number of parallel threads (default: 10)',
-                       choices=range(1, 21),
-                       required=True)  # Enforce default per spec.md
+                       choices=range(1, 21))  # Don't require flag for default
     parser.add_argument('--verbose', action='store_true',
                        help='Enable verbose output')
     args = parser.parse_args()
@@ -765,7 +764,7 @@ if __name__ == "__main__":
     WINDOW_SIZE = args.window_size
     
     try:
-        run_genetic_algorithm(args.pop_size)
+        run_genetic_algorithm(args.pop_size, args)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
