@@ -1,7 +1,6 @@
 import concurrent.futures
 import random
 import string
-import sys
 import time
 from typing import List
 
