@@ -386,7 +386,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
-    for generation in itertools.count(0):  # Continuous evolution per spec.md
+    for generation in itertools.count(0):  # Track generation for logging
         # Trim population using sliding window of candidates
         if len(population) > max_population:
             population = trim_population(population[-WINDOW_SIZE:], max_population)
