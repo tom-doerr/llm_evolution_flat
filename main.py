@@ -416,7 +416,7 @@ def log_population(stats: dict) -> None:
             f"{stats['best']:.1f}\t"
             f"{stats['worst']:.1f}\t"
             f"{stats['diversity']:.3f}\t"
-            f"{stats['best_core'][:23]}\n"  # Core segment from spec.md - removed window size column
+            f"{stats['best_core'][:23]}\n"  # Core segment from spec.md
         )
 
 def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
