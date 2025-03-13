@@ -533,8 +533,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, _gen
     }
     handle_generation_output(stats, population)
     
-    updated_window = update_fitness_window(fitness_window, new_fitness)
-    return population, fitness_window
+    return population, update_fitness_window(fitness_window, new_fitness)
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
