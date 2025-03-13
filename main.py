@@ -290,8 +290,6 @@ def crossover(parent: dict, population: List[dict]) -> dict:
         return create_agent(build_child_chromosome(parent, llm_select_mate(parent, mates)))
     
     return create_agent(build_child_chromosome(parent, parent))
-    
-    return create_agent(build_child_chromosome(parent, mate))
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
