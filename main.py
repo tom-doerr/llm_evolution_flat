@@ -114,23 +114,38 @@ def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromo = validate_chromosome(agent["chromosome"])
     metrics = score_chromosome(chromo)
+    
     # Hidden goal: maximize 'a's in first 23 chars, minimize length after that
     a_count = chromo[:23].count('a')
-    agent["fitness"] = a_count - (len(chromo) - 23 if len(chromo) > 23 else 0)
+    penalty = len(chromo) - 23 if len(chromo) > 23 else 0
+    
+    # Calculate fitness
+    agent["fitness"] = a_count - penalty
+    
+    # Add more detailed metrics for debugging
+    metrics['a_count'] = a_count
+    metrics['length_penalty'] = penalty
     
     assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
     agent["metrics"] = metrics
+    
     return agent["fitness"]
 
 
 def initialize_population(pop_size: int) -> List[dict]:
-    """Create initial population with truly random chromosomes"""
-    # Start with random chromosomes without bias toward 'a's
-    chromosomes = [
-        ''.join(random.choices(string.ascii_lowercase, k=random.randint(23, 40)))
-        for _ in range(pop_size)
-    ]
-    # Parallel create agents
+    """Create initial population with some 'a's in the core segment"""
+    chromosomes = []
+    for _ in range(pop_size):
+        # Create core with some 'a's to give evolution a starting point
+        core = ''.join(random.choices(['a'] + list(string.ascii_lowercase), 
+                                     weights=[3] + [1] * 25, 
+                                     k=23))
+        # Add random suffix
+        suffix = ''.join(random.choices(string.ascii_lowercase, 
+                                       k=random.randint(0, 17)))
+        chromosomes.append(core + suffix)
+    
+    # Create agents from chromosomes
     return [create_agent(c) for c in chromosomes]
 
 
@@ -184,20 +199,20 @@ def mutate_with_llm(agent: dict) -> str:
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
     
     try:
-        # Create a more effective prompt that ensures core preservation
+        # Create a more effective prompt that encourages 'a's in the core
         mutation_prompt = f"""
         Current chromosome: {agent['chromosome']}
         
         Instructions: {agent['mutation_chromosome']}
         
         Important rules:
-        1. You MUST keep the first 23 characters exactly the same: {core_segment}
+        1. You can modify the first 23 characters to improve fitness
         2. You can modify anything after the first 23 characters
         3. Total length must be between 23 and 40 characters
         4. Only use lowercase letters and spaces
+        5. The fitness function rewards specific patterns in the first 23 characters
         
         Modified chromosome:
-        {core_segment}
         """
         
         # Use the agent's mutation chromosome as instructions
@@ -210,17 +225,8 @@ def mutate_with_llm(agent: dict) -> str:
         for comp in response.completions:
             comp_str = str(comp).strip().lower()
             
-            # Extract just the part after the core segment if it includes the core
-            if comp_str.startswith(core_segment):
-                valid_candidate = comp_str
-            else:
-                # Try to find the core segment in the response
-                core_pos = comp_str.find(core_segment)
-                if core_pos >= 0:
-                    valid_candidate = comp_str[core_pos:]
-                else:
-                    # If core not found, construct a valid response
-                    valid_candidate = core_segment + comp_str[:MAX_CHARS-MAX_CORE]
+            # Use the response directly, don't force the core to stay the same
+            valid_candidate = comp_str[:MAX_CHARS]
             
             # Clean and validate
             valid_candidate = ''.join(c for c in valid_candidate[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
@@ -637,12 +643,17 @@ def log_population(stats: dict) -> None:
 def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
     console = Console()
+    
+    # Get the best agent's core and count 'a's
+    best_core = stats.get('best_core', '')
+    a_count = best_core.count('a') if best_core else 0
+    
     console.print(Panel(
         f"[bold]Gen {stats.get('generation', 0)}[/]\n"
         f"Current μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}\n"
         f"Window μ:{stats.get('window_mean', 0.0):.1f} σ:{stats.get('window_std', 0.0):.1f}\n"
         f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
-        f"Core: {stats.get('best_core', '')}\n"
+        f"Core: {best_core} (a's: {a_count}/23)\n"
         f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         subtitle=f"[Population: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}]",
