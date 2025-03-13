@@ -431,6 +431,7 @@ def handle_generation_output(stats: dict, population: List[dict]) -> None:
 
 
 
+
 def validate_population_extremes(population: List[dict]) -> None:
     """Validate best/worst agents in population"""
     best, worst = get_population_extremes(population)
