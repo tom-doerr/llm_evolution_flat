@@ -207,14 +207,14 @@ class MutateSignature(dspy.Signature):
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
 def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
-    """Optimized LLM mutation with validation"""
+    # LLM mutation using agent's mutation chromosome as instructions
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
     if cli_args.verbose:
-        print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
+        print(f"Mutate instructions: {agent['mutation_chromosome']}")
 
-    llm_result = _try_llm_mutation(agent, cli_args)
-    return llm_result if llm_result else _fallback_mutation(agent, cli_args)
+    # TODO: Implement retry logic for robust LLM mutations
+    return _try_llm_mutation(agent, cli_args)
 
 def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     """Attempt LLM-based mutation and return valid result or None"""
