@@ -41,3 +41,9 @@ def test_trim_population_deduplication():
     trimmed = main.trim_population(pop, 2)
     assert len(trimmed) == 2
     assert len({a["chromosome"] for a in trimmed}) == 2
+class EvolutionOptimizer(dspy.Module):
+    """DSPy optimizer implementing evolutionary strategies"""
+    def __init__(self, population_size=1000):
+        super().__init__()
+        self.population_size = population_size
+        self.generate_metric = dspy.Predict("chromosome -> mutated_chromosome")
