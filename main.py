@@ -541,7 +541,8 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     try:
         iterations = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads) as executor:
-            # Remove outer executor - we only need one pool
+            # Error handling for thread pool
+            futures = []
             while True:
                 iterations += 1
                 parent = random.choice(select_parents(population))
