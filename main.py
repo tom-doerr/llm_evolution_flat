@@ -135,7 +135,7 @@ def select_parents(population: List[dict]) -> List[dict]:
     # Weighted sampling per spec.md: fitness² * Pareto distribution
     weights = np.nan_to_num(
         np.array([a['fitness'] ** 2 for a in population], dtype=np.float64) *
-        (np.random.pareto(3.0, len(population)) + 1),  # Pareto shape=3.0
+        (np.random.pareto(PARETO_SHAPE, len(population)) + 1),  # Configurable shape
         nan=1e-6
     ).clip(1e-6)
     
@@ -297,6 +297,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
+        parent_dna=parent["chromosome"],
         candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
@@ -446,7 +447,13 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     evaluated_pop = evaluate_population(population)
     fitness_values = [a["fitness"] for a in evaluated_pop]
     window = update_fitness_window(fitness_data[0], fitness_values)
+    current_stats = calculate_window_statistics(fitness_values)
     stats = calculate_window_statistics(window)
+    stats.update({
+        'current_mean': current_stats['mean'],
+        'current_median': current_stats['median'], 
+        'current_std': current_stats['std']
+    })
     
     # Get extreme values
     extremes = extreme_values(evaluated_pop)
@@ -599,12 +606,12 @@ def log_population(stats: dict) -> None:
         f.write(
             f"{stats.get('generation', 0)}\t" 
             f"{stats.get('population_size', 0)}\t"
-            f"{stats.get('mean', 0.0):.1f}\t"
-            f"{stats.get('median', 0.0):.1f}\t"
-            f"{stats.get('std', 0.0):.1f}\t"
-            f"{stats.get('best', 0.0):.1f}\t"
-            f"{stats.get('worst', 0.0):.1f}\t"
-            f"{stats.get('diversity', 0.0):.3f}\t"
+            f"{stats.get('current_mean', 0.0):.1f}\t"
+            f"{stats.get('current_median', 0.0):.1f}\t" 
+            f"{stats.get('current_std', 0.0):.1f}\t"
+            f"{stats.get('window_mean', 0.0):.1f}\t"
+            f"{stats.get('window_median', 0.0):.1f}\t"
+            f"{stats.get('window_std', 0.0):.1f}\t"
             f"{stats.get('best_core', '')[:23]}\n"  # Exactly 23 chars per spec.md core
         )
 
@@ -639,8 +646,7 @@ def extreme_values(population: List[dict]) -> dict:
 
 def calculate_diversity(population: List[dict]) -> float:
     """Calculate population diversity as ratio of unique chromosomes"""
-    unique_count = len({a["chromosome"] for a in population})
-    return unique_count / len(population) if population else 0.0
+    return len({a["chromosome"] for a in population}) / len(population) if population else 0.0
 
 
 
