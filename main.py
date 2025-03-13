@@ -34,9 +34,9 @@ class EvolutionaryOptimizer(dspy.Module):
         self.population = initialize_population(population_size)
         self.fitness_window = []
     
-    def forward(self):
+    def forward(self, *args, **kwargs):
         """Run evolutionary optimization and return best candidates"""
-        self.population = evolution_loop(self.population, argparse.Namespace(threads=10, verbose=False))
+        evolution_loop(self.population, argparse.Namespace(threads=10, verbose=False)) 
         return [agent["chromosome"] for agent in self.population[:10]]
 
 # Configure DSPy with OpenRouter and timeout
@@ -637,13 +637,12 @@ def display_generation_stats(stats: dict) -> None:
     
     console.print(Panel(
         f"[bold]Gen {stats.get('generation', 0)}[/] "
-        f"Best: {stats.get('best', 0.0):.1f} Δ{stats.get('diversity', 0.0):.0%}\n"
-        f"μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} "
-        f"Core: [a's:{a_count}/23] {best_core[:10]}...\n" 
-        f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
+        f"Best: {stats.get('best', 0.0):.1f} [μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}]\n"
+        f"Core: {best_core[:10]}... (a's:{a_count}/23) "
+        f"Pop: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
-        subtitle=f"[Population: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}]",
-        style="blue"
+        style="blue",
+        width=80
     ))
     
     # Print a separator for better readability
