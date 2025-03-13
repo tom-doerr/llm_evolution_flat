@@ -314,8 +314,8 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     
     # Generate children with mutation/crossover balance
     return [
-        crossover(random.choice(selected_parents), population) 
-        if random.random() < 0.9 else  # 90% crossover
+        crossover(random.choice(selected_parents), population)
+        if random.random() < 0.9 else  # 90% crossover 
         create_agent(mutate(random.choice(selected_parents)))
         for _ in range(MAX_POPULATION - len(selected_parents))
     ][:MAX_POPULATION]  # Hard limit enforced
@@ -383,6 +383,7 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     return [population[i] for i in selected_indices]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
+    """Continuous evolution loop with population trimming and statistics tracking"""
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
