@@ -399,7 +399,7 @@ def generate_children(parents: List[dict], population: List[dict], cli_args: arg
     children = [
         (crossover(random.choice(selected_parents), population) 
          if random.random() < 0.9 else 
-         create_agent(mutate(random.choice(selected_parents), cli_args)))
+         create_agent(mutate(random.choice(selected_parents), cli_args)))  # pylint: disable=no-value-for-parameter
         for _ in range(MAX_POPULATION - len(selected_parents))
     ]
     return children[:MAX_POPULATION]
@@ -423,10 +423,10 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_evolution(population_size: int = 1000) -> list:
+def run_evolution(population_size: int = 1000, cli_args: argparse.Namespace = None) -> list:
     """Run evolutionary optimization"""
     population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
-    evolution_loop(population)
+    evolution_loop(population, cli_args)
     return population
 
 def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
