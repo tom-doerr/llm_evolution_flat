@@ -1,11 +1,11 @@
 import argparse
 import concurrent.futures
-from tenacity import retry, wait_exponential, stop_after_attempt 
 import random
 import string
 import sys
 import time
 from typing import List
+from tenacity import retry, wait_exponential, stop_after_attempt 
 import numpy as np
 import dspy
 from rich.console import Console
@@ -430,7 +430,7 @@ def run_evolution(population_size: int = 1000, cli_args: argparse.Namespace = No
     evolution_loop(population, cli_args)
     return population
 
-def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
+def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace, window_size: int = 100) -> None:
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
@@ -523,7 +523,7 @@ def log_and_display_stats(generation: int, population: List[dict], fitness_windo
     
     handle_generation_output(stats, population)
 
-def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace, window_size: int = WINDOW_SIZE) -> None:
     """Continuous evolution loop without discrete generations"""
     fitness_window = []
     num_threads = cli_args.threads
@@ -626,7 +626,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
 
 
 
-def log_population(stats: dict, cli_args: argparse.Namespace) -> None:
+def log_population(stats: dict) -> None:  # Removed unused cli_args parameter
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
@@ -773,8 +773,8 @@ def main():
     args = parser.parse_args()
     
     # Use module-level variable directly
-    global WINDOW_SIZE  # pylint: disable=global-statement
-    WINDOW_SIZE = args.window_size
+    # Pass window size through function arguments instead of global
+    run_genetic_algorithm(args.pop_size, args, window_size=args.window_size)
     
     try:
         run_genetic_algorithm(args.pop_size, args)
