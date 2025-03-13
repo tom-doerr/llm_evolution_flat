@@ -177,12 +177,11 @@ def select_parents(population: List[dict]) -> List[dict]:
 def _calculate_parent_weights(fitness: np.array) -> np.array:
     """Calculate normalized selection weights using fitness² * Pareto"""
     # Enhanced per spec.md: Use fitness^2 * Pareto distribution weights
-    fitness_scores = np.abs(fitness) ** 2
-    pareto_samples = np.random.pareto(PARETO_SHAPE, len(fitness)) + 1
-    weights = fitness_scores * pareto_samples
-    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
-    total = weights.sum()
-    return weights / total if total > 0 else np.ones_like(weights) / len(weights)
+    # Combined numpy operations to reduce locals
+    return np.nan_to_num(
+        (np.abs(fitness) ** 2) * (np.random.pareto(PARETO_SHAPE, len(fitness)) + 1),
+        nan=1e-6
+    ).clip(1e-6) / np.sum(np.abs(fitness) ** 2)
 
 def _select_weighted_parents(population: List[dict], weights: np.array) -> List[dict]:
     """Select parents using weighted sampling without replacement"""
@@ -372,7 +371,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights using fitness^2 * Pareto distribution per spec
     weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
@@ -575,7 +574,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
         except KeyboardInterrupt:
             print("\nEvolution stopped by user. Exiting gracefully.")
 
-def _handle_iteration_stats(stats: dict, population: list, cli_args: argparse.Namespace) -> None:
+def _handle_iteration_stats(population: list, cli_args: argparse.Namespace) -> None:
     """Handle stats display and logging for each iteration batch"""
     best_agent = max(population, key=lambda x: x["fitness"]) if population else None
     
