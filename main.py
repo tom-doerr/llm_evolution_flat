@@ -92,7 +92,7 @@ def create_agent(chromosome: str) -> dict:
         "fitness": 0.0
     }
     # Added validation and whitespace stripping per spec.md chromosome separation requirements
-    # TODO: Add mutation tracking from spec.md
+    "mutation_source": "initial"  # Track mutation origin per spec.md
 
 
 def evaluate_agent(agent: dict) -> float:
@@ -155,6 +155,7 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
+    agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     core_segment = agent["chromosome"][:23].lower()
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
@@ -267,14 +268,18 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
-    recent_candidates = (population[-WINDOW_SIZE:] or population)[:100]
-    valid_candidates = [a for a in recent_candidates if validate_mating_candidate(a, parent)]
+    valid_candidates = [a for a in (population[-WINDOW_SIZE:] or population)[:100] 
+                       if validate_mating_candidate(a, parent)]
     
     if valid_candidates:
         mate = llm_select_mate(parent, valid_candidates)
-        return create_agent(build_child_chromosome(parent, mate))
+        child = create_agent(build_child_chromosome(parent, mate))
+        child["mutation_source"] = f"crossover:{parent['mutation_chromosome']}"
+        return child
     
-    return create_agent(build_child_chromosome(parent, parent))
+    child = create_agent(build_child_chromosome(parent, parent))
+    child["mutation_source"] = "self-crossover"
+    return child
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
@@ -324,8 +329,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
 def update_generation_stats(population: List[dict], fitness_data: tuple) -> tuple:
     """Calculate and return updated statistics for current generation"""
     evaluated_pop = evaluate_population(population)
-    new_fitness = [a["fitness"] for a in evaluated_pop]
-    window = update_fitness_window(fitness_data[0], new_fitness)
+    window = update_fitness_window(fitness_data[0], [a["fitness"] for a in evaluated_pop])
     stats = calculate_window_statistics(window)
     
     stats.update({
@@ -458,7 +462,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     return stats
 
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:  # pylint: disable=too-many-arguments
+def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
