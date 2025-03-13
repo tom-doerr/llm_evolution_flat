@@ -195,7 +195,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -384,7 +384,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights, ensuring they're all positive
     weights = [max(a['fitness'], 0.001)**2 for a in parents]
@@ -628,6 +628,9 @@ def log_population(stats: dict) -> None:
         f.write(
             f"{stats.get('generation', 0)}\t" 
             f"{stats.get('population_size', 0)}\t"
+            f"{stats.get('mean', 0.0):.1f}\t"
+            f"{stats.get('median', 0.0):.1f}\t" 
+            f"{stats.get('std', 0.0):.1f}\t"
             f"{stats.get('current_mean', 0.0):.1f}\t"
             f"{stats.get('current_median', 0.0):.1f}\t" 
             f"{stats.get('current_std', 0.0):.1f}\t"
@@ -754,7 +757,7 @@ def validate_population_state(best, worst) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
-    parser.add_argument('--pop-size', type=int, default=1000,
+    parser.add_argument('--pop-size', type=int, default=1___000,
                        help='Initial population size (default: 1000)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
