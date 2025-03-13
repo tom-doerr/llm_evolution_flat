@@ -698,11 +698,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list) -> t
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
-    updated_window = update_fitness_window(fitness_window, new_fitness)
-    
-    stats = _build_stats_dict(population, updated_window)
-    
-    return population, updated_window
+    return population, update_fitness_window(fitness_window, new_fitness)
 
 def _build_stats_dict(population: List[dict], updated_window: list) -> dict:
     """Build statistics dictionary from population data"""
