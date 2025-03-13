@@ -585,15 +585,18 @@ def _handle_iteration_stats(population: list, cli_args: argparse.Namespace) -> N
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
-        # Information-dense format with core segment
+        # Detailed log format with timestamp and all key metrics
         f.write(
-            f"Generation: {stats.get('generation', 0)}\n"
-            f"Population: {stats.get('population_size', 0)}\n"
-            f"Mean fitness: {stats.get('mean', 0.0):.1f}\n"
-            f"Best fitness: {stats.get('best', 0.0):.1f}\n"
-            f"Core: {stats.get('best_core', '')[:23]}[...]\n"  # Truncate and indicate truncation
-            f"Mutations: {stats.get('mutations', 0)}\n"
-            f"Threads: {stats.get('threads', 1)}\n\n"
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Generation {stats.get('generation', 0):04}\n"
+            f"  Population: {stats.get('population_size', 0):,}\n"
+            f"  Fitness: μ={stats.get('mean', 0.0):.2f} η={stats.get('median', 0.0):.2f} σ={stats.get('std', 0.0):.2f}\n"
+            f"  Best: {stats.get('best', 0.0):.2f} (A's: {stats.get('best_a_count', 0)})\n"
+            f"  Worst: {stats.get('worst', 0.0):.2f}\n"
+            f"  Core: {stats.get('best_core', '')[:23]}[...]\n"
+            f"  Diversity: {stats.get('diversity', 0.0):.1%}\n"
+            f"  Mutations: {stats.get('mutations', 0):,} ({stats.get('mutation_rate', 0.0):.1f}/agent)\n"
+            f"  Threads: {stats.get('threads', 1)}\n"
+            f"  Runtime: {stats.get('runtime', 0):.1f}s\n\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
