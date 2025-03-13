@@ -596,7 +596,7 @@ def display_generation_stats(stats: dict) -> None:
     # Removed unused variable
     
     console.print(
-        f"[bold]Gen {stats.get('generation', 0):03}[/] | "
+        f"[bold]Generation {stats.get('generation', 0):03}[/] | "
         f"⏱ {time.strftime('%H:%M:%S')} | "
         f"🏆 [green]{stats.get('best', 0.0):.1f}[/] | "
         f"📊 μ:{stats.get('current_mean', 0.0):.1f} η:{stats.get('current_median', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f} | "
@@ -697,7 +697,7 @@ def main():
     """CLI entry point for evolutionary optimizer"""
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
-                      help='Initial population size (default: 1000)',
+                      help=f'Initial population size (default: 1000, max: {MAX_POPULATION})',
                       choices=range(1, MAX_POPULATION+1))
     parser.add_argument('--problem', type=str, default='hidden',
                       choices=['hidden', 'other', 'custom'],
