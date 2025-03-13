@@ -281,7 +281,12 @@ class MateSelectionSignature(dspy.Signature):
 
 def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     """Select mate using parent's mate-selection chromosome/prompt"""
-    valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
+    # Validate candidates have required DNA fields per spec.md
+    valid_candidates = [
+        c for c in candidates 
+        if validate_mating_candidate(c, parent) and 
+           all(key in c for key in ('task_chromosome', 'mate_selection_chromosome', 'mutation_chromosome'))
+    ]
     if not valid_candidates:
         raise ValueError("No valid mates")
 
@@ -497,7 +502,7 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
 
-def log_and_display_stats(generation: int, population: List[dict], fitness_window: list) -> None:
+def log_and_display_stats(stats: dict) -> None:
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
     current_fitness = [a["fitness"] for a in population]
@@ -561,7 +566,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
                     
                     if iterations % 10 == 0:
-                        _handle_iteration_stats(iterations, population, fitness_window, cli_args)
+                        _handle_iteration_stats(stats, fitness_window, population, iterations, cli_args)
                         
                 except (ValueError, TypeError) as e:
                     print(f"Child creation failed: {e}")
@@ -578,7 +583,7 @@ def _handle_iteration_stats(iterations: int, population: list, fitness_window: l
     best_agent = max(population, key=lambda x: x["fitness"]) if population else None
     
     stats.update({
-        'iterations': iterations,
+        'iterations': stats.get('iterations', 0),
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_agent.get("metrics", {}).get("core_segment", "") if best_agent else "",
