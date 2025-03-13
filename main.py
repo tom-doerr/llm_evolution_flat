@@ -523,8 +523,9 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
 
     try:
+        iterations = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads) as executor:
-            iterations = 0
+            # Remove outer executor - we only need one pool
             while True:
                 iterations += 1
                 parent = random.choice(select_parents(population))
@@ -726,7 +727,7 @@ def main():
     
     # Use module-level variable directly
     # Pass window size through function arguments instead of global
-    run_genetic_algorithm(args.pop_size, args, window_size=args.window_size)
+    run_genetic_algorithm(args.pop_size, args)
     
     try:
         run_genetic_algorithm(args.pop_size, args)
