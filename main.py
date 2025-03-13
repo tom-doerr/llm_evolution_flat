@@ -369,7 +369,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights using fitness^2 * Pareto distribution per spec
     weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
@@ -562,7 +562,8 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def _handle_iteration_stats(stats: dict) -> None:
+def _handle_iteration_stats(iterations: int, population: list, fitness_window: list, 
+                          cli_args: argparse.Namespace) -> None:
     """Handle stats display and logging for each iteration batch"""
     stats = calculate_window_statistics(fitness_window)
     best_agent = max(population, key=lambda x: x["fitness"]) if population else None
@@ -699,7 +700,8 @@ def validate_population_state(best, worst) -> None:
     assert MAX_CORE == 23 and MAX_CHARS == 40, "Core configuration invalid"
     
     # Fitness sanity checks - use absolute() since rewards can be negative per spec.md
-    assert best['fitness'] >= worst['fitness'], "Best fitness should be >= worst fitness"
+    assert best['fitness'] >= worst['fitness'], \
+        f"Best fitness {best['fitness']} < worst {worst['fitness']} in population"
     
     # Chromosome structural validation
     for agent in [best, worst]:
