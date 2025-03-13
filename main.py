@@ -337,24 +337,25 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
     """Construct child chromosome with switches at hotspots"""
     p_chrom = parent["chromosome"]
     m_chrom = mate["chromosome"]
-    
     hotspots = get_hotspots(p_chrom)
-    result = []
-    use_parent = True
-    last_pos = 0
+    
+    # Track recombination state
+    parts = []
+    source = p_chrom
+    last_idx = 0
 
     for pos in sorted(hotspots):
         if pos >= len(p_chrom):
             continue
             
-        # Switch chromosomes at hotspots with 60% probability per spec.md
-        if random.random() < 0.6:  # Matches spec.md average of 1 switch per chrom
-            use_parent = not use_parent
-        result.append(p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos])
-        last_pos = pos
+        # Switch source with 60% probability at each hotspot    
+        if random.random() < 0.6:
+            source = m_chrom if source == p_chrom else p_chrom
+        parts.append(source[last_idx:pos])
+        last_idx = pos
 
-    # Add remaining sequence
-    result.append(p_chrom[last_pos:] if use_parent else m_chrom[last_pos:])
+    # Add final segment
+    parts.append(source[last_idx:])
     
     return validate_chromosome("".join(result))
 
