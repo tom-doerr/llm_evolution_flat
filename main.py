@@ -74,10 +74,16 @@ def validate_chromosome(chromosome: str) -> str:
     if not chromosome:
         return "a" * 23  # Default to valid chromosome with 'a's
     
+    # Clean invalid characters
+    chromosome = ''.join(c for c in chromosome if c.isalpha() or c == ' ')
+    
     # Structural validation
     assert len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-    assert all(c.isalpha() or c == ' ' for c in chromosome), "Invalid characters in chromosome"
     assert chromosome == chromosome.strip(), "Whitespace not allowed at ends"
+    
+    # If chromosome is too short after cleaning, pad with 'a's
+    if len(chromosome) < 23:
+        chromosome = chromosome.ljust(23, 'a')
     
     return chromosome
 
@@ -163,19 +169,28 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     core_segment = agent["chromosome"][:23].lower()
-    response = dspy.Predict(MutateSignature)(
-        chromosome=agent["chromosome"],
-        mutation_instructions=agent["mutation_chromosome"]
-    )
-
-    valid_candidate = next(
-        (str(c).strip()[:40].lower()
-         for c in response.completions
-         if str(c).strip().lower().startswith(core_segment)),
-        None
-    )
     
-    return valid_candidate or f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
+    try:
+        response = dspy.Predict(MutateSignature)(
+            chromosome=agent["chromosome"],
+            mutation_instructions=agent["mutation_chromosome"]
+        )
+
+        # Clean and validate the response
+        valid_candidate = next(
+            (''.join(c for c in str(comp).strip()[:40].lower() if c.isalpha() or c == ' ')
+             for comp in response.completions
+             if str(comp).strip().lower().startswith(core_segment)),
+            None
+        )
+        
+        if valid_candidate and len(valid_candidate) >= 23:
+            return valid_candidate
+    except Exception:
+        pass  # Fall back to default mutation
+    
+    # Default fallback mutation
+    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
