@@ -185,8 +185,6 @@ def _select_weighted_parents(population: List[dict], weights: np.array) -> List[
     count = min(len(population), MAX_POPULATION//2)
     indices = np.random.choice(len(population), size=count, replace=False, p=weights)
     return [population[i] for i in indices]
-        
-    return [population[i] for i in selected_indices]
 
 
 
@@ -518,7 +516,8 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     """Continuous evolution loop without discrete generations"""
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads)
     # Evaluate initial population in parallel
-    [executor.submit(evaluate_agent, agent) for agent in population]
+    for agent in population:
+        executor.submit(evaluate_agent, agent)
     fitness_window = [a["fitness"] for a in population]
     
     print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
