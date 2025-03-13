@@ -8,6 +8,10 @@ from typing import List
 
 
 # Third party imports
+import numpy as np
+import dspy
+from rich.console import Console
+from rich.panel import Panel
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
@@ -199,12 +203,6 @@ def select_parents(population: List[dict]) -> List[dict]:
         else:  # Handle edge case
             weights = np.ones_like(weights) / len(weights)
     return [population[i] for i in selected_indices]
-
-import numpy as np
-import dspy
-from dspy import DSPyError
-from rich.console import Console
-from rich.panel import Panel
 
 # Configuration constants from spec.md
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
