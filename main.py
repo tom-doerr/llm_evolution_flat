@@ -426,9 +426,10 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     with open("evolution.log", "w", encoding="utf-8") as log_file:
         log_file.truncate(0)  # Immediately clear file contents per spec
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
-        log_file.write(header)
+        # Write initial log entry
+        log_file.write(f"Evolution started at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         # Validate plain text format
-        assert '\n' in header and '\t' in header, "Log format must be plain text"
+        assert '\n' in header and '\t' not in header, "Log format must be simple text"
         assert not any(c in header for c in '[],'), "No structured formats allowed in log"
     
     evolution_loop(population, cli_args)
