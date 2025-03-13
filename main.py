@@ -679,10 +679,8 @@ def evolution_loop(population: List[dict]) -> None:
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "a", encoding="utf-8") as f:
-        # Write header if file is empty
-        if f.tell() == 0:
-            f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
             
         # Information-dense format with core segment
         f.write(
@@ -710,7 +708,7 @@ def display_generation_stats(stats: dict) -> None:
         f"Current μ:{stats.get('current_mean', 0.0):.1f} σ:{stats.get('current_std', 0.0):.1f}\n"
         f"Window μ:{stats.get('window_mean', 0.0):.1f} σ:{stats.get('window_std', 0.0):.1f}\n"
         f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
-        f"Core: {best_core} (a's: {a_count}/23)\n"
+        f"Core: [a's:{a_count}/23] {best_core[:10]}...{best_core[-10:]}\n" 
         f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
         subtitle=f"[Population: {stats.get('population_size', 0):,}/{MAX_POPULATION:,}]",
