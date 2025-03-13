@@ -442,12 +442,14 @@ def calculate_diversity(population: List[dict]) -> float:
     if len(population) <= 1:
         return 0.0
     
-    sample_size = min(100, len(population))
-    agents_sample = random.sample(population, sample_size)
-    max_pairs = sample_size * (sample_size - 1) // 2
-    differences = sum(1 for a,b in itertools.combinations(agents_sample, 2) 
-                   if a["chromosome"] != b["chromosome"])
-    return differences / max_pairs if max_pairs > 0 else 0.0
+    # Use set for unique chromosomes and combination count
+    unique_chromosomes = {a["chromosome"] for a in population}
+    if len(unique_chromosomes) == 1:
+        return 0.0
+    
+    # Calculate diversity using combination formula
+    n = len(unique_chromosomes)
+    return 1.0 - (1.0 / (n * (n - 1) / 2)) if n > 1 else 0.0
 
 
 
