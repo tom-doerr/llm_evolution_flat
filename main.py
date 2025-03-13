@@ -331,7 +331,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates intentional unused var
         pass  # Simple file truncation per spec.md
     
     evolution_loop(population, max_population)
@@ -357,6 +357,7 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
         return population
     
     assert max_size <= MAX_POPULATION, "Population size exceeds maximum allowed"
+    assert max_size >= 2, "Population must keep at least 2 agents"
     assert all(a['fitness'] >= 0 for a in population), "Negative fitness values found"
         
     pop_weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
