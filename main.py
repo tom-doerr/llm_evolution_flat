@@ -65,7 +65,8 @@ def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     if isinstance(chromosome, list):
         chromosome = "".join(chromosome)
-    chromosome = str(chromosome).strip()[:40]  # Enforce max length
+    # Preserve original case but enforce length and format
+    chromosome = str(chromosome).strip()[:40].lower()  # Normalize to lowercase
     
     # Structural validation
     assert 1 <= len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
@@ -76,13 +77,18 @@ def validate_chromosome(chromosome: str) -> str:
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
+    # Store original chromosome before validation
+    original_chromo = chromosome
     chromosome = validate_chromosome(chromosome)
-    # Generate random chromosome if empty
-    if not chromosome:
-        # Generate random chromosome preserving core segment length
-        core = "".join(random.choices(string.ascii_lowercase, k=23))
-        extra = "".join(random.choices(string.ascii_letters + " ", k=random.randint(0, 17)))
-        chromosome = core + extra
+    
+    # Preserve original chromosome structure while deriving components
+    return {
+        "chromosome": original_chromo,  # Store original unevolved chromosome
+        "task_chromosome": original_chromo[:23],  # Unmodified first 23 chars
+        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower(),
+        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7],
+        "fitness": 0.0
+    }
     
     return {
         "chromosome": chromosome,
