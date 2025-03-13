@@ -163,17 +163,14 @@ def mutate_with_llm(agent: dict) -> str:
         instructions=agent["mutation_chromosome"]
     )
 
-    valid_candidates = [
-        str(c).strip()[:40].lower()
-        for c in response.completions
-        if str(c).strip().lower().startswith(core_segment)
-    ]
-
-    if valid_candidates:
-        return random.choice(valid_candidates)
+    valid_candidate = next(
+        (str(c).strip()[:40].lower()
+         for c in response.completions
+         if str(c).strip().lower().startswith(core_segment)),
+        None
+    )
     
-    # Fallback with core preservation
-    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
+    return valid_candidate or f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(40)[:40]
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
@@ -227,9 +224,6 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_candidates:
         raise ValueError("No valid mates")
 
-    # Calculate normalized weights in one step
-    weights = np.array([c['fitness']**2 + 1e-9 for c in valid_candidates], dtype=np.float64)
-
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
         mate_selection_chromosome=parent["mate_selection_chromosome"],
@@ -238,13 +232,12 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
         top_p=0.9
     ).selected_mate.lower()
 
-    # Check for direct matches first
-    for candidate in valid_candidates:
-        if candidate["chromosome"].lower().startswith(result):
-            return candidate
-            
-    return random.choice([c for c in valid_candidates 
-                        if c["chromosome"] != parent["chromosome"]])
+    # Combined filtering and selection
+    return next(
+        (c for c in valid_candidates 
+         if c["chromosome"].lower().startswith(result)
+         and c["chromosome"] != parent["chromosome"]),
+        random.choice(valid_candidates)
 
 def get_hotspots(chromosome: str) -> list:
     """Get chromosome switch points per spec.md rules with avg 1 switch per chrom"""
