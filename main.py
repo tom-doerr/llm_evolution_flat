@@ -1,5 +1,6 @@
 import argparse
-import concurrent.futures 
+import concurrent.futures
+from tenacity import retry, wait_exponential, stop_after_attempt 
 import random
 import string
 import sys
@@ -620,7 +621,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
 
 
 
-def log_population(stats: dict) -> None:
+def log_population(stats: dict, cli_args: argparse.Namespace) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
@@ -635,7 +636,7 @@ def log_population(stats: dict) -> None:
             f"{stats.get('diversity', 0.0):.2f}\t"
             f"{stats.get('best_core', '')[:23]}\t"
             f"{stats.get('mutation_rate', 0.0):.2f}\t"
-            f"{cli_args.threads}\t"
+            f"{stats.get('threads', 1)}\t"
             f"{stats.get('a_count', 0)}\n"
         )
 
@@ -644,7 +645,7 @@ def display_generation_stats(stats: dict) -> None:
     console = Console()
     
     # Get the best agent's core
-    best_core = stats.get('best_core', '')
+    # Removed unused variable
     
     console.print(
         f"Gen {stats.get('generation', 0)} | "
@@ -751,6 +752,9 @@ def main():
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
                       help='Initial population size (default: 1000)')
+    parser.add_argument('--problem', type=str, default='hidden',
+                      choices=['hidden', 'other'],
+                      help='Problem type to optimize (default: hidden)')
     parser.add_argument('--max-runtime', type=int, default=3600,
                       help='Maximum runtime in seconds (default: 1 hour)') 
     parser.add_argument('--window-size', type=int, default=100,
