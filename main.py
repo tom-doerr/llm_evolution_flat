@@ -8,7 +8,6 @@ from typing import List
 import numpy as np
 import dspy
 from rich.console import Console
-from rich.panel import Panel
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
@@ -206,8 +205,6 @@ class MutateSignature(dspy.Signature):
     chromosome = dspy.InputField(desc="Current chromosome to mutate")
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
-
-from tenacity import retry, wait_exponential, stop_after_attempt
 
 def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
     # LLM mutation using agent's mutation chromosome as instructions
@@ -546,7 +543,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
         try:
             agent["fitness"] = future.result()
             fitness_window.append(agent["fitness"])
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError) as e:
             print(f"Agent evaluation failed: {str(e)}")
     
     try:
@@ -645,9 +642,8 @@ def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
     console = Console()
     
-    # Get the best agent's core and count 'a's
+    # Get the best agent's core
     best_core = stats.get('best_core', '')
-    a_count = best_core.count('a') if best_core else 0
     
     console.print(
         f"Gen {stats.get('generation', 0)} | "
