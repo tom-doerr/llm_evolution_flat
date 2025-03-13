@@ -18,9 +18,9 @@ WINDOW_SIZE = 100  # Default, can be overridden by CLI
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
 MUTATION_RATE = 0.1  # Base mutation probability 
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
-HOTSPOT_SPACE_PROB = 0.35  # Increased per spec.md space focus
-MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
-HOTSPOT_ANYWHERE_PROB = 0.025  # Matches spec.md requirement for ~1 switch per chromosome
+HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
+MIN_HOTSPOTS = 0  # Let probabilities control switches
+HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch avg per chrom
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -228,15 +228,9 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 def _build_mutation_prompt(agent: dict) -> str:
     """Construct mutation prompt string per spec.md requirements"""
     return f"""
-    MUTATION INSTRUCTIONS: {agent['mutation_chromosome']}
-    CURRENT CHROMOSOME: {agent["chromosome"]}
-    REQUIREMENTS:
-    - PRESERVE first 23 characters (core segment)
-    - INCREASE 'a' density in first 23 characters
-    - REDUCE length after 23 characters
-    - USE ONLY lowercase letters and spaces
-    OUTPUT ONLY the modified chromosome:
-    """.strip()
+    {agent['mutation_chromosome']}
+    Current DNA: {agent["chromosome"]}
+    Provide mutated version:""".strip()
 
 def _process_llm_response(response, cli_args) -> str:
     """Process LLM response into valid chromosome"""
@@ -310,8 +304,7 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
-        mate_selection_chromosome=parent["mate_selection_chromosome"],
-        parent_dna=parent["chromosome"],
+        mate_selection_chromosome=parent["mate_selection_chromosome"], 
         candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
         temperature=0.7,
         top_p=0.9
