@@ -6,7 +6,7 @@ import dspy
 
 @pytest.fixture
 def mock_lm():
-    lm = dspy.LM("openai/mock_model")  # Use valid provider prefix
+    lm = dspy.LM("openrouter/mock_model")  # Use valid openrouter prefix per spec
     lm.return_value = MagicMock()
     return lm
 
@@ -21,7 +21,7 @@ def test_mutation_mock(mock_lm):
     main.dspy.settings.lm = mock_lm
     mock_lm.return_value = MagicMock()
     mock_lm.return_value.completions = ["aaaaaabbbccc"]
-    mock_lm.model = "openai/mock_model"  # Valid provider prefix
+    mock_lm.model = "openrouter/mock_model"  # Valid openrouter prefix per spec
     
     agent = main.create_agent("test")
     # Create proper argparse namespace with required fields
