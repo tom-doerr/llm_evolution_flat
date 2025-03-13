@@ -5,6 +5,7 @@ import time
 import argparse
 from typing import List
 
+# Third party imports
 import numpy as np
 import dspy
 from rich.console import Console
