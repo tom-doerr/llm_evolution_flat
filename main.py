@@ -294,23 +294,18 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    # Weighted parent selection with fitness² weighting
     selected_parents = random.choices(
         parents,
         weights=[a['fitness']**2 for a in parents],
         k=min(len(parents), MAX_POPULATION//2)
     )
     
-    # Generate children with mutation/crossover balance
-    children = []
-    for _ in range(MAX_POPULATION - len(selected_parents)):
-        if random.random() < 0.9:  # 90% crossover
-            parent = random.choice(selected_parents)
-            children.append(crossover(parent, population))
-        else:  # 10% mutation
-            parent = random.choice(selected_parents)
-            children.append(create_agent(mutate(parent)))  # Added closing parenthesis
-    return children[:MAX_POPULATION]  # Hard limit enforced
+    return [
+        crossover(random.choice(selected_parents), population)
+        if random.random() < 0.9 else 
+        create_agent(mutate(random.choice(selected_parents)))
+        for _ in range(MAX_POPULATION - len(selected_parents))
+    ][:MAX_POPULATION]
 
 
 def get_population_extremes(population: List[dict]) -> tuple:
