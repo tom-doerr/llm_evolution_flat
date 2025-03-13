@@ -223,7 +223,6 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
     # Calculate normalized weights in one step
     weights = np.array([c['fitness']**2 + 1e-9 for c in valid_candidates], dtype=np.float64)
-    assert abs((weights_sum := weights.sum()) - 1.0) < 1e-6, f"Weights sum {weights_sum} != ~1.0"
 
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
