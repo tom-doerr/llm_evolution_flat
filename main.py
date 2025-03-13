@@ -277,24 +277,21 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
-    valid_candidates = [
-        a for a in (population[-WINDOW_SIZE:] or population)[:100] 
-        if validate_mating_candidate(a, parent)
-    ]
+    # Get recent valid candidates
+    recent_pop = (population[-WINDOW_SIZE:] or population)[:100]
+    valid_candidates = [a for a in recent_pop if validate_mating_candidate(a, parent)]
     
-    # Weighted selection without replacement using fitness²
-    mates = []
+    # Select mate or use parent as fallback
     if valid_candidates:
         weights = np.array([a['fitness']**2 + 1e-9 for a in valid_candidates], dtype=np.float64)
         weights /= weights.sum()
-        mates = [valid_candidates[i] for i in np.random.choice(
-            len(valid_candidates), 
-            size=min(5, len(valid_candidates)),
-            replace=False,
-            p=weights
-        )]
+        mates = valid_candidates[np.random.choice(len(valid_candidates), 
+                                                 size=min(5, len(valid_candidates)),
+                                                 replace=False,
+                                                 p=weights)]
+        return create_agent(build_child_chromosome(parent, llm_select_mate(parent, mates)))
     
-    mate = llm_select_mate(parent, mates) if mates else parent
+    return create_agent(build_child_chromosome(parent, parent))
     
     return create_agent(build_child_chromosome(parent, mate))
 
