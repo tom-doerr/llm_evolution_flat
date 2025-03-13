@@ -94,7 +94,6 @@ def create_agent(chromosome: str) -> dict:
     # Added validation and whitespace stripping per spec.md chromosome separation requirements
     "mutation_source": "initial"  # Track mutation origin per spec.md
 
-
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromo = validate_chromosome(agent["chromosome"])
