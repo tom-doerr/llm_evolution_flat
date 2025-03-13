@@ -1,11 +1,12 @@
+import argparse
 import pytest
 from unittest.mock import patch, MagicMock
-import main
+import main 
 import dspy
 
 @pytest.fixture
 def mock_lm():
-    lm = dspy.LM("mock_model")
+    lm = dspy.LM("mock/model")  # Must follow provider/model format
     lm.return_value = MagicMock()
     return lm
 
