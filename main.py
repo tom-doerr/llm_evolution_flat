@@ -1,14 +1,14 @@
-import sys
+import concurrent.futures
 import random
 import string
-import concurrent.futures
+import sys
 import time
 from typing import List
 
 import numpy as np
+import dspy
 from rich.console import Console
 from rich.panel import Panel
-import dspy
 
 MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
@@ -228,7 +228,7 @@ def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
     llm_result = _try_llm_mutation(agent, cli_args)
     return llm_result if llm_result else _fallback_mutation(agent)
 
-def _try_llm_mutation(agent: dict, args: argparse.Namespace) -> str:
+def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
     """Attempt LLM-based mutation and return valid result or None"""
     try:
         response = dspy.Predict(MutateSignature)(
@@ -237,7 +237,7 @@ def _try_llm_mutation(agent: dict, args: argparse.Namespace) -> str:
         )
         return _process_llm_response(response)
     except (dspy.DSPyError, ValueError) as e:
-        if args.verbose:
+        if cli_args.verbose:
             print(f"LLM mutation error: {str(e)}")
         return None
 
@@ -254,13 +254,13 @@ def _build_mutation_prompt(agent: dict) -> str:
     OUTPUT ONLY the modified chromosome:
     """.strip()
 
-def _process_llm_response(response) -> str:
+def _process_llm_response(response, cli_args) -> str:
     """Process LLM response into valid chromosome"""
     for comp in response.completions:
         candidate = str(comp).strip().lower()[:MAX_CHARS]
         candidate = ''.join(c for c in candidate if c.isalpha() or c == ' ').strip()
         if len(candidate) >= MAX_CORE and validate_mutation(candidate):
-            if args.verbose:
+            if cli_args.verbose:
                 print(f"LLM mutation successful: {candidate}")
             return candidate
     return None
@@ -590,7 +590,7 @@ def evolution_loop(population: List[dict]) -> None:
                     # Update fitness window
                     fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
                     
-                except Exception as e:
+                except (ValueError, TypeError) as e:
                     print(f"Child creation failed: {e}")
                 
                 # Display stats periodically
