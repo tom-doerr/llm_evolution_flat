@@ -83,12 +83,13 @@ def create_agent(chromosome: str) -> dict:
     
     # Preserve original chromosome structure while deriving components
     return {
-        "chromosome": chromosome,
-        "task_chromosome": chromosome[:23],
-        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),  # 10 chars enforced per spec.md
-        "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # 7 chars for mutation instructions
+        "chromosome": original_chromo,  # Store original unevolved chromosome per spec.md
+        "task_chromosome": original_chromo[:23],  # Unmodified first 23 chars
+        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower(),
+        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7],
         "fitness": 0.0
     }
+    # TODO: Add mutation tracking from spec.md
 
 
 def evaluate_agent(agent: dict) -> float:
@@ -383,6 +384,7 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
         children = generate_children(parents, population)
         population = parents + children  # Combine rather than replace
         population = trim_population(population, max_population)
+        # TODO: Add mutation rate tracking from spec.md
         
         # Update and track fitness statistics
         population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
