@@ -117,11 +117,10 @@ def evaluate_agent(agent: dict) -> float:
 
 
 def initialize_population(pop_size: int) -> List[dict]:
-    """Create initial population with random chromosomes"""
-    # Start with random chromosomes
+    """Create initial population with truly random chromosomes"""
+    # Start with random chromosomes without bias toward 'a's
     chromosomes = [
-        ''.join(random.choices(string.ascii_lowercase, k=23)) + 
-        ''.join(random.choices(string.ascii_lowercase + " ", k=random.randint(0, 17)))
+        ''.join(random.choices(string.ascii_lowercase, k=random.randint(23, 40)))
         for _ in range(pop_size)
     ]
     # Parallel create agents
@@ -172,39 +171,68 @@ def mutate_with_llm(agent: dict) -> str:
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     core_segment = agent["chromosome"][:MAX_CORE].lower()
     
-    print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
+    # Only print for debugging if verbose
+    if args.verbose:
+        print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
     
     try:
+        # Create a more effective prompt that ensures core preservation
+        mutation_prompt = f"""
+        Current chromosome: {agent['chromosome']}
+        
+        Instructions: {agent['mutation_chromosome']}
+        
+        Important rules:
+        1. You MUST keep the first 23 characters exactly the same: {core_segment}
+        2. You can modify anything after the first 23 characters
+        3. Total length must be between 23 and 40 characters
+        4. Only use lowercase letters and spaces
+        
+        Modified chromosome:
+        {core_segment}
+        """
+        
         # Use the agent's mutation chromosome as instructions
         response = dspy.Predict(MutateSignature)(
             chromosome=agent["chromosome"],
-            mutation_instructions=agent["mutation_chromosome"]
+            mutation_instructions=mutation_prompt
         )
 
         # Process completions
         for comp in response.completions:
             comp_str = str(comp).strip().lower()
             
-            # Ensure core segment is preserved
-            if not comp_str.startswith(core_segment):
-                print("LLM mutation failed: core segment not preserved")
-                continue
-                
-            # Clean and validate
-            valid_candidate = ''.join(c for c in comp_str[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
+            # Extract just the part after the core segment if it includes the core
+            if comp_str.startswith(core_segment):
+                valid_candidate = comp_str
+            else:
+                # Try to find the core segment in the response
+                core_pos = comp_str.find(core_segment)
+                if core_pos >= 0:
+                    valid_candidate = comp_str[core_pos:]
+                else:
+                    # If core not found, construct a valid response
+                    valid_candidate = core_segment + comp_str[:MAX_CHARS-MAX_CORE]
             
-            if valid_candidate and len(valid_candidate) >= MAX_CORE:
-                print(f"LLM mutation successful: {valid_candidate}")
+            # Clean and validate
+            valid_candidate = ''.join(c for c in valid_candidate[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
+            
+            if valid_candidate and valid_candidate.startswith(core_segment) and len(valid_candidate) >= MAX_CORE:
+                if args.verbose:
+                    print(f"LLM mutation successful: {valid_candidate}")
                 return valid_candidate
                 
     except Exception as e:
-        print(f"LLM mutation error: {str(e)}")
-        pass
+        if args.verbose:
+            print(f"LLM mutation error: {str(e)}")
     
     # Default fallback mutation - preserve core segment
-    random_chars = ''.join(random.choices(string.ascii_lowercase + ' ', k=17))
+    random_chars = ''.join(random.choices(string.ascii_lowercase + ' ', k=random.randint(0, 17)))
     fallback = f"{core_segment}{random_chars}".strip()
-    print(f"Using fallback mutation: {fallback}")
+    
+    if args.verbose:
+        print(f"Using fallback mutation: {fallback}")
+    
     return fallback
 
 
@@ -462,16 +490,16 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     return [population[i] for i in selected_indices]
 
 def evolution_loop(population: List[dict]) -> None:
-    """Continuous evolution loop without generation concept"""
+    """Continuous evolution loop without discrete generations"""
     import concurrent.futures
     import time
     
     fitness_window = []
-    num_threads = 10  # Default from spec.md
+    num_threads = args.threads  # Use the threads argument
+    iterations = 0
     
     # Initial evaluation of population
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        # Evaluate initial population in parallel
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         for future in concurrent.futures.as_completed(future_to_agent):
             agent = future_to_agent[future]
@@ -485,73 +513,74 @@ def evolution_loop(population: List[dict]) -> None:
     # Print initial stats
     print(f"Initial population: {len(population)} agents")
     print(f"Initial best fitness: {max(fitness_window) if fitness_window else 0}")
-    print("Starting evolution loop...")
+    print("Starting continuous evolution...")
     
-    for generation in itertools.count(0):  # Track generation for logging
-        # Print generation number for every iteration
-        print(f"\nGeneration {generation}:")
-        
-        # Trim and evolve in one pass
-        selected_parents = select_parents(population)
-        print(f"Selected {len(selected_parents)} parents")
-        
-        # Generate children in parallel
-        children = []
+    try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = []
-            for _ in range(MAX_POPULATION - len(selected_parents)):
-                if random.random() < 0.9:
-                    futures.append(executor.submit(
-                        crossover, random.choice(selected_parents), population
-                    ))
+            while True:  # Continuous evolution without generations
+                iterations += 1
+                
+                # Select parents based on fitness
+                selected_parents = select_parents(population)
+                
+                # Randomly select a parent for reproduction
+                parent = random.choice(selected_parents)
+                
+                # Either crossover or mutate
+                if random.random() < 0.9 and len(population) > 1:
+                    # Submit crossover task
+                    future = executor.submit(crossover, parent, population)
                 else:
-                    parent = random.choice(selected_parents)
-                    futures.append(executor.submit(
-                        lambda p: create_agent(mutate(p)), parent
-                    ))
-            
-            for future in concurrent.futures.as_completed(futures):
+                    # Submit mutation task
+                    future = executor.submit(lambda p: create_agent(mutate(p)), parent)
+                
                 try:
+                    # Get the new child
                     child = future.result()
-                    children.append(child)
+                    
+                    # Evaluate the child
+                    child["fitness"] = evaluate_agent(child)
+                    
+                    # Add to population
+                    population.append(child)
+                    
+                    # Trim population if needed
+                    if len(population) > MAX_POPULATION:
+                        population = trim_population(population, MAX_POPULATION)
+                    
+                    # Update fitness window
+                    fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
+                    
                 except Exception as e:
-                    print(f"Child generation failed: {e}")
-        
-        print(f"Generated {len(children)} children")
-        
-        population = trim_population(children[:MAX_POPULATION], MAX_POPULATION)
-        print(f"Population size after trimming: {len(population)}")
-        
-        # Evaluate population in parallel
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
-            for future in concurrent.futures.as_completed(future_to_agent):
-                agent = future_to_agent[future]
-                try:
-                    agent["fitness"] = future.result()
-                except Exception as e:
-                    print(f"Agent evaluation failed: {e}")
-        
-        # Update fitness window
-        new_fitness = [a["fitness"] for a in population]
-        fitness_window = update_fitness_window(fitness_window, new_fitness)
-        
-        # Calculate complete stats for display and logging
-        stats = calculate_window_statistics(fitness_window)
-        best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
-        
-        stats.update({
-            'generation': generation,
-            'population_size': len(population),
-            'diversity': calculate_diversity(population),
-            'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
-        })
-        
-        # Display and log stats
-        handle_generation_output(stats, population)
-        
-        # Add a small delay to prevent CPU overload
-        time.sleep(0.1)
+                    print(f"Child creation failed: {e}")
+                
+                # Display stats periodically
+                if iterations % 10 == 0:
+                    stats = calculate_window_statistics(fitness_window)
+                    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
+                    
+                    stats.update({
+                        'generation': iterations,  # Use iterations instead of generations
+                        'population_size': len(population),
+                        'diversity': calculate_diversity(population),
+                        'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
+                    })
+                    
+                    # Display and log stats
+                    handle_generation_output(stats, population)
+                    
+                    # Print best chromosome for debugging
+                    if args.verbose and best_agent:
+                        print(f"Best chromosome: {best_agent['chromosome']}")
+                        print(f"Best fitness: {best_agent['fitness']}")
+                        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
+                        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
+                
+                # Small delay to prevent CPU overload
+                time.sleep(0.01)
+                
+    except KeyboardInterrupt:
+        print("\nEvolution stopped by user. Exiting gracefully.")
 
 
 
@@ -678,6 +707,8 @@ if __name__ == "__main__":
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
                        help='Number of parallel threads (default: 10)')
+    parser.add_argument('--verbose', action='store_true',
+                       help='Enable verbose output')
     args = parser.parse_args()
     
     # Set global window size from args
