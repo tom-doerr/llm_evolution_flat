@@ -22,7 +22,7 @@ HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From 
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch avg per chrom
-HOTSPOT_SPACE_PROB = 0.25  # Reduced from 0.35 to account for general anywhere prob
+HOTSPOT_SPACE_PROB = 0.15  # Adjusted to maintain ~1 switch avg across all chars
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -232,9 +232,9 @@ def _try_llm_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
 def _build_mutation_prompt(agent: dict) -> str:
     """Construct mutation prompt string per spec.md requirements"""
     return f"""
-    {agent['mutation_chromosome']}
-    Current DNA: {agent["chromosome"]}
-    Provide mutated version:""".strip()
+    Using these mutation instructions: {agent['mutation_chromosome']}
+    Modify this DNA: {agent["chromosome"]}
+    Provide mutated version that increases fitness:""".strip()
 
 def _process_llm_response(response, cli_args) -> str:
     """Process LLM response into valid chromosome"""
@@ -387,12 +387,9 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    # Calculate weights, ensuring they're all positive
-    weights = [max(a['fitness'], 0.001)**2 for a in parents]
-    
-    # If all weights are zero, use uniform weights
-    if sum(weights) <= 0:
-        weights = [1.0] * len(parents)
+    # Calculate weights using fitness^2 * Pareto distribution per spec
+    weights = [(max(a['fitness'], 0.0) ** 2) * (np.random.pareto(PARETO_SHAPE) + 1e-6) 
+              for a in parents]
     
     # Weighted sampling without replacement
     selected_indices = np.random.choice(
