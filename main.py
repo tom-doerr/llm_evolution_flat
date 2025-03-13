@@ -22,8 +22,8 @@ CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
-HOTSPOT_ANYWHERE_PROB = 0.025  # Adjusted to maintain ~1 switch avg across 40-char chromosome
-HOTSPOT_SPACE_PROB = 0.03  # Reduced space probability to balance total
+HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1.0 avg switches
+HOTSPOT_SPACE_PROB = 0.25  # Higher space probability to align with spec
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -424,8 +424,8 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
     
     # Initialize log with header and truncate any existing content per spec.md
-    with open("evolution.log", "w", encoding="utf-8"):
-        pass  # Empty the file per spec.md
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        # Empty the file per spec.md
         header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
         f.write(header)
         # Validate plain text format
@@ -512,6 +512,15 @@ def log_and_display_stats(generation: int, population: List[dict], fitness_windo
     })
     
     handle_generation_output(stats, population)
+
+def _create_child(parent: dict, population: list, cli_args: argparse.Namespace) -> dict:
+    """Create new child through mutation or crossover"""
+    if random.random() < CROSSOVER_RATE and len(population) > 1:
+        child = crossover(parent, population)
+    else:
+        mutated = mutate(parent, cli_args)
+        child = create_agent(mutated)
+    return child
 
 def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
