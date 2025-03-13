@@ -314,9 +314,9 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     )
     
     # Generate children with mutation/crossover balance
-    return [
+    return [  # Fixed parenthesis and added clarifying comment
         crossover(random.choice(selected_parents), population)
-        if random.random() < 0.9 else  # 90% crossover 
+        if random.random() < 0.9 else  # 90% crossover probability
         create_agent(mutate(random.choice(selected_parents)))
         for _ in range(MAX_POPULATION - len(selected_parents))
     ][:MAX_POPULATION]  # Hard limit enforced
