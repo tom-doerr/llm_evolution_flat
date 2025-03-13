@@ -448,11 +448,12 @@ def calculate_diversity(population: List[dict]) -> float:
     """Calculate population diversity using pairwise differences"""
     if len(population) <= 1:
         return 0.0
-    # Sample 100 random pairs for efficiency
+    
     sample_size = min(100, len(population))
-    pairs = itertools.combinations(random.sample(population, sample_size), 2)
-    differences = sum(1 for a,b in pairs if a["chromosome"] != b["chromosome"])
-    max_pairs = sample_size * (sample_size - 1) / 2
+    agents_sample = random.sample(population, sample_size)
+    max_pairs = sample_size * (sample_size - 1) // 2
+    differences = sum(1 for a,b in itertools.combinations(agents_sample, 2) 
+                   if a["chromosome"] != b["chromosome"])
     return differences / max_pairs if max_pairs > 0 else 0.0
 
 
@@ -515,7 +516,9 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants per spec.md"""
     # Validate spec.md constants
-    assert MAX_CORE == 23 and MAX_CHARS == 40 and MAX_POPULATION == 1_000_000, \
+    assert (MAX_CORE == 23 and 
+            MAX_CHARS == 40 and 
+            MAX_POPULATION == 1_000_000), \
         "Configuration constants modified from spec.md requirements"
     
     # Validate fitness relationships
