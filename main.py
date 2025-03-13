@@ -207,10 +207,11 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
+    global args  # Handle CLI args reference
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
     # Only print for debugging if verbose
-    if args.verbose:
+    if 'verbose' in args and args.verbose:
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
     
     try:
@@ -497,16 +498,11 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-class EvolutionaryOptimizer(dspy.Module):
-    def __init__(self):
-        super().__init__()
-        self.population = []
-        
-    def forward(self, population_size: int = 1000) -> list:
-        """Run evolutionary optimization"""
-        self.population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
-        self.evolution_loop()
-        return self.population
+def run_evolution(population_size: int = 1000) -> list:
+    """Run evolutionary optimization"""
+    population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
+    evolution_loop(population)
+    return population
 
 def run_genetic_algorithm(pop_size: int) -> None:
     """Run continuous genetic algorithm per spec.md"""
@@ -816,7 +812,8 @@ if __name__ == "__main__":
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
-                       help='Number of parallel threads (default: 10)')
+                       help='Number of parallel threads (default: 10)',
+                       choices=range(1, 21))  # Limit 1-20 threads per spec
     parser.add_argument('--verbose', action='store_true',
                        help='Enable verbose output')
     args = parser.parse_args()
