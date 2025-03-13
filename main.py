@@ -434,7 +434,7 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
     # Initialize log with header and truncate any existing content per spec.md
     with open("evolution.log", "w", encoding="utf-8") as f:
         f.truncate(0)  # Explicitly empty the file per spec.md
-        header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n"
+        header = "generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\tmutation_rate\tthreads\ta_count\n"
         f.write(header)
         # Validate plain text format
         assert '\n' in header and '\t' in header, "Log format must be plain text"
@@ -635,7 +635,10 @@ def log_population(stats: dict) -> None:
             f"{stats.get('best', 0.0):.1f}\t"
             f"{stats.get('worst', 0.0):.1f}\t"
             f"{stats.get('diversity', 0.0):.2f}\t"
-            f"{stats.get('best_core', '')[:23]}\n"
+            f"{stats.get('best_core', '')[:23]}\t"
+            f"{stats.get('mutation_rate', 0.0):.2f}\t"
+            f"{cli_args.threads}\t"
+            f"{stats.get('a_count', 0)}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
