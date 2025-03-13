@@ -522,8 +522,9 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
+    window_stats = calculate_window_statistics(update_fitness_window(fitness_window, new_fitness))
     stats = {
-        **calculate_window_statistics(update_fitness_window(fitness_window, new_fitness)),
+        **window_stats,
         'generation': generation,  # Now using the passed generation number
         'population_size': len(population),
         'diversity': calculate_diversity(population),
