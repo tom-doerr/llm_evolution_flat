@@ -34,9 +34,10 @@ class EvolutionaryOptimizer(dspy.Module):
         self.population = initialize_population(population_size)
         self.fitness_window = []
     
-    def forward(self, *args, **kwargs):
-        """Run evolutionary optimization and return best candidates"""
-        evolution_loop(self.population, argparse.Namespace(threads=10, verbose=False)) 
+    def forward(self):
+        """Evolve population through DSPy interface"""
+        # Implement basic evolution step per spec.md requirements
+        self.population = select_parents(self.population)
         return [agent["chromosome"] for agent in self.population[:10]]
 
 # Configure DSPy with OpenRouter and timeout
