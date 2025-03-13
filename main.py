@@ -115,47 +115,37 @@ def create_agent(chromosome: str) -> dict:
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
     chromo = validate_chromosome(agent["chromosome"])
-    metrics = score_chromosome(chromo)
     
     # Calculate fitness: a_count in core - length penalty
-    core_segment = chromo[:23]
-    agent["fitness"] = core_segment.count('a') - max(len(chromo) - 23, 0)
+    agent["fitness"] = (chromo[:23].count('a') 
+                        - max(len(chromo) - 23, 0))
     
-    # Store metrics
-    metrics.update({
-        'a_count': core_segment.count('a'),
+    # Store metrics from score_chromosome
+    agent["metrics"] = score_chromosome(chromo)
+    agent["metrics"].update({
+        'a_count': chromo[:23].count('a'),
         'length_penalty': max(len(chromo) - 23, 0)
     })
-    agent["metrics"] = metrics
     
-    assert len(metrics['core_segment']) == 23, "Core segment length mismatch"
+    assert len(agent["metrics"]['core_segment']) == 23
     return agent["fitness"]
 
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    chromosomes = []
-    
-    # Create a diverse initial population with different 'a' densities
-    for _ in range(pop_size):  # Fixed unused variable 'i'
-        # Vary 'a' probability across population 
-        a_probability = random.uniform(0.1, 0.5)  # 10-50% 'a's
-        
-        # Create core with controlled 'a' density
-        core_chars = []
-        for _ in range(23):
-            if random.random() < a_probability:
-                core_chars.append('a')
-            else:
-                core_chars.append(random.choice(string.ascii_lowercase))
-        
-        core = ''.join(core_chars)
-        
-        # Add minimal suffix (0-7 chars) to keep total length between 23-30
-        suffix_len = random.randint(0, 7)
-        suffix = ''.join(random.choices(string.ascii_lowercase, k=suffix_len))
-        
-        chromosomes.append(core + suffix)
+    def generate_core(a_prob: float) -> str:
+        """Generate core segment with given 'a' probability"""
+        return ''.join(['a' if random.random() < a_prob 
+                      else random.choice(string.ascii_lowercase) 
+                      for _ in range(23)])
+
+    # Create population with varied 'a' densities and random suffixes
+    chromosomes = [
+        (generate_core(random.uniform(0.1, 0.5))  # 10-50% 'a's
+         + ''.join(random.choices(string.ascii_lowercase, 
+                  k=random.randint(0, 7))))
+        for _ in range(pop_size)
+    ]
     
     # Add one chromosome with all 'a's in core to seed the population
     if pop_size > 5:
@@ -168,37 +158,31 @@ def initialize_population(pop_size: int) -> List[dict]:
 
 def select_parents(population: List[dict]) -> List[dict]:
     """Select parents using Pareto(fitness²) weighting per spec.md"""
-    # Implementation of spec.md required parent selection criteria:
-    # 1. Pareto distribution weighting by fitness^2
-    # 2. Weighted sampling without replacement
     if not population:
         return []
-    
-    # Weighted sampling per spec.md: fitness² * Pareto distribution
-    # Pareto distribution weighting by fitness^2 per spec.md
-    fitness_squared = np.array([max(a['fitness'], 0)**2 for a in population], dtype=np.float64)
-    pareto = np.random.pareto(PARETO_SHAPE, len(population)) + 1
-    weights = np.nan_to_num(fitness_squared * pareto, nan=1e-6).clip(1e-6)
-    
-    weights /= weights.sum()  # Normalize
-    assert np.isclose(weights.sum(), 1.0), "Weights must sum to 1"
-    assert len(weights) == len(population), "Weight/population size mismatch"
-    
-    # Weighted sampling without replacement using numpy
+
+    # Calculate weights using vectorized operations
+    fitness = np.array([max(a['fitness'], 0) for a in population], dtype=np.float64)
+    weights = (fitness ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
+    weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
+    weights /= weights.sum()
+
+    # Simplified sampling with modern numpy
+    rng = np.random.default_rng()
     try:
-        selected_indices = np.random.choice(
+        selected_indices = rng.choice(
             len(population),
             size=min(len(population), MAX_POPULATION//2),
             replace=False,
             p=weights
         )
     except ValueError:
-        # Fallback to uniform sampling if weight error occurs
-        selected_indices = np.random.choice(
+        selected_indices = rng.choice(
             len(population),
             size=min(len(population), MAX_POPULATION//2),
             replace=False
         )
+        
     return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
