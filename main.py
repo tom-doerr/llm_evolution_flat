@@ -514,7 +514,8 @@ def log_and_display_stats(generation: int, population: List[dict], fitness_windo
 def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads)
-    futures = [executor.submit(evaluate_agent, agent) for agent in population]
+    # Evaluate initial population in parallel
+    [executor.submit(evaluate_agent, agent) for agent in population]
     fitness_window = [a["fitness"] for a in population]
     
     print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
@@ -604,7 +605,6 @@ def log_population(stats: dict) -> None:
             f"{stats.get('mutation_rate', 0.0):.2f}\t"
             f"{stats.get('threads', 1)}\t"
             f"{stats.get('a_count', 0)}\t"
-            f"{stats.get('mutation_rate', 0.0):.2f}\t"
             f"{stats.get('threads', 1)}\n"
         )
 
