@@ -395,8 +395,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
-    for _ in itertools.count():  # Generation counter not used per spec.md's continuous evolution
-        # Trim population using fitness² weighted sampling without replacement (spec.md)
+    for _ in itertools.count():  # Continuous evolution without generation tracking
+        # Trim population using fitness² weighted sampling without replacement
         if len(population) > max_population:
             weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
             weights /= weights.sum()
@@ -409,7 +409,8 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
             population = [population[i] for i in selected_indices]
         
         # Evaluate and generate next generation
-        population, fitness_window = evaluate_population_stats(population, fitness_window, 0)  # Generation number not used
+        population, fitness_window = evaluate_population_stats(population, fitness_window, _)
+        _ = calculate_window_statistics(fitness_window)  # Stats used in logging
         parents = select_parents(population)
         population = generate_children(parents, population)[:MAX_POPULATION]
 
