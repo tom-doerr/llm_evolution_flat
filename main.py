@@ -529,6 +529,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     """Continuous evolution loop without discrete generations"""
     fitness_window = []
     num_threads = cli_args.threads  # Fixed redefined-outer-name
+    assert cli_args.threads >= 1, "Must have at least 1 thread"
     iterations = 0
     
     # Initial evaluation of population
