@@ -516,8 +516,9 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     """Continuous evolution loop without discrete generations"""
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads)
     # Evaluate initial population in parallel
-    for agent in population:
-        executor.submit(evaluate_agent, agent)
+    futures = [executor.submit(evaluate_agent, agent) for agent in population]
+    # Process futures to ensure evaluation completes
+    concurrent.futures.wait(futures)
     fitness_window = [a["fitness"] for a in population]
     
     print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
