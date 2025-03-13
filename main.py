@@ -85,12 +85,13 @@ def create_agent(chromosome: str) -> dict:
     
     # Preserve original chromosome structure while deriving components
     return {
-        "chromosome": original_chromo,  # Store original unevolved chromosome per spec.md
-        "task_chromosome": original_chromo[:23],  # Unmodified first 23 chars
-        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower(),
-        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7],
+        "chromosome": original_chromo,
+        "task_chromosome": original_chromo[:23].ljust(23, ' ')[:23],  # Enforce exact length
+        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower().strip(),
+        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7].strip(),
         "fitness": 0.0
     }
+    # Added validation and whitespace stripping per spec.md chromosome separation requirements
     # TODO: Add mutation tracking from spec.md
 
 
@@ -106,14 +107,9 @@ def evaluate_agent(agent: dict) -> float:
 
 
 def initialize_population(pop_size: int) -> List[dict]:
-    """Create initial population with random chromosomes using vectorized operations"""
-    # Generate lengths first 
-    lengths = [random.randint(20, 40) for _ in range(pop_size)]
-    # Batch create all chromosomes
-    chromosomes = [
-        "".join(random.choices(string.ascii_letters + " ", k=length))
-        for length in lengths
-    ]
+    """Create initial population with empty chromosomes per spec.md"""
+    # Start with empty chromosomes as per spec.md requirement
+    chromosomes = [""] * pop_size
     # Parallel create agents
     return [create_agent(c) for c in chromosomes]
 
@@ -316,9 +312,9 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     population = initialize_population(min(pop_size, max_population))[:max_population]
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
-    # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8"):
-        pass  # Simple file truncation per spec.md
+    # Initialize log with header and truncate any existing content
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
     
     evolution_loop(population, max_population)
 
