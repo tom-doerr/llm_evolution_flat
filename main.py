@@ -344,8 +344,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8") as _:
-        pass  # Opening in write mode automatically truncates the file
+    open("evolution.log", "w").close()  # Simple file truncation per spec.md
     
     evolution_loop(population, max_population)
 
@@ -354,15 +353,14 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
     evaluated_pop = evaluate_population(population)
     new_fitness = [a["fitness"] for a in evaluated_pop]
     window = update_fitness_window(fitness_data[0], new_fitness)
+    stats = calculate_window_statistics(window)
     
-    stats = {
+    stats.update({
         'generation': fitness_data[1],
         'population_size': len(evaluated_pop),
         'diversity': calculate_diversity(evaluated_pop),
-        **calculate_window_statistics(window),
-        **extreme_values(evaluated_pop),
-        'window_size': min(len(window), WINDOW_SIZE)  # Add actual window size used
-    }
+        **extreme_values(evaluated_pop)
+    })
     return (stats, window[-WINDOW_SIZE:])
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
