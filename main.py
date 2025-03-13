@@ -436,7 +436,7 @@ def extreme_values(population: List[dict]) -> dict:
     """Get best/worst fitness and core segment"""
     best_agent = max(population, key=lambda x: x["fitness"])
     return {
-        'best': best_agent["fitness"],
+        'best': max(a["fitness"] for a in population),
         'best_core': best_agent["metrics"]["core_segment"],
         'worst': min(a["fitness"] for a in population)
     }
