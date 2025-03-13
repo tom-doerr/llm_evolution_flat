@@ -13,14 +13,17 @@ do
         echo "ERROR: $FILE has fewer than $MIN_LINES lines!"
         echo "Showing context around the file:"
         ls -la $(dirname "$FILE")
-        echo "First 10 lines of $FILE:"
-        head -10 "$FILE"
-        echo "Last 10 lines of $FILE:"
-        tail -10 "$FILE"
         echo "Reverting to last commit..."
         git checkout HEAD -- "$FILE"
         echo "File restored from git."
     fi
+    
+    # Run pylint and syntax check
+    echo "Running code quality checks..."
+    pylint --msg-template '{path}:{line}:{column}: {msg} ({symbol}) [{obj}]' "$FILE" | tail -n 400 > issues.txt.tmp
+    python3 -m py_compile "$FILE" 2>&1 | tail -n 400 >> issues.txt.tmp
+    mv issues.txt.tmp issues.txt
+    echo "Code quality check results saved to issues.txt"
     
     sleep 1
 done
