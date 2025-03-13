@@ -61,7 +61,7 @@ assert "gemini-2.0-flash" in lm.model, "Model must match spec.md"
 
 
 def calculate_window_statistics(fitness_window: list) -> dict:
-    """Calculate statistics for sliding window of last WINDOW_SIZE evaluations"""
+    # Calculate mean/median/std for sliding window of fitness scores
     if not fitness_window:
         return {'mean': 0.0, 'median': 0.0, 'std': 0.0, 'best': 0.0, 'worst': 0.0}
     assert len(fitness_window) <= WINDOW_SIZE, f"Window size exceeds configured {WINDOW_SIZE}"
@@ -96,7 +96,7 @@ def score_chromosome(chromosome: str) -> dict:
     }
 
 def validate_chromosome(chromosome: str) -> str:
-    """Validate and normalize chromosome structure"""
+    # Ensure chromosome meets length and character requirements
     chromosome = _clean_input(chromosome)
     chromosome = _ensure_min_length(chromosome)
     return chromosome[:MAX_CHARS]  # Enforce max length
@@ -247,24 +247,6 @@ def _process_llm_response(response, cli_args) -> str:
             return candidate
     return None
 
-def _fallback_mutation(agent: dict, cli_args: argparse.Namespace) -> str:
-    """Create fallback mutation with improved core"""
-    core = list(agent["chromosome"][:MAX_CORE])
-    a_count = core.count('a')
-    
-    # Add 'a's to core if needed
-    if a_count < MAX_CORE:
-        replacements = min(5, MAX_CORE - a_count)
-        positions = random.sample([i for i, c in enumerate(core) if c != 'a'], replacements)
-        for pos in positions:
-            core[pos] = 'a'
-    
-    suffix = ''.join(random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
-    fallback = validate_chromosome(''.join(core) + suffix)
-    
-    if cli_args.verbose:
-        print(f"Using fallback mutation: {fallback}")
-    return fallback
 
 
 def mutate(agent: dict, cli_args: argparse.Namespace) -> str:
