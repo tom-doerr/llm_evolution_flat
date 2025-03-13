@@ -295,9 +295,9 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     )
     
     children = [
-        crossover(random.choice(selected_parents), population) 
-        if random.random() < 0.9 else 
-        {**create_agent(mutate(random.choice(selected_parents))), 'mutation_source': 'llm_mutation'}
+        (crossover(random.choice(selected_parents), population) 
+         if random.random() < 0.9 else 
+         create_agent(mutate(random.choice(selected_parents)))
         for _ in range(MAX_POPULATION - len(selected_parents))
     ]
     return children[:MAX_POPULATION]
