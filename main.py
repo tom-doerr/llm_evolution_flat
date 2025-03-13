@@ -266,23 +266,14 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
-    # Get recent valid candidates
-    recent_pop = (population[-WINDOW_SIZE:] or population)[:100]
-    valid_candidates = [a for a in recent_pop if validate_mating_candidate(a, parent)]
+    recent_candidates = (population[-WINDOW_SIZE:] or population)[:100]
+    valid_candidates = [a for a in recent_candidates if validate_mating_candidate(a, parent)]
     
-    # Select mate with error handling and fallbacks
-    try:
-        if not valid_candidates:
-            raise ValueError("No valid mating candidates available")
-            
-        # Get top 5 candidates by fitness
-        mates = sorted(valid_candidates, key=lambda x: x['fitness']**2, reverse=True)[:5]
-        selected_mate = llm_select_mate(parent, mates)
-    except (ValueError, IndexError, KeyError) as e:
-        # Fallback to parent if any selection errors occur
-        selected_mate = parent  
+    if valid_candidates:
+        mate = llm_select_mate(parent, valid_candidates)
+        return create_agent(build_child_chromosome(parent, mate))
     
-    return create_agent(build_child_chromosome(parent, selected_mate))
+    return create_agent(build_child_chromosome(parent, parent))
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
@@ -324,7 +315,7 @@ def run_genetic_algorithm(pop_size: int, max_population: int = MAX_POPULATION) -
     assert 1 < len(population) <= max_population, f"Population size must be 2-{max_population}"
     
     # Empty log file per spec.md requirement
-    with open("evolution.log", "w", encoding="utf-8") as _:  # _ indicates intentional unused var
+    with open("evolution.log", "w", encoding="utf-8"):
         pass  # Simple file truncation per spec.md
     
     evolution_loop(population, max_population)
