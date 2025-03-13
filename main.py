@@ -205,7 +205,6 @@ HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
 AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
-AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
 
 
 
@@ -623,7 +622,7 @@ def evolution_loop(population: List[dict]) -> None:
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "w", encoding="utf-8") as f:
+    with open("evolution.log", "a", encoding="utf-8") as f:
         # Information-dense format with core segment
         f.write(f"{stats.get('generation', 0)}\t"
                 f"{stats.get('population_size', 0)}\t"
