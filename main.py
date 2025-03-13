@@ -14,6 +14,13 @@ MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
 WINDOW_SIZE = 100  # Default, can be overridden by CLI
+# Configuration constants moved from later in file
+PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
+MUTATION_RATE = 0.1  # Base mutation probability 
+HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
+HOTSPOT_SPACE_PROB = 0.35  # Increased per spec.md space focus
+MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
+HOTSPOT_ANYWHERE_PROB = 0.025  # Matches spec.md requirement for ~1 switch per chromosome
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -175,21 +182,6 @@ def select_parents(population: List[dict]) -> List[dict]:
     )
         
     return [population[i] for i in selected_indices]
-
-# Configuration constants from spec.md
-PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
-MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
-MAX_CHARS = 40  # From spec.md (different from max tokens)
-MAX_CORE = 23  # From spec.md hidden goal
-WINDOW_SIZE = 100  # Default, can be overridden by CLI
-MUTATION_RATE = 0.1  # Base mutation probability 
-HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
-HOTSPOT_SPACE_PROB = 0.35  # Increased per spec.md space focus
-MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
-# Total average switches = punctuation + spaces + anywhere = ~1.0
-HOTSPOT_ANYWHERE_PROB = 0.015  # Adjusted to account for punctuation/space probabilities
-AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
-HOTSPOT_ANYWHERE_PROB = 0.025  # Matches spec.md requirement for ~1 switch per chromosome
 
 
 
