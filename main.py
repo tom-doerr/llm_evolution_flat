@@ -33,10 +33,14 @@ lm = dspy.LM(
 dspy.configure(lm=lm)
 assert dspy.settings.lm is not None, "DSPy LM must be configured"
 
-# Test mock configuration
+# Validate production configuration matches spec
+assert "gemini-2.0-flash" in lm.model, "Model must match spec.md requirements"
+
+# Test mock configuration 
 if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
     dspy.configure(lm=lm, test_mode=True)
+    assert dspy.settings.test_mode, "Must be in test mode for pytest"
 
 # Validate configuration
 assert isinstance(lm, dspy.LM), "LM configuration failed"
@@ -590,7 +594,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
                     
                     stats.update({
-                        'generation': iterations,  # Use iterations instead of generations
+                        'iterations': iterations,
                         'population_size': len(population),
                         'diversity': calculate_diversity(population),
                         'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
@@ -699,7 +703,7 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     return stats
 
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
+def evaluate_population_stats(population: List[dict], fitness_window: list) -> tuple:
     """Evaluate and log generation statistics"""
     # Evaluate population fitness
     print("Evaluating population fitness...")
