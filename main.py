@@ -308,7 +308,7 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
             children.append(crossover(parent, population))
         else:  # 10% mutation
             parent = random.choice(selected_parents)
-            children.append(create_agent(mutate(parent)))
+            children.append(create_agent(mutate(parent)))  # Added closing parenthesis
     return children[:MAX_POPULATION]  # Hard limit enforced
 
 
@@ -382,9 +382,22 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
             population = trim_population(population[-WINDOW_SIZE:], max_population)
         
         # Evolve population continuously without generations
-        population = generate_children(select_parents(population), population)
-        population, new_fitness_window = evaluate_population_stats(population, fitness_window, generation)
-        fitness_window = new_fitness_window
+        parents = select_parents(population)
+        children = generate_children(parents, population)
+        population = parents + children  # Combine rather than replace
+        population = trim_population(population, max_population)
+        
+        # Update and track fitness statistics
+        population = evaluate_population(population)
+        fitness_window = update_fitness_window(fitness_window, [a["fitness"] for a in population])
+        stats = calculate_window_statistics(fitness_window)
+        stats.update({
+            'generation': generation,
+            'population_size': len(population),
+            'diversity': calculate_diversity(population),
+            'best_core': max(population, key=lambda x: x["fitness"])["metrics"]["core_segment"]
+        })
+        handle_generation_output(stats, population)
 
 
 
