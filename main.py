@@ -207,9 +207,6 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-from retry import retry
-from retry.api import retry_call  # For different calling style
-from tenacity import wait_exponential, stop_after_attempt
 
 def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
     # LLM mutation using agent's mutation chromosome as instructions
@@ -300,8 +297,9 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
 
     # Get and process LLM selection
     result = dspy.Predict(MateSelectionSignature)(
-        mate_selection_chromosome=parent["mate_selection_chromosome"], 
-        candidate_chromosomes=[c["chromosome"] for c in valid_candidates],
+        mate_selection_chromosome=parent["mate_selection_chromosome"],
+        parent_dna=parent["chromosome"], 
+        candidate_chromosomes=[f"{c['chromosome']} (fitness: {c['fitness']})" for c in valid_candidates], 
         temperature=0.7,
         top_p=0.9
     ).selected_mate.lower()
@@ -362,7 +360,7 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
     # Add final segment
     parts.append(source[last_idx:])
     
-    return validate_chromosome("".join(result))
+    return validate_chromosome("".join(parts))
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
@@ -769,7 +767,8 @@ def main():
                       help='Enable verbose output')
     args = parser.parse_args()
     
-    global WINDOW_SIZE
+    # Use module-level variable directly
+    global WINDOW_SIZE  # pylint: disable=global-statement
     WINDOW_SIZE = args.window_size
     
     try:
