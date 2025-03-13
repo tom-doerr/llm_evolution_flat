@@ -431,7 +431,7 @@ def generate_children(parents: List[dict], population: List[dict], cli_args: arg
     children = [
         (crossover(random.choice(selected_parents), population) 
          if random.random() < 0.9 else 
-         create_agent(mutate(random.choice(selected_parents))))
+         create_agent(mutate(random.choice(selected_parents), cli_args)))
         for _ in range(MAX_POPULATION - len(selected_parents))
     ]
     return children[:MAX_POPULATION]
