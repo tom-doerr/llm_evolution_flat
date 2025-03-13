@@ -1,10 +1,15 @@
 import argparse
-import concurrent.futures
+import concurrent.futures 
 import random
 import string
 import sys
 import time
 from typing import List
+
+import numpy as np
+import dspy
+from rich.console import Console
+from rich.panel import Panel
 
 # Third party imports
 
@@ -24,10 +29,8 @@ lm = dspy.LM(
 dspy.configure(lm=lm)
 assert dspy.settings.lm is not None, "DSPy LM must be configured"
 
-import sys
-
 # Test mock configuration
-if __name__ == "__main__" and "pytest" in sys.modules:  # pylint: disable=used-before-assignment
+if __name__ == "__main__" and "pytest" in sys.modules:
     lm = dspy.LM("mock_model")
     dspy.configure(lm=lm, test_mode=True)
 
