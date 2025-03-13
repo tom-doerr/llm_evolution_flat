@@ -376,19 +376,20 @@ def generate_children(parents: List[dict], population: List[dict], cli_args: arg
               for a in parents]
     
     # Weighted sampling without replacement
+    normalized_weights = np.array(weights) / np.sum(weights)  # Normalize probabilities
     selected_indices = np.random.choice(
         len(parents),
         size=min(len(parents), MAX_POPULATION//2),
         replace=False,
-        p=weights
+        p=normalized_weights
     )
     selected_parents = [parents[i] for i in selected_indices]
     
     children = [
-        (crossover(random.choice(selected_parents), population) 
-         if random.random() < 0.9 else 
-         create_agent(mutate(random.choice(selected_parents), cli_args)))
-        for _ in range(MAX_POPULATION - len(selected_parents))
+        (crossover(selected_parents[i % len(selected_parents)], population) 
+         if random.random() < CROSSOVER_RATE else 
+         create_agent(mutate(selected_parents[i % len(selected_parents)], cli_args)))
+        for i in range(MAX_POPULATION - len(selected_parents))
     ]
     return children[:MAX_POPULATION]
 
