@@ -188,20 +188,21 @@ def select_parents(population: List[dict]) -> List[dict]:
     assert np.isclose(weights.sum(), 1.0), "Weights must sum to 1"
     assert len(weights) == len(population), "Weight/population size mismatch"
     
-    # Weighted sampling without replacement using reservoir sampling
-    selected_indices = []
-    population_indices = list(range(len(population)))
-    for _ in range(min(len(population), MAX_POPULATION//2)):
-        chosen = random.choices(population_indices, weights=weights, k=1)[0]
-        selected_indices.append(chosen)
-        # Remove chosen index and reweight properly
-        idx = population_indices.index(chosen)
-        population_indices.pop(idx)
-        weights = np.delete(weights, idx)
-        if weights.sum() > 0:
-            weights /= weights.sum()  # Renormalize
-        else:  # Handle edge case
-            weights = np.ones_like(weights) / len(weights)
+    # Weighted sampling without replacement using numpy
+    try:
+        selected_indices = np.random.choice(
+            len(population),
+            size=min(len(population), MAX_POPULATION//2),
+            replace=False,
+            p=weights
+        )
+    except ValueError:
+        # Fallback to uniform sampling if weight error occurs
+        selected_indices = np.random.choice(
+            len(population),
+            size=min(len(population), MAX_POPULATION//2),
+            replace=False
+        )
     return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
@@ -214,7 +215,8 @@ MUTATION_RATE = 0.1  # Base mutation probability
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per spec.md
 HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
-HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
+# Total average switches = punctuation + spaces + anywhere = ~1.0
+HOTSPOT_ANYWHERE_PROB = 0.015  # Adjusted to account for punctuation/space probabilities
 AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
 
