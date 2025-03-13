@@ -181,7 +181,7 @@ def select_parents(population: List[dict]) -> List[dict]:
 
     fitness = np.array([max(a['fitness'], 0) for a in population], dtype=np.float64)
     # Stronger fitness pressure per spec
-    weights = (fitness ** 3) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
+    weights = (fitness ** 2) * (np.random.pareto(PARETO_SHAPE, len(population)) + 1)
     weights = np.nan_to_num(weights, nan=1e-6).clip(1e-6)
     
     if weights.sum() > 0:
