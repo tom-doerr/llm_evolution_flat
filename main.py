@@ -313,11 +313,11 @@ def get_hotspots(chromosome: str) -> list:
     # Probabilistic hotspot selection per spec.md requirements
     hotspots = []
     for i, c in enumerate(chromosome):
-        # Check punctuation marks
+        # Punctuation marks are automatic hotspots
         if c in HOTSPOT_CHARS:
             hotspots.append(i)
-        # Higher space switching probability
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB * 2:  # Double space probability
+        # Space switching probability
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:  # Single probability
             hotspots.append(i)
         # Random anywhere probability
         elif random.random() < HOTSPOT_ANYWHERE_PROB:
