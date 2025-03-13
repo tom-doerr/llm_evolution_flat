@@ -89,14 +89,6 @@ def create_agent(chromosome: str) -> dict:
         "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7],
         "fitness": 0.0
     }
-    
-    return {
-        "chromosome": chromosome,
-        "task_chromosome": chromosome[:23],
-        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),  # 10 chars enforced per spec.md
-        "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # 7 chars for mutation instructions
-        "fitness": 0.0
-    }
 
 
 def evaluate_agent(agent: dict) -> float:
@@ -232,7 +224,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     valid_candidates = [c for c in candidates if validate_mating_candidate(c, parent)]
     if not valid_candidates:
         raise ValueError("No valid mates")
-    assert abs(sum(weights) - 1.0) < 1e-6, "Weights must sum to ~1.0"
+    # Calculate weights using fitness squared per spec.md
+    weights = np.array([c['fitness']**2 + 1e-9 for c in valid_candidates], dtype=np.float64)
+    weights /= weights.sum()
+    assert abs(sum(weights) - 1.0) < 1e-6, f"Weights sum {sum(weights)} != ~1.0"
 
     # Get LLM selection with validated candidates
     result = dspy.Predict(MateSelectionSignature)(
