@@ -67,19 +67,19 @@ def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
     if isinstance(chromosome, list):
         chromosome = "".join(chromosome)
-    # Preserve original case but enforce length and format
+    
+    # Convert to string and strip whitespace
     chromosome = str(chromosome).strip()[:40].lower()  # Normalize to lowercase
     
     # For empty strings, return a valid default
     if not chromosome:
         return "a" * 23  # Default to valid chromosome with 'a's
     
-    # Clean invalid characters
-    chromosome = ''.join(c for c in chromosome if c.isalpha() or c == ' ')
+    # Clean invalid characters and strip again to ensure no whitespace at ends
+    chromosome = ''.join(c for c in chromosome if c.isalpha() or c == ' ').strip()
     
     # Structural validation
     assert len(chromosome) <= 40, f"Invalid length {len(chromosome)}"
-    assert chromosome == chromosome.strip(), "Whitespace not allowed at ends"
     
     # If chromosome is too short after cleaning, pad with 'a's
     if len(chromosome) < 23:
@@ -89,20 +89,19 @@ def validate_chromosome(chromosome: str) -> str:
 
 def create_agent(chromosome: str) -> dict:
     """Create a new agent as a dictionary"""
-    # Store original chromosome before validation
-    original_chromo = chromosome
+    # Validate and clean chromosome first
     chromosome = validate_chromosome(chromosome)
     
-    # Preserve original chromosome structure while deriving components
+    # Create agent with validated chromosome
     return {
-        "chromosome": original_chromo,
-        "task_chromosome": original_chromo[:23].ljust(23, ' ')[:23],  # Enforce exact length
-        "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower().strip(),
-        "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7].strip()[:7],  # Enforce exact 7 char length
+        "chromosome": chromosome,
+        "task_chromosome": chromosome[:23].ljust(23, ' ')[:23],  # Enforce exact length
+        "mate_selection_chromosome": chromosome[23:33].ljust(10, ' ')[:10].lower(),
+        "mutation_chromosome": chromosome[33:40].ljust(7, ' ')[:7],  # Enforce exact 7 char length
         "fitness": 0.0,
-        "mutation_source": "initial"  # Track mutation origin per spec.md
+        "mutation_source": "initial",  # Track mutation origin per spec.md
+        "metrics": {}  # Initialize metrics dictionary
     }
-    # Added validation and whitespace stripping per spec.md chromosome separation requirements
 
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
@@ -186,7 +185,7 @@ def mutate_with_llm(agent: dict) -> str:
                 continue
                 
             # Clean and validate
-            valid_candidate = ''.join(c for c in comp_str[:MAX_CHARS] if c.isalpha() or c == ' ')
+            valid_candidate = ''.join(c for c in comp_str[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
             
             if valid_candidate and len(valid_candidate) >= MAX_CORE:
                 return valid_candidate
@@ -196,7 +195,7 @@ def mutate_with_llm(agent: dict) -> str:
         pass
     
     # Default fallback mutation - preserve core segment
-    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".ljust(MAX_CHARS)[:MAX_CHARS]
+    return f"{core_segment}{random.choices(string.ascii_lowercase + ' ', k=17)[:17]}".strip()
 
 
 def mutate(agent: dict) -> str:
@@ -219,23 +218,28 @@ def validate_mutation(chromosome: str) -> bool:
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     """Validate candidate meets mating requirements"""
-    # Per spec.md: candidates must differ and have valid chromosomes
+    # Quick checks first
     if candidate == parent:
         return False
     
-    # Check if required fields exist
     if "mutation_chromosome" not in candidate or "mate_selection_chromosome" not in candidate:
         return False
+    
+    if "chromosome" not in candidate:
+        return False
         
+    # Validate chromosome
     try:
-        # Validate chromosome
         validated = validate_chromosome(candidate["chromosome"])
         
-        # Ensure chromosomes are different and valid length (spec.md requirements)
+        # Check if chromosomes are different
         if validated == parent["chromosome"]:
             return False
-        if len(validated) < 23 or len(validated) > 40:  # Core segment requirement
+            
+        # Check length requirements
+        if len(validated) < 23:
             return False
+            
         return True
     except (AssertionError, KeyError):
         return False
@@ -287,7 +291,7 @@ def get_hotspots(chromosome: str) -> list:
     return sorted(list(set(hotspots)))  # Remove duplicates and sort
 
 def build_child_chromosome(parent: dict, mate: dict) -> str:
-    """Construct child chromosome with single character switch using parent/mate DNA"""
+    """Construct child chromosome with character switches at hotspots"""
     p_chrom = parent["chromosome"]
     m_chrom = mate["chromosome"]
     
@@ -320,7 +324,8 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
         final = p_chrom[last_pos:] if use_parent else m_chrom[last_pos:min(len(m_chrom), len(p_chrom))]
         result += final
     
-    return result[:MAX_CHARS]  # Hard truncate to spec.md limit
+    # Validate before returning
+    return validate_chromosome(result[:MAX_CHARS])
 
 def crossover(parent: dict, population: List[dict]) -> dict:
     """Create child through LLM-assisted mate selection with chromosome combining"""
@@ -370,9 +375,10 @@ def get_population_extremes(population: List[dict]) -> tuple:
 
 def handle_generation_output(stats: dict, population: List[dict]) -> None:
     """Combined logging and display operations"""
-    log_population(stats)
-    display_generation_stats(stats)
-    validate_population_extremes(population)
+    if population:  # Only log if we have a population
+        log_population(stats)
+        display_generation_stats(stats)
+        validate_population_extremes(population)
 
 def validate_population_extremes(population: List[dict]) -> None:
     """Validate best/worst agents in population"""
@@ -416,36 +422,33 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
-    # Initialize log file once
-    if not hasattr(trim_population, "logged"):
-        with open("evolution.log", "w", encoding="utf-8") as f:
-            f.write("")
-        trim_population.logged = True
-        
-    max_size = min(max_size, MAX_POPULATION)  # Hard cap from spec.md
+    # Apply hard cap from spec.md
+    max_size = min(max_size, MAX_POPULATION)
+    
+    # Quick return if no trimming needed
     if len(population) <= max_size:
         return population
     
-    assert max_size <= MAX_POPULATION, "Population size exceeds maximum allowed"
-    assert max_size >= 2, "Population must keep at least 2 agents"
+    # Prepare fitness values for weighting
+    fitness_values = np.array([a['fitness'] for a in population], dtype=np.float64)
     
     # Handle negative fitness values (allowed per spec.md)
-    fitness_values = np.array([a['fitness'] for a in population], dtype=np.float64)
     min_fitness = min(fitness_values)
-    
-    # Shift all values to be positive for weighting
     if min_fitness < 0:
         fitness_values = fitness_values - min_fitness + 1e-6
-        
-    pop_weights = fitness_values ** 2
-    pop_weights /= pop_weights.sum()
     
+    # Calculate weights and normalize
+    weights = fitness_values ** 2
+    weights = weights / weights.sum() if weights.sum() > 0 else np.ones_like(weights) / len(weights)
+    
+    # Select agents to keep
     selected_indices = np.random.choice(
         len(population),
         size=max_size,
         replace=False,
-        p=pop_weights
+        p=weights
     )
+    
     return [population[i] for i in selected_indices]
 
 def evolution_loop(population: List[dict]) -> None:
@@ -462,9 +465,22 @@ def evolution_loop(population: List[dict]) -> None:
             MAX_POPULATION
         )
         
-        # Get stats directly without intermediate variables
+        # Evaluate population and update stats
         population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
-        handle_generation_output(calculate_window_statistics(fitness_window), population)
+        
+        # Calculate complete stats for display and logging
+        stats = calculate_window_statistics(fitness_window)
+        best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
+        
+        stats.update({
+            'generation': generation,
+            'population_size': len(population),
+            'diversity': calculate_diversity(population),
+            'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
+        })
+        
+        # Display and log stats
+        handle_generation_output(stats, population)
 
 
 
@@ -478,29 +494,27 @@ def log_population(stats: dict) -> None:
             
         # Information-dense format with core segment
         f.write(
-            f"{stats['generation']}\t" 
-            f"{stats['population_size']}\t"
-            f"{stats['mean']:.1f}\t"
-            f"{stats['median']:.1f}\t"
-            f"{stats['std']:.1f}\t"
-            f"{stats['best']:.1f}\t"
-            f"{stats['worst']:.1f}\t"
-            f"{stats['diversity']:.3f}\t"
-            f"{stats.get('mutation_rate', 0.0):.1%}\t"
-            f"{stats['best_core'][:23]}\n"  # Exactly 23 chars per spec.md core
+            f"{stats.get('generation', 0)}\t" 
+            f"{stats.get('population_size', 0)}\t"
+            f"{stats.get('mean', 0.0):.1f}\t"
+            f"{stats.get('median', 0.0):.1f}\t"
+            f"{stats.get('std', 0.0):.1f}\t"
+            f"{stats.get('best', 0.0):.1f}\t"
+            f"{stats.get('worst', 0.0):.1f}\t"
+            f"{stats.get('diversity', 0.0):.3f}\t"
+            f"{stats.get('best_core', '')[:23]}\n"  # Exactly 23 chars per spec.md core
         )
 
-def display_generation_stats(stats: dict) -> None:  # Removed unused 'population' param
+def display_generation_stats(stats: dict) -> None:
     """Rich-formatted display with essential stats"""
     Console().print(Panel(
-        f"[bold]Gen {stats['generation']}[/]\n"
-        f"μ:{stats['mean']:.1f} σ:{stats['std']:.1f} (window)\n"
-        f"Best: {stats['best']:.1f} Worst: {stats['worst']:.1f}\n"
-        f"Mutations: {stats.get('mutation_rate', 0.0):.1%}\n"
-        f"Core: {stats['best_core']}\n"
-        f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
+        f"[bold]Gen {stats.get('generation', 0)}[/]\n"
+        f"μ:{stats.get('mean', 0.0):.1f} σ:{stats.get('std', 0.0):.1f} (window)\n"
+        f"Best: {stats.get('best', 0.0):.1f} Worst: {stats.get('worst', 0.0):.1f}\n"
+        f"Core: {stats.get('best_core', '')}\n"
+        f"Δ{stats.get('diversity', 0.0):.0%} 👥{stats.get('population_size', 0):,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
-        subtitle=f"[Population size: {stats['population_size']}/{MAX_POPULATION}]",
+        subtitle=f"[Population size: {stats.get('population_size', 0)}/{MAX_POPULATION}]",
         style="blue"
     ))
 
@@ -552,30 +566,22 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, gene
     # Evaluate population fitness
     population = evaluate_population(population)
     
-    # Get new fitness values
+    # Update fitness window
     new_fitness = [a["fitness"] for a in population]
-    
-    # Update window with new fitness values
     updated_window = update_fitness_window(fitness_window, new_fitness)
     
-    # Calculate window statistics
-    window_stats = calculate_window_statistics(updated_window)
+    # Get best agent and core segment
+    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
+    best_core = best_agent.get("metrics", {}).get("core_segment", "")
     
-    # Get best agent's core segment
-    best_agent = max(population, key=lambda x: x["fitness"])
-    best_core = best_agent["metrics"]["core_segment"] if "metrics" in best_agent else ""
-    
-    # Combine all stats
-    stats = {
-        **window_stats,
+    # Create stats dictionary
+    stats = calculate_window_statistics(updated_window)
+    stats.update({
         'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_core,
-    }
-    
-    # Output stats
-    handle_generation_output(stats, population)
+    })
     
     return population, updated_window
 
