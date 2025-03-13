@@ -145,17 +145,15 @@ def evaluate_agent(agent: dict) -> float:
 
 def initialize_population(pop_size: int) -> List[dict]:
     """Create initial population with varied 'a' density in core segment"""
-    chromosomes = []
-    for _ in range(pop_size):
-        a_prob = random.uniform(0.1, 0.5)
-        core = ''.join(
-            'a' if random.random() < a_prob 
+    # Generate chromosomes with varied a-density cores and random suffixes
+    chromosomes = [
+        ''.join([
+            'a' if random.random() < random.uniform(0.1, 0.5) 
             else random.choice(string.ascii_lowercase) 
             for _ in range(23)
-        )
-        suffix = ''.join(random.choices(string.ascii_lowercase, 
-                      k=random.randint(0, 7)))
-        chromosomes.append(core + suffix)
+        ]) + ''.join(random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
+        for _ in range(pop_size)
+    ]
     
     if pop_size > 5:
         chromosomes[0] = 'a' * 23 + ''.join(
@@ -587,7 +585,8 @@ def _handle_iteration_stats(iterations: int, population: List[dict],
 
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
-    with open("evolution.log", "a", encoding="utf-8") as f:
+    with open("evolution.log", "w", encoding="utf-8") as f:
+        f.truncate(0)  # Empty file on startup
         # Information-dense format with core segment
         f.write(
             f"{stats.get('generation', 0)}\t"
