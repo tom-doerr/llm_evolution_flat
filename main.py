@@ -160,12 +160,8 @@ def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
     mc = agent["mutation_chromosome"]
     # Extract and clamp params from mutation chromosome
-    temp_top = (
-        float(mc[0:3] or '0.7'),
-        float(mc[3:7] or '0.9')
-    )
-    temperature = min(2.0, max(0.0, temp_top[0]))
-    top_p = min(1.0, max(0.0, temp_top[1]))
+    temperature = min(2.0, max(0.0, float(mc[0:3] or 0.7))
+    top_p = min(1.0, max(0.0, float(mc[3:7] or 0.9))
     
     response = dspy.Predict(MutateSignature)(
         chromosome=agent["chromosome"],
@@ -234,11 +230,10 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_candidates:
         raise ValueError("No valid mates")
         
-    # Calculate weights in single comprehension
-    weights = [(c['fitness']**2 + 1e-6) for c in valid_candidates]
-    sum_weights = sum(weights)
-    weights = [w/sum_weights for w in weights]
-    assert sum_weights > 0, "All candidate weights are zero"
+    # Calculate weights in single step
+    weights = [(c['fitness']**2 + 1e-6 for c in valid_candidates]
+    norm_weights = [w/sum(weights) for w in weights]
+    assert sum(weights) > 0, "All candidate weights are zero"
 
     # Get LLM selection with weighted candidates
     result = dspy.Predict(MateSelectionSignature)(
@@ -280,7 +275,7 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
             if switch else p_chrom)
 
 def crossover(parent: dict, population: List[dict]) -> dict:
-    """Create child through LLM-assisted mate selection with chromosome switching"""
+    """Create child through LLM-assisted mate selection with chromosome combining"""
     valid_candidates = [
         a for a in (population[-WINDOW_SIZE:] or population)[:100] 
         if validate_mating_candidate(a, parent)
@@ -518,7 +513,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, _generation: int) -> tuple:  # pylint: disable=too-many-arguments
+def evaluate_population_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:  # pylint: disable=too-many-arguments
     """Evaluate and log generation statistics"""
     population = evaluate_population(population)
     new_fitness = [a["fitness"] for a in population]
