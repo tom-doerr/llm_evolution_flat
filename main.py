@@ -6,10 +6,6 @@ import sys
 import time
 from typing import List
 
-import numpy as np
-import dspy
-from rich.console import Console
-from rich.panel import Panel
 
 # Third party imports
 
@@ -206,11 +202,16 @@ def select_parents(population: List[dict]) -> List[dict]:
 
 import numpy as np
 import dspy
+from dspy import DSPyError
 from rich.console import Console
 from rich.panel import Panel
 
 # Configuration constants from spec.md
 PARETO_SHAPE = 3.0  # From spec.md parent selection requirements
+MAX_POPULATION = 1_000_000  # Defined per spec.md population limit
+MAX_CHARS = 40  # From spec.md (different from max tokens)
+MAX_CORE = 23  # From spec.md hidden goal
+WINDOW_SIZE = 100  # Default, can be overridden by CLI
 MUTATION_RATE = 0.1  # Base mutation probability 
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per spec.md
 HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
