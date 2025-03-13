@@ -188,12 +188,16 @@ def select_parents(population: List[dict]) -> List[dict]:
     assert np.isclose(weights.sum(), 1.0), "Weights must sum to 1"
     assert len(weights) == len(population), "Weight/population size mismatch"
     
-    selected_indices = np.random.choice(
-        len(population),
-        size=min(len(population), MAX_POPULATION//2),
-        replace=False,
-        p=weights
-    )
+    # Weighted sampling without replacement using reservoir sampling
+    selected_indices = []
+    population_indices = list(range(len(population)))
+    for _ in range(min(len(population), MAX_POPULATION//2)):
+        chosen = random.choices(population_indices, weights=weights, k=1)[0]
+        selected_indices.append(chosen)
+        # Remove chosen index and its weight
+        population_indices.remove(chosen)
+        weights = np.delete(weights, chosen)
+        weights /= weights.sum()  # Renormalize
     return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
@@ -203,6 +207,7 @@ HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' '}  # Expanded punctuation per 
 HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
+AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
 AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
 
 
@@ -299,31 +304,12 @@ def validate_mutation(chromosome: str) -> bool:
 
 def validate_mating_candidate(candidate: dict, parent: dict) -> bool:
     """Validate candidate meets mating requirements"""
-    # Quick checks first
-    if candidate == parent:
-        return False
-    
-    if "mutation_chromosome" not in candidate or "mate_selection_chromosome" not in candidate:
-        return False
-    
-    if "chromosome" not in candidate:
-        return False
-        
-    # Validate chromosome
-    try:
-        validated = validate_chromosome(candidate["chromosome"])
-        
-        # Check if chromosomes are different
-        if validated == parent["chromosome"]:
-            return False
-            
-        # Check length requirements
-        if len(validated) < 23:
-            return False
-            
-        return True
-    except (AssertionError, KeyError):
-        return False
+    return all([
+        candidate != parent,
+        all(key in candidate for key in ("mutation_chromosome", "mate_selection_chromosome", "chromosome")),
+        len(validate_chromosome(candidate["chromosome"])) >= 23,
+        validate_chromosome(candidate["chromosome"]) != parent["chromosome"]
+    ])
 
 class MateSelectionSignature(dspy.Signature):
     """Select mate using agent's mate-selection chromosome as instructions"""
@@ -360,12 +346,20 @@ def get_hotspots(chromosome: str) -> list:
     if not chromosome:
         return []
         
+    # Calculate target number of switches based on spec.md average requirement
+    target_switches = max(1, round(len(chromosome) * AVERAGE_SWITCHES / 40))
+    
+    # First collect punctuation and space-based hotspots
     hotspots = [
         i for i, c in enumerate(chromosome)
-        if c in HOTSPOT_CHARS  # Punctuation always included
-        or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)  # Space check
-        or random.random() < HOTSPOT_ANYWHERE_PROB  # Use constant from config
+        if c in HOTSPOT_CHARS or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)
     ]
+    
+    # Then add random hotspots to reach target average
+    while len(hotspots) < target_switches:
+        pos = random.randint(0, len(chromosome)-1)
+        if pos not in hotspots:
+            hotspots.append(pos)
     
     # Ensure minimum hotspots per spec
     if len(hotspots) < MIN_HOTSPOTS and chromosome:
