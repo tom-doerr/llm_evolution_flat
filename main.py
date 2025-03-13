@@ -435,7 +435,16 @@ def validate_population_extremes(population: List[dict]) -> None:
     best, worst = get_population_extremes(population)
     validate_population_state(best, worst)
 
-def run_genetic_algorithm(pop_size: int) -> None:
+class EvolutionaryOptimizer(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.population = []
+        
+    def forward(self, population_size: int = 1000) -> list:
+        """Run evolutionary optimization"""
+        self.population = initialize_population(min(population_size, MAX_POPULATION))[:MAX_POPULATION]
+        self.evolution_loop()
+        return self.population
     """Run continuous genetic algorithm per spec.md"""
     population = initialize_population(min(pop_size, MAX_POPULATION))[:MAX_POPULATION]
     assert 1 < len(population) <= MAX_POPULATION, f"Population size must be 2-{MAX_POPULATION}"
