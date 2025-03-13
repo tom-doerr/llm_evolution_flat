@@ -21,6 +21,7 @@ def test_mutation_mock(mock_lm):
     main.dspy.settings.lm = mock_lm
     mock_lm.return_value = MagicMock()
     mock_lm.return_value.completions = ["aaaaaabbbccc"]
+    mock_lm.model = "mock/mock_model"  # Set provider prefix
     
     agent = main.create_agent("test")
     # Create proper argparse namespace with required fields
