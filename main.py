@@ -355,22 +355,20 @@ def get_hotspots(chromosome: str) -> list:
     if not chromosome:
         return []
         
-    # Calculate target number of switches based on spec.md average requirement
-    target_switches = max(1, round(len(chromosome) * AVERAGE_SWITCHES / 40))
+    # Probabilistic hotspot selection per spec.md requirements
+    hotspots = []
+    for i, c in enumerate(chromosome):
+        # Check punctuation marks
+        if c in HOTSPOT_CHARS:
+            hotspots.append(i)
+        # Check spaces with probability
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
+            hotspots.append(i)
+        # Random anywhere probability
+        elif random.random() < HOTSPOT_ANYWHERE_PROB:
+            hotspots.append(i)
     
-    # First collect punctuation and space-based hotspots
-    hotspots = [
-        i for i, c in enumerate(chromosome)
-        if c in HOTSPOT_CHARS or (c == ' ' and random.random() < HOTSPOT_SPACE_PROB)
-    ]
-    
-    # Then add random hotspots to reach target average
-    while len(hotspots) < target_switches:
-        pos = random.randint(0, len(chromosome)-1)
-        if pos not in hotspots:
-            hotspots.append(pos)
-    
-    # Ensure minimum hotspots per spec
+    # Enforce minimum hotspots if needed
     if len(hotspots) < MIN_HOTSPOTS and chromosome:
         hotspots.extend(random.sample(range(len(chromosome)), k=MIN_HOTSPOTS-len(hotspots)))
     
