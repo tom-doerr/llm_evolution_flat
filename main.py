@@ -207,86 +207,68 @@ class MutateSignature(dspy.Signature):
 
 def mutate_with_llm(agent: dict) -> str:
     """Optimized LLM mutation with validation"""
-    global args  # Handle CLI args reference
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
-    # Only print for debugging if verbose
-    if 'verbose' in args and args.verbose:
+    if args.verbose:
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
-    
+
+    llm_result = _try_llm_mutation(agent)
+    return llm_result if llm_result else _fallback_mutation(agent)
+
+def _try_llm_mutation(agent: dict) -> str:
+    """Attempt LLM-based mutation and return valid result or None"""
     try:
-        # Create a more effective prompt that explicitly encourages 'a's in the core
-        mutation_prompt = f"""
-        Current chromosome: {agent['chromosome']}
-        
-        Instructions: {agent['mutation_chromosome']}
-        
-        Important rules:
-        1. The first 23 characters determine the core fitness
-        2. The letter 'a' in the first 23 characters is very important for fitness
-        3. Keep total length between 23-30 characters (shorter is better after 23)
-        4. Only use lowercase letters
-        5. Try to maximize the number of 'a's in the first 23 characters
-        
-        Modified chromosome:
-        """
-        
-        # Use the agent's mutation chromosome as instructions
         response = dspy.Predict(MutateSignature)(
             chromosome=agent["chromosome"],
-            mutation_instructions=mutation_prompt
+            mutation_instructions=_build_mutation_prompt(agent)
         )
-
-        # Process completions
-        for comp in response.completions:
-            comp_str = str(comp).strip().lower()
-            
-            # Use the response directly, don't force the core to stay the same
-            valid_candidate = comp_str[:MAX_CHARS]
-            
-            # Clean and validate
-            valid_candidate = ''.join(c for c in valid_candidate[:MAX_CHARS] if c.isalpha() or c == ' ').strip()
-            
-            if valid_candidate and len(valid_candidate) >= MAX_CORE:
-                if args.verbose:
-                    print(f"LLM mutation successful: {valid_candidate}")
-                return valid_candidate
-                
-    except Exception as e:
+        return _process_llm_response(response)
+    except (dspy.DSPyException, ValueError) as e:
         if args.verbose:
             print(f"LLM mutation error: {str(e)}")
+        return None
+
+def _build_mutation_prompt(agent: dict) -> str:
+    """Construct mutation prompt string"""
+    return f"""
+    Current chromosome: {agent["chromosome"]}
+    Instructions: {agent['mutation_chromosome']}
+    Important rules:
+    1. First 23 chars determine core fitness
+    2. Maximize 'a's in first 23 characters
+    3. Keep total length 23-30 (shorter better after 23)
+    4. Only lowercase letters
+    Modified chromosome:
+    """.strip()
+
+def _process_llm_response(response) -> str:
+    """Process LLM response into valid chromosome"""
+    for comp in response.completions:
+        candidate = str(comp).strip().lower()[:MAX_CHARS]
+        candidate = ''.join(c for c in candidate if c.isalpha() or c == ' ').strip()
+        if len(candidate) >= MAX_CORE and validate_mutation(candidate):
+            if args.verbose:
+                print(f"LLM mutation successful: {candidate}")
+            return candidate
+    return None
+
+def _fallback_mutation(agent: dict) -> str:
+    """Create fallback mutation with improved core"""
+    core = list(agent["chromosome"][:MAX_CORE])
+    a_count = core.count('a')
     
-    # Default fallback mutation - create a better chromosome with more 'a's
-    # Create a core with many 'a's
-    a_count = agent["chromosome"][:MAX_CORE].count('a')
-    improved_core = agent["chromosome"][:MAX_CORE]
-    
-    # Randomly replace some characters with 'a's to improve fitness
+    # Add 'a's to core if needed
     if a_count < MAX_CORE:
-        char_positions = list(range(MAX_CORE))
-        random.shuffle(char_positions)
-        # Convert to list for mutation
-        improved_core_list = list(improved_core)
-        
-        # Replace up to 5 random non-'a' characters with 'a's
-        replacements = 0
-        for pos in char_positions:
-            if improved_core_list[pos] != 'a':
-                improved_core_list[pos] = 'a'
-                replacements += 1
-                if replacements >= 5:  # Limit replacements per mutation
-                    break
-        
-        improved_core = ''.join(improved_core_list)
+        replacements = min(5, MAX_CORE - a_count)
+        positions = random.sample([i for i, c in enumerate(core) if c != 'a'], replacements)
+        for pos in positions:
+            core[pos] = 'a'
     
-    # Keep length minimal after core (23-30 chars total)
-    suffix_len = random.randint(0, 7)  # 0-7 chars after core = 23-30 total
-    random_chars = ''.join(random.choices(string.ascii_lowercase, k=suffix_len))
-    fallback = f"{improved_core}{random_chars}".strip()
+    suffix = ''.join(random.choices(string.ascii_lowercase, k=random.randint(0, 7)))
+    fallback = validate_chromosome(''.join(core) + suffix)
     
     if args.verbose:
         print(f"Using fallback mutation: {fallback}")
-    
     return fallback
 
 
