@@ -56,7 +56,7 @@ def score_chromosome(chromosome: str) -> dict:
     repeats = sum(core[i] == core[i-1] for i in range(1, len(core)))
     
     return {
-        'a_density': a_count / 23.0,
+        'a_density': a_count / 23.0,  # Now properly defined
         'repeating_pairs': repeats / 22,
         'core_segment': core
     }
