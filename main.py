@@ -697,37 +697,35 @@ def update_population_stats(fitness_window: list, population: list) -> dict:
     return stats
 
 
-def evaluate_population_stats(population: List[dict], fitness_window: list, cli_args: argparse.Namespace, generation: int) -> tuple:
+def evaluate_population_stats(population: List[dict], fitness_window: list) -> tuple:
     """Evaluate and log generation statistics"""
-    # Evaluate population fitness
-    print("Evaluating population fitness...")
     population = evaluate_population(population)
-    
-    # Update fitness window
     new_fitness = [a["fitness"] for a in population]
     updated_window = update_fitness_window(fitness_window, new_fitness)
     
-    # Get best agent and core segment
-    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
-    best_core = best_agent.get("metrics", {}).get("core_segment", "")
-    
-    # Print best chromosome for debugging
-    if best_agent and cli_args.verbose:
-        print(f"Best chromosome: {best_agent['chromosome']}")
-        print(f"Best fitness: {best_agent['fitness']}")
-        print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
-        print(f"Length after core: {len(best_agent['chromosome']) - 23}")
-    
-    # Create stats dictionary
-    stats = calculate_window_statistics(updated_window)
-    stats.update({
-        'generation': generation,
-        'population_size': len(population),
-        'diversity': calculate_diversity(population),
-        'best_core': best_core,
-    })
+    stats = _build_stats_dict(population, updated_window)
     
     return population, updated_window
+
+def _build_stats_dict(population: List[dict], updated_window: list) -> dict:
+    """Build statistics dictionary from population data"""
+    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
+    return {
+        **calculate_window_statistics(updated_window),
+        'population_size': len(population),
+        'diversity': calculate_diversity(population),
+        'best_core': best_agent.get("metrics", {}).get("core_segment", "")
+    }
+
+def _log_best_agent_details(best_agent: dict) -> None:
+    """Log details about the best agent"""
+    if not best_agent:
+        return
+        
+    print(f"Best chromosome: {best_agent['chromosome']}")
+    print(f"Best fitness: {best_agent['fitness']}") 
+    print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
+    print(f"Length after core: {len(best_agent['chromosome']) - 23}")
 
 def validate_population_state(best, worst) -> None:
     """Validate fundamental population invariants"""
