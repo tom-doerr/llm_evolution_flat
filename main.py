@@ -373,7 +373,7 @@ def evolution_loop(population: List[dict], max_population: int, generation: int 
         
         # Track mutation rate as percentage of new agents
         mutation_rate = sum(1 for a in population if a.get('mutation_source')) / len(population) if population else 0.0
-        stats['mutation_rate'] = mutation_rate
+        stats = {'mutation_rate': mutation_rate}  # Initialize stats dict
         
         population, fitness_window = _update_stats(population, fitness_window, generation)
         handle_generation_output(fitness_window, population)
