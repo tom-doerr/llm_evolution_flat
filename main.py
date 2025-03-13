@@ -719,7 +719,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list, cli_
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
     stats.update({
-        'generation': iterations,
+        'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_core,
