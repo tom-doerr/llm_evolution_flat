@@ -199,7 +199,7 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=unused-argument,no-value-for-parameter
+def mutate_with_llm(agent: dict, _cli_args: argparse.Namespace) -> str:  # pylint: disable=no-value-for-parameter
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -388,7 +388,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:  # pylint: disable=unused-argument
+def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights, ensuring they're all positive
     weights = [max(a['fitness'], 0.001)**2 for a in parents]
