@@ -308,12 +308,15 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     )
     
     # Generate children with mutation/crossover balance
-    return list(  # Convert generator to list and slice
-        crossover(random.choice(selected_parents), population)
-        if random.random() < 0.9 else  # 90% crossover probability
-        create_agent(mutate(random.choice(selected_parents)))
-        for _ in range(MAX_POPULATION - len(selected_parents))
-    )[:MAX_POPULATION]  # Hard limit enforced
+    children = []
+    for _ in range(MAX_POPULATION - len(selected_parents)):
+        if random.random() < 0.9:  # 90% crossover
+            parent = random.choice(selected_parents)
+            children.append(crossover(parent, population))
+        else:  # 10% mutation
+            parent = random.choice(selected_parents)
+            children.append(create_agent(mutate(parent)))
+    return children[:MAX_POPULATION]  # Hard limit enforced
 
 
 def get_population_extremes(population: List[dict]) -> tuple:
