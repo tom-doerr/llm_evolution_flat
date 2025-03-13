@@ -22,8 +22,8 @@ CROSSOVER_RATE = 0.9  # Initial crossover rate that will evolve
 HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From spec.md punctuation list
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
-HOTSPOT_ANYWHERE_PROB = 0.045  # Adjusted to maintain ~1 switch avg across 40-char chromosome
-HOTSPOT_SPACE_PROB = 0.04  # Reduced space probability to balance total
+HOTSPOT_ANYWHERE_PROB = 0.025  # Adjusted to maintain ~1 switch avg across 40-char chromosome
+HOTSPOT_SPACE_PROB = 0.03  # Reduced space probability to balance total
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
