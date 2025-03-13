@@ -22,6 +22,7 @@ HOTSPOT_CHARS = {'.', ',', '!', '?', ';', ':', ' ', '-', '_', '"', "'"}  # From 
 HOTSPOT_SPACE_PROB = 0.35  # Probability for space characters
 MIN_HOTSPOTS = 0  # Let probabilities control switches
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch avg per chrom
+HOTSPOT_SPACE_PROB = 0.25  # Reduced from 0.35 to account for general anywhere prob
 
 # Validate hidden goal constants from spec.md
 assert MAX_CORE == 23, "Core segment length must be 23 per spec.md"
@@ -356,8 +357,8 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
         if pos >= len(p_chrom):
             continue
             
-        # Switch chromosomes at hotspots with 80% probability per spec.md
-        if random.random() < 0.8:  # Matches spec.md requirement for switching probability
+        # Switch chromosomes at hotspots with 60% probability per spec.md
+        if random.random() < 0.6:  # Matches spec.md average of 1 switch per chrom
             use_parent = not use_parent
         result.append(p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos])
         last_pos = pos
@@ -393,11 +394,14 @@ def generate_children(parents: List[dict], population: List[dict], cli_args: arg
     if sum(weights) <= 0:
         weights = [1.0] * len(parents)
     
-    selected_parents = random.choices(
-        parents,
-        weights=weights,
-        k=min(len(parents), MAX_POPULATION//2)
+    # Weighted sampling without replacement
+    selected_indices = np.random.choice(
+        len(parents),
+        size=min(len(parents), MAX_POPULATION//2),
+        replace=False,
+        p=weights
     )
+    selected_parents = [parents[i] for i in selected_indices]
     
     children = [
         (crossover(random.choice(selected_parents), population) 
