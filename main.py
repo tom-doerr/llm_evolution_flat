@@ -212,17 +212,17 @@ class MutateSignature(dspy.Signature):
     mutation_instructions = dspy.InputField(desc="Mutation strategy instructions") 
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
-def mutate_with_llm(agent: dict, args: argparse.Namespace) -> str:
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
     """Optimized LLM mutation with validation"""
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
-    if args.verbose:
+    if cli_args.verbose:
         print(f"Attempting LLM mutation with instructions: {agent['mutation_chromosome']}")
 
-    llm_result = _try_llm_mutation(agent)
+    llm_result = _try_llm_mutation(agent, cli_args)
     return llm_result if llm_result else _fallback_mutation(agent)
 
-def _try_llm_mutation(agent: dict) -> str:
+def _try_llm_mutation(agent: dict, args: argparse.Namespace) -> str:
     """Attempt LLM-based mutation and return valid result or None"""
     try:
         response = dspy.Predict(MutateSignature)(
@@ -548,8 +548,9 @@ def evolution_loop(population: List[dict]) -> None:
             agent = future_to_agent[future]
             try:
                 agent["fitness"] = future.result()
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 print(f"Agent evaluation failed: {e}")
+                raise  # Re-raise to avoid silent failures
     
     fitness_window = [a["fitness"] for a in population]
     
