@@ -316,14 +316,16 @@ def generate_children(parents: List[dict], population: List[dict]) -> List[dict]
     # Enforce population limit before extending
     assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
     
-    next_gen.extend([
+    # Generate children with continuous evolution
+    new_children = [
         crossover(random.choice(parents), population)
         if random.random() < 0.9 else  # 90% crossover, 10% mutation
         create_agent(mutate(random.choice(parents)))
         for _ in range(max_children)
-    ])
+    ]
     
-    # Hard limit enforcement per spec.md
+    # Add children and enforce hard limit
+    next_gen.extend(new_children)
     next_gen = next_gen[:MAX_POPULATION]
     assert len(next_gen) <= MAX_POPULATION, "Population exceeded MAX_POPULATION after generation"
     
