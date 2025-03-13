@@ -374,36 +374,23 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     )
     return [population[i] for i in selected_indices]
 
-def evolution_loop(population: List[dict], max_population: int, generation: int = 0) -> None:
-    """Continuous evolution loop per spec.md requirements"""
+def evolution_loop(population: List[dict], max_population: int) -> None:
+    """Continuous evolution loop without generation concept"""
     fitness_window = []
     
     for generation in itertools.count(0):  # Track generation for logging
-        population = _trim_population_if_needed(population, max_population)
-        population = _evolve_population(population, max_population)
+        # Trim and evolve in one pass
+        population = trim_population(
+            generate_children(
+                select_parents(population),
+                population
+            )[:MAX_POPULATION],
+            MAX_POPULATION
+        )
         
-        # Track mutation rate as percentage of new agents
-        mutation_rate = sum(1 for a in population if a.get('mutation_source')) / len(population) if population else 0.0
-        stats = {'mutation_rate': mutation_rate}  # Initialize stats dict
-        
-        population, fitness_window = _update_stats(population, fitness_window, generation)
-        handle_generation_output(fitness_window, population)
-
-def _trim_population_if_needed(population: List[dict], max_pop: int) -> List[dict]:
-    """Trim population if exceeds max size using sliding window"""
-    if len(population) > max_pop:
-        return trim_population(population[-WINDOW_SIZE:], max_pop)
-    return population
-
-def _evolve_population(population: List[dict], max_pop: int) -> List[dict]:
-    """Handle one evolution cycle"""
-    parents = select_parents(population)
-    children = generate_children(parents, population)
-    return trim_population(parents + children, max_pop)
-
-def _update_stats(population: List[dict], fitness_window: list, generation: int) -> tuple:
-    """Update and return new fitness statistics"""
-    return evaluate_population_stats(population, fitness_window, generation)
+        # Get stats directly without intermediate variables
+        population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
+        handle_generation_output(calculate_window_statistics(fitness_window), population)
 
 
 
@@ -438,8 +425,8 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
         f"Mutations: {stats.get('mutation_rate', 0.0):.1%}\n"
         f"Core: {stats['best_core']}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
-        subtitle=f"[Population evolution: +{len(children)}/-{len(population)-len(parents)}]"
-        title="Evolution Progress", 
+        title="Evolution Progress",
+        subtitle=f"[Population evolution: +{len(children)}/-{len(population)-len(parents)}]",
         style="blue"
     ))
 
