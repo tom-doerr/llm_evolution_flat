@@ -380,7 +380,7 @@ def trim_population(population: List[dict], max_size: int) -> List[dict]:
     return [population[i] for i in selected_indices]
 
 def evolution_loop(population: List[dict], max_population: int) -> None:
-    """Continuous evolution loop with population trimming and statistics tracking"""
+    """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
     for generation in itertools.count(0):  # Track generation for logging
