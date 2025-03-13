@@ -350,6 +350,12 @@ def update_generation_stats(population: List[dict], fitness_data: tuple) -> tupl
 
 def trim_population(population: List[dict], max_size: int) -> List[dict]:
     """Trim population using fitness-weighted sampling without replacement"""
+    # Empty log file at start per spec.md requirement
+    if not hasattr(trim_population, "_logged"):
+        with open("evolution.log", "w", encoding="utf-8") as f:
+            f.write("")
+        trim_population._logged = True
+        
     max_size = min(max_size, MAX_POPULATION)  # Hard cap from spec.md
     if len(population) <= max_size:
         return population
@@ -503,8 +509,8 @@ def validate_population_state(best, worst) -> None:
     # Validate hidden goal constants without referencing spec.md
     assert MAX_CORE == 23 and MAX_CHARS == 40, "Core configuration invalid"
     
-    # Fitness sanity checks
-    assert best['fitness'] >= worst['fitness'], "Best fitness should >= worst"
+    # Fitness sanity checks - use absolute() since rewards can be negative per spec.md
+    assert abs(best['fitness']) >= abs(worst['fitness']), "Best fitness should >= worst in magnitude"
     assert 0 <= best['fitness'] <= 1e6, "Fitness out of bounds"
 
     # Chromosome structural validation
