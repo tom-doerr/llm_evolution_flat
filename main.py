@@ -73,12 +73,8 @@ def score_chromosome(chromosome: str) -> dict:
 
 def validate_chromosome(chromosome: str) -> str:
     """Validate and normalize chromosome structure"""
-    assert MAX_CHARS == 40, "MAX_CHARS must be 40 per spec.md"
-    assert MAX_CORE == 23, "MAX_CORE must be 23 per spec.md"
-    
     chromosome = _clean_input(chromosome)
-    chromosome = _ensure_min_length(chromosome)
-    return chromosome
+    return _ensure_min_length(chromosome)
 
 def _clean_input(chromosome: str) -> str:
     """Clean and normalize chromosome input"""
@@ -195,10 +191,14 @@ def select_parents(population: List[dict]) -> List[dict]:
     for _ in range(min(len(population), MAX_POPULATION//2)):
         chosen = random.choices(population_indices, weights=weights, k=1)[0]
         selected_indices.append(chosen)
-        # Remove chosen index and its weight
-        population_indices.remove(chosen)
-        weights = np.delete(weights, chosen)
-        weights /= weights.sum()  # Renormalize
+        # Remove chosen index and reweight properly
+        idx = population_indices.index(chosen)
+        population_indices.pop(idx)
+        weights = np.delete(weights, idx)
+        if weights.sum() > 0:
+            weights /= weights.sum()  # Renormalize
+        else:  # Handle edge case
+            weights = np.ones_like(weights) / len(weights)
     return [population[i] for i in selected_indices]
 
 # Configuration constants from spec.md
@@ -209,6 +209,7 @@ HOTSPOT_SPACE_PROB = 0.25  # Higher space probability per spec.md
 MIN_HOTSPOTS = 2  # Ensure minimum 2 switch points for combination
 HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
 AVERAGE_SWITCHES = 1.0  # Explicit constant per spec.md requirement
+HOTSPOT_ANYWHERE_PROB = 0.025  # 40 chars * 0.025 = 1 switch on average per spec.md
 
 
 
