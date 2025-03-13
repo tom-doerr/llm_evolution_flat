@@ -513,6 +513,8 @@ def validate_population_state(best, worst) -> None:
     # Chromosome structural validation
     for agent in [best, worst]:
         chrom = agent['chromosome']
-        assert (isinstance(chrom, str) and 1 <= len(chrom) <= 40 and 
-               chrom == chrom.strip() and chrom[:23].islower(), f"Invalid: {chrom}"
+        assert (isinstance(chrom, str) and 
+                1 <= len(chrom) <= 40 and 
+                chrom == chrom.strip() and 
+                chrom[:23].islower()), f"Invalid: {chrom}"
 
