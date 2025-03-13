@@ -34,7 +34,7 @@ class EvolutionaryOptimizer(dspy.Module):
         self.population = initialize_population(population_size)
         self.fitness_window = []
     
-    def forward(self, **kwargs):
+    def forward(self):
         """Run evolutionary optimization and return best candidates"""
         self.population = evolution_loop(self.population, argparse.Namespace(threads=10, verbose=False))
         return [agent["chromosome"] for agent in self.population[:10]]
@@ -450,7 +450,7 @@ def run_genetic_algorithm(pop_size: int, cli_args: argparse.Namespace) -> None:
         assert '\n' in header and '\t' in header, "Log format must be plain text"
         assert not any([',' in header, '[' in header, ']' in header]), "No structured formats allowed in log"
     
-    evolution_loop(population)
+    evolution_loop(population, cli_args)
 
 def update_generation_stats(population: List[dict], fitness_data: tuple) -> tuple:
     """Calculate and return updated statistics for current generation"""
@@ -728,7 +728,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list) -> t
     
     # Print best chromosome for debugging
     if best_agent:
-        if args.verbose:
+        if cli_args.verbose:
             print(f"Best chromosome: {best_agent['chromosome']}")
             print(f"Best fitness: {best_agent['fitness']}")
             print(f"A's in core: {best_agent['chromosome'][:23].count('a')}")
@@ -737,7 +737,7 @@ def evaluate_population_stats(population: List[dict], fitness_window: list) -> t
     # Create stats dictionary
     stats = calculate_window_statistics(updated_window)
     stats.update({
-        'generation': generation,
+        'generation': iterations,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_core,
