@@ -571,9 +571,13 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
-def _handle_iteration_stats(iterations: int, population: list, fitness_window: list,
-                          cli_args: argparse.Namespace) -> None:
-    """Handle stats display and logging for each iteration batch"""
+def _handle_iteration_stats(stats: dict, population: list, cli_args: argparse.Namespace) -> None:
+    """Handle stats display and logging for each iteration batch
+    Args:
+        stats: Dictionary containing current statistics
+        population: Current population of agents
+        cli_args: Command line arguments namespace
+    """
     """Handle stats display and logging for each iteration batch"""
     stats = calculate_window_statistics(fitness_window)
     best_agent = max(population, key=lambda x: x["fitness"]) if population else None
