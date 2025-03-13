@@ -495,13 +495,13 @@ def evaluate_initial_population(population: List[dict], num_threads: int) -> Lis
         future_to_agent = {executor.submit(evaluate_agent, agent): agent for agent in population}
         return [future.result() for future in concurrent.futures.as_completed(future_to_agent)]
 
-def log_and_display_stats(iterations: int, population: List[dict], fitness_window: list) -> None:
+def log_and_display_stats(generation: int, population: List[dict], fitness_window: list) -> None:
     """Handle periodic logging and display"""
     stats = calculate_window_statistics(fitness_window)
     best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
     
     stats.update({
-        'generation': iterations,
+        'generation': generation,
         'population_size': len(population),
         'diversity': calculate_diversity(population),
         'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
