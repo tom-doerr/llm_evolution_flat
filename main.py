@@ -89,10 +89,10 @@ def create_agent(chromosome: str) -> dict:
         "task_chromosome": original_chromo[:23].ljust(23, ' ')[:23],  # Enforce exact length
         "mate_selection_chromosome": original_chromo[23:33].ljust(10, ' ')[:10].lower().strip(),
         "mutation_chromosome": original_chromo[33:40].ljust(7, ' ')[:7].strip()[:7],  # Enforce exact 7 char length
-        "fitness": 0.0
+        "fitness": 0.0,
+        "mutation_source": "initial"  # Track mutation origin per spec.md
     }
     # Added validation and whitespace stripping per spec.md chromosome separation requirements
-    "mutation_source": "initial"  # Track mutation origin per spec.md
 
 def evaluate_agent(agent: dict) -> float:
     """Evaluate agent fitness based on hidden optimization target"""
