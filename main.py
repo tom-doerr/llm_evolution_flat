@@ -724,7 +724,8 @@ def main():
     """CLI entry point for evolutionary optimizer"""
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
-                      help='Initial population size (default: 1000)')
+                      help='Initial population size (default: 1000)',
+                      choices=range(1, main.MAX_POPULATION+1))
     parser.add_argument('--problem', type=str, default='hidden',
                       choices=['hidden', 'other'],
                       help='Problem type to optimize (default: hidden)')
@@ -739,11 +740,10 @@ def main():
                       help='Enable verbose output')
     args = parser.parse_args()
     
-    # Use module-level variable directly
-    # Pass window size through function arguments instead of global
-    run_genetic_algorithm(args.pop_size, args)
-    
     try:
+        # Single call with validation
+        assert 1 <= args.pop_size <= main.MAX_POPULATION, \
+            f"Population size must be between 1 and {main.MAX_POPULATION}"
         run_genetic_algorithm(args.pop_size, args)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")

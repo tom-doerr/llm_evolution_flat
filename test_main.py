@@ -22,7 +22,9 @@ def test_mutation_mock(mock_lm):
     mock_lm.return_value.completions = ["aaaaaabbbccc"]
     
     agent = main.create_agent("test")
-    mutated = main.mutate(agent, argparse.Namespace(verbose=False))
+    # Create proper argparse namespace with required fields
+    args = argparse.Namespace(verbose=False, threads=1)
+    mutated = main.mutate(agent, args)
     assert mutated["chromosome"] != "test"
 
 def test_crossover_no_duplicates():
