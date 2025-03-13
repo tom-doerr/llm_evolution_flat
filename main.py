@@ -300,35 +300,20 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
-    # Trim population using weighted sampling to maintain diversity
-    parents = random.choices(
+    # Weighted parent selection with fitness² weighting
+    selected_parents = random.choices(
         parents,
         weights=[a['fitness']**2 for a in parents],
         k=min(len(parents), MAX_POPULATION//2)
     )
-    next_gen = []
-    max_children = MAX_POPULATION - len(parents)
     
-    # Enforce population limit before generation (spec.md requirement)
-    assert len(parents) <= MAX_POPULATION//2, "Parent population exceeds limit"
-    
-    # Enforce population limit before extending
-    assert len(next_gen) <= MAX_POPULATION, "Population overflow before generation"
-    
-    # Generate children with continuous evolution
-    new_children = [
-        crossover(random.choice(parents), population)
-        if random.random() < 0.9 else  # 90% crossover, 10% mutation
-        create_agent(mutate(random.choice(parents)))
-        for _ in range(max_children)
-    ]
-    
-    # Add children and enforce hard limit
-    next_gen.extend(new_children)
-    next_gen = next_gen[:MAX_POPULATION]
-    assert len(next_gen) <= MAX_POPULATION, "Population exceeded MAX_POPULATION after generation"
-    
-    return next_gen[:MAX_POPULATION]
+    # Generate children with mutation/crossover balance
+    return [
+        (crossover(random.choice(selected_parents), population) 
+        if random.random() < 0.9 else  # 90% crossover
+        create_agent(mutate(random.choice(selected_parents)))
+        for _ in range(MAX_POPULATION - len(selected_parents))
+    ][:MAX_POPULATION]  # Hard limit enforced
 
 
 def get_population_extremes(population: List[dict]) -> tuple:
@@ -396,23 +381,14 @@ def evolution_loop(population: List[dict], max_population: int) -> None:
     """Continuous evolution loop per spec.md requirements"""
     fitness_window = []
     
-    for generation in itertools.count(0):  # Track generation for stats
-        # Trim population using fitness² weighted sampling without replacement
+    for generation in itertools.count(0):  # Continuous evolution per spec.md
+        # Trim population using sliding window of candidates
         if len(population) > max_population:
-            weights = np.array([a['fitness']**2 + 1e-6 for a in population], dtype=np.float64)
-            weights /= weights.sum()
-            selected_indices = np.random.choice(
-                len(population),
-                size=max_population,
-                replace=False,
-                p=weights
-            )
-            population = [population[i] for i in selected_indices]
+            population = trim_population(population[-WINDOW_SIZE:], max_population)
         
-        # Evaluate and generate next generation with proper generation tracking
+        # Evolve population continuously without generations
+        population = generate_children(select_parents(population), population)
         population, fitness_window = evaluate_population_stats(population, fitness_window, generation)
-        parents = select_parents(population)
-        population = generate_children(parents, population)[:MAX_POPULATION]
 
 
 
