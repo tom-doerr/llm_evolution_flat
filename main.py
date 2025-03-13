@@ -88,25 +88,14 @@ def score_chromosome(chromosome: str) -> dict:
     }
 
 def validate_chromosome(chromosome: str) -> str:
-    # Ensure chromosome meets length and character requirements
-    chromosome = _clean_input(chromosome)
-    chromosome = _ensure_min_length(chromosome)
-    return chromosome[:MAX_CHARS]  # Enforce max length
+    """Ensure chromosome meets length and character requirements"""
+    return _clean_input(chromosome)[:MAX_CHARS]
 
 def _clean_input(chromosome: str) -> str:
     """Clean and normalize chromosome input"""
-    if isinstance(chromosome, list):
-        chromosome = "".join(chromosome)
-    chrom = str(chromosome).strip()[:40].lower()
-    return ''.join(c for c in chrom if c.isalpha() or c == ' ').strip()
-
-def _ensure_min_length(chromosome: str) -> str:
-    """Ensure minimum length and pad with 'a's if needed"""
-    if not chromosome:
-        return "a" * 23
-    if len(chromosome) < 23:
-        return chromosome.ljust(23, 'a')
-    return chromosome
+    chrom = ''.join(c for c in str(chromosome).strip()[:40].lower() 
+                   if c.isalpha() or c == ' ')
+    return chrom.ljust(23, 'a')  # Ensure min length
 
 def create_agent(chromosome: str) -> dict:
     """Create agent with 3 specialized chromosomes"""
