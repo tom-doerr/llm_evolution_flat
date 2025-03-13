@@ -279,12 +279,8 @@ def crossover(parent: dict, population: List[dict]) -> dict:
     
     # Select mate or use parent as fallback
     if valid_candidates:
-        weights = np.array([a['fitness']**2 + 1e-9 for a in valid_candidates], dtype=np.float64)
-        weights /= weights.sum()
-        mates = valid_candidates[np.random.choice(len(valid_candidates), 
-                                                 size=min(5, len(valid_candidates)),
-                                                 replace=False,
-                                                 p=weights)]
+        # Get top 5 candidates by fitness
+        mates = sorted(valid_candidates, key=lambda x: x['fitness']**2, reverse=True)[:5]
         return create_agent(build_child_chromosome(parent, llm_select_mate(parent, mates)))
     
     return create_agent(build_child_chromosome(parent, parent))
