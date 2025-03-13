@@ -232,9 +232,9 @@ def llm_select_mate(parent: dict, candidates: List[dict]) -> dict:
     if not valid_candidates:
         raise ValueError("No valid mates")
     
-    # Combined weight calculation and validation
-    raw_weights = [a['fitness']**2 + 1e-9 for a in valid_candidates]  # Add epsilon to each term
-    sum_weights = sum(raw_weights) + 1e-9  # Prevent division by zero
+    # Calculate normalized weights in single step with numeric stability
+    sum_weights = sum(a['fitness']**2 + 1e-9 for a in valid_candidates)
+    weights = [(a['fitness']**2 + 1e-9)/sum_weights for a in valid_candidates]
     assert sum_weights > 1e-9, "All candidate weights are zero"
 
     # Get LLM selection with weighted candidates
