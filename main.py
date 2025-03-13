@@ -513,105 +513,74 @@ def log_and_display_stats(generation: int, population: List[dict], fitness_windo
     
     handle_generation_output(stats, population)
 
-def evolution_loop(population: List[dict], cli_args: argparse.Namespace, window_size: int = WINDOW_SIZE) -> None:
+def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None:
     """Continuous evolution loop without discrete generations"""
-    fitness_window = []
-    num_threads = cli_args.threads
-    assert cli_args.threads >= 1, "Must have at least 1 thread"
-    iterations = 0
-    
-    # Continuous evaluation setup
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_threads)
-    futures = []
-    
-    # Submit initial batch of evaluations
-    for agent in population:
-        futures.append(executor.submit(evaluate_agent, agent))
-    
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads)
+    futures = [executor.submit(evaluate_agent, agent) for agent in population]
     fitness_window = [a["fitness"] for a in population]
     
-    # Print initial stats
-    print(f"Initial population: {len(population)} agents")
-    print("Starting continuous evolution...")
-    
-    # Process initial evaluation results
-    for future in concurrent.futures.as_completed(futures):
-        agent = futures[future]
-        try:
-            agent["fitness"] = future.result()
-            fitness_window.append(agent["fitness"])
-        except (ValueError, TypeError, RuntimeError) as e:
-            print(f"Agent evaluation failed: {str(e)}")
-    
+    print(f"Initial population: {len(population)} agents\nStarting continuous evolution...")
+
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            while True:  # Continuous evolution without generations
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cli_args.threads) as executor:
+            iterations = 0
+            while True:
                 iterations += 1
+                parent = random.choice(select_parents(population))
                 
-                # Select parents based on fitness
-                selected_parents = select_parents(population)
-                
-                # Randomly select a parent for reproduction
-                parent = random.choice(selected_parents)
-                
-                # Either crossover or mutate
-                if random.random() < CROSSOVER_RATE and len(population) > 1:
-                    # Submit crossover task
-                    future = executor.submit(crossover, parent, population)
-                else:
-                    # Submit mutation task
-                    future = executor.submit(lambda p: create_agent(mutate(p, cli_args)), parent)
-                
+                # Create new child through mutation or crossover
+                future = executor.submit(
+                    crossover if random.random() < CROSSOVER_RATE and len(population) > 1 
+                    else lambda p: create_agent(mutate(p, cli_args)),
+                    parent,
+                    population
+                ) if random.random() < CROSSOVER_RATE else executor.submit(
+                    lambda p: create_agent(mutate(p, cli_args)), parent
+                )
+
                 try:
-                    # Get the new child
                     child = future.result()
-                    
-                    # Evaluate the child
                     child["fitness"] = evaluate_agent(child)
-                    
-                    # Add to population
                     population.append(child)
                     
-                    # Trim population if needed
                     if len(population) > MAX_POPULATION:
                         population = trim_population(population, MAX_POPULATION)
                     
-                    # Update fitness window
                     fitness_window = update_fitness_window(fitness_window, [child["fitness"]])
                     
+                    if iterations % 10 == 0:
+                        _handle_iteration_stats(iterations, population, fitness_window, cli_args)
+                        
                 except (ValueError, TypeError) as e:
                     print(f"Child creation failed: {e}")
-                
-                # Display stats periodically
-                if iterations % 10 == 0:
-                    stats = calculate_window_statistics(fitness_window)
-                    best_agent = max(population, key=lambda x: x["fitness"]) if population else {"metrics": {}}
-                    
-                    stats.update({
-                        'iterations': iterations,
-                        'population_size': len(population),
-                        'diversity': calculate_diversity(population),
-                        'best_core': best_agent.get("metrics", {}).get("core_segment", ""),
-                    })
-                    
-                    # Display and log stats
-                    handle_generation_output(stats, population)
-                    
-                    # Debug output
-                    if cli_args.verbose and best_agent:
-                        debug_info = [
-                            f"Best chromosome: {best_agent['chromosome'][:23]}...", 
-                            f"Best fitness: {best_agent['fitness']}",
-                            f"A's in core: {best_agent['chromosome'][:23].count('a')}",
-                            f"Length after core: {len(best_agent['chromosome']) - 23}"
-                        ]
-                        print("\n".join(debug_info))
-                
-                # Small delay to prevent CPU overload
+
                 time.sleep(0.01)
                 
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
+
+def _handle_iteration_stats(iterations: int, population: List[dict], 
+                          fitness_window: list, cli_args: argparse.Namespace) -> None:
+    """Handle stats display and logging for each iteration batch"""
+    stats = calculate_window_statistics(fitness_window)
+    best_agent = max(population, key=lambda x: x["fitness"]) if population else None
+    
+    stats.update({
+        'iterations': iterations,
+        'population_size': len(population),
+        'diversity': calculate_diversity(population),
+        'best_core': best_agent.get("metrics", {}).get("core_segment", "") if best_agent else "",
+    })
+    
+    handle_generation_output(stats, population)
+    
+    if cli_args.verbose and best_agent:
+        print("\n".join([
+            f"Best chromosome: {best_agent['chromosome'][:23]}...",
+            f"Best fitness: {best_agent['fitness']}",
+            f"A's in core: {best_agent['chromosome'][:23].count('a')}",
+            f"Length after core: {len(best_agent['chromosome']) - 23}"
+        ]))
 
 
 
