@@ -360,8 +360,8 @@ def get_hotspots(chromosome: str) -> list:
         # Check punctuation marks
         if c in HOTSPOT_CHARS:
             hotspots.append(i)
-        # Check spaces with probability
-        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB:
+        # Higher space switching probability
+        elif c == ' ' and random.random() < HOTSPOT_SPACE_PROB * 2:  # Double space probability
             hotspots.append(i)
         # Random anywhere probability
         elif random.random() < HOTSPOT_ANYWHERE_PROB:
@@ -387,9 +387,10 @@ def build_child_chromosome(parent: dict, mate: dict) -> str:
         if pos >= len(p_chrom):
             continue
             
-        # Take segment from current parent
+        # Probabilistic switching at hotspots (80% chance per spec)
+        if random.random() < 0.8:
+            use_parent = not use_parent
         result.append(p_chrom[last_pos:pos] if use_parent else m_chrom[last_pos:pos])
-        use_parent = not use_parent
         last_pos = pos
 
     # Add remaining sequence
@@ -414,7 +415,7 @@ def crossover(parent: dict, population: List[dict]) -> dict:
 
 # Hotspot switching implemented in get_hotspots() with space/punctuation probabilities
 
-def generate_children(parents: List[dict], population: List[dict]) -> List[dict]:
+def generate_children(parents: List[dict], population: List[dict], cli_args: argparse.Namespace) -> List[dict]:
     """Generate new population through validated crossover/mutation"""
     # Calculate weights, ensuring they're all positive
     weights = [max(a['fitness'], 0.001)**2 for a in parents]
@@ -596,7 +597,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     future = executor.submit(crossover, parent, population)
                 else:
                     # Submit mutation task
-                    future = executor.submit(lambda p: create_agent(mutate(p)), parent)
+                    future = executor.submit(lambda p: create_agent(mutate(p, cli_args)), parent)
                 
                 try:
                     # Get the new child
