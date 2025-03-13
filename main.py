@@ -618,8 +618,6 @@ def log_population(stats: dict) -> None:
             f"{stats.get('median', 0.0):.1f}\t" 
             f"{stats.get('std', 0.0):.1f}\t"
             f"{stats.get('best', 0.0):.1f}\t"
-            f"{stats.get('worst', 0.0):.1f}\t"
-            f"{stats.get('diversity', 0.0):.1f}\t"
             f"{stats.get('best', 0.0):.1f}\t"
             f"{stats.get('worst', 0.0):.1f}\t"
             f"{stats.get('diversity', 0.0):.1f}\t"
