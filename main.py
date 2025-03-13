@@ -208,7 +208,10 @@ class MutateSignature(dspy.Signature):
     mutated_chromosome = dspy.OutputField(desc="Improved chromosome meeting requirements")
 
 
-def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:  # pylint: disable=redefined-outer-name,no-value-for-parameter
+@retry(wait=wait_exponential(multiplier=1, min=1, max=10), 
+       stop=stop_after_attempt(3),
+       reraise=True)
+def mutate_with_llm(agent: dict, cli_args: argparse.Namespace) -> str:
     # LLM mutation using agent's mutation chromosome as instructions
     agent["mutation_source"] = f"llm:{agent['mutation_chromosome']}"
     
@@ -639,7 +642,9 @@ def log_population(stats: dict, cli_args: argparse.Namespace) -> None:
             f"{stats.get('best_core', '')[:23]}\t"
             f"{stats.get('mutation_rate', 0.0):.2f}\t"
             f"{stats.get('threads', 1)}\t"
-            f"{stats.get('a_count', 0)}\n"
+            f"{stats.get('a_count', 0)}\t"
+            f"{stats.get('mutation_rate', 0.0):.2f}\t"
+            f"{stats.get('threads', 1)}\n"
         )
 
 def display_generation_stats(stats: dict) -> None:
