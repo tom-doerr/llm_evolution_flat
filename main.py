@@ -181,7 +181,7 @@ def mutate_with_llm(agent: dict) -> str:
     # Fallback mutation if no valid responses - preserve core and randomize rest
     return agent["chromosome"][:23].lower() + ''.join(
         random.choices(string.ascii_lowercase + ' ',
-                      k=random.randint(0, 17)))
+                      k=random.randint(0, 17)))[:40]  # Enforce max length
 
 MAX_CHARS = 40  # From spec.md (different from max tokens)
 MAX_CORE = 23  # From spec.md hidden goal
