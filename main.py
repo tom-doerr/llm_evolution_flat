@@ -603,7 +603,7 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
                     # Debug output
                     if cli_args.verbose and best_agent:
                         debug_info = [
-                            f"Best chromosome: {best_agent['chromosome']}",
+                            f"Best chromosome: {best_agent['chromosome'][:23]}...", 
                             f"Best fitness: {best_agent['fitness']}",
                             f"A's in core: {best_agent['chromosome'][:23].count('a')}",
                             f"Length after core: {len(best_agent['chromosome']) - 23}"
@@ -749,6 +749,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evolutionary string optimizer')
     parser.add_argument('--pop-size', type=int, default=1000,
                        help='Initial population size (default: 1000)')
+    parser.add_argument('--max-runtime', type=int, default=3600,
+                       help='Maximum runtime in seconds (default: 1 hour)')
     parser.add_argument('--window-size', type=int, default=100,
                        help='Sliding window size for statistics (default: 100)')
     parser.add_argument('--threads', type=int, default=10,
