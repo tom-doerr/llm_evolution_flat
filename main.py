@@ -676,19 +676,11 @@ def evolution_loop(population: List[dict]) -> None:
 def log_population(stats: dict) -> None:
     """Log population statistics in plain text format per spec.md"""
     with open("evolution.log", "w", encoding="utf-8") as f:
-        f.write("generation\tpopulation\tmean\tmedian\tstd\tbest\tworst\tdiversity\tcore\n")
-            
         # Information-dense format with core segment
-        f.write(
-            f"{stats.get('generation', 0)}\t" 
-            f"{stats.get('population_size', 0)}\t"
-            f"{stats.get('current_mean', 0.0):.1f}\t"
-            f"{stats.get('current_median', 0.0):.1f}\t" 
-            f"{stats.get('current_std', 0.0):.1f}\t"
-            f"{stats.get('window_mean', 0.0):.1f}\t"
-            f"{stats.get('window_median', 0.0):.1f}\t"
-            f"{stats.get('window_std', 0.0):.1f}\t"
-            f"{stats.get('best_core', '')[:23]}\n"  # Exactly 23 chars per spec.md core
+        f.write(f"{stats.get('generation', 0)}\t"
+                f"{stats.get('population_size', 0)}\t"
+                f"{stats.get('current_mean', 0.0):.1f}\t"
+                f"{stats.get('best_core', '')[:23]}\n")
         )
 
 def display_generation_stats(stats: dict) -> None:
@@ -822,8 +814,7 @@ if __name__ == "__main__":
     WINDOW_SIZE = args.window_size
     
     try:
-        optimizer = EvolutionaryOptimizer()
-        optimizer.forward(population_size=args.pop_size)
+        run_genetic_algorithm(args.pop_size)
     except KeyboardInterrupt:
         print("\nEvolution stopped by user. Exiting gracefully.")
 
