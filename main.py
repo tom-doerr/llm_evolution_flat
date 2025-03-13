@@ -567,12 +567,15 @@ def evolution_loop(population: List[dict], cli_args: argparse.Namespace) -> None
 
 def _handle_iteration_stats(population: list, cli_args: argparse.Namespace) -> None:
     """Handle stats display and logging for each iteration batch"""
-    best_agent = max(population, key=lambda x: x["fitness"]) if population else None
+    if not population:
+        return
     
-    if cli_args.verbose and best_agent:
+    best_agent = max(population, key=lambda x: x["fitness"])
+    
+    if cli_args.verbose:
         print("\n".join([
             f"Best chromosome: {best_agent['chromosome'][:23]}...",
-            f"Best fitness: {best_agent['fitness']}",
+            f"Best fitness: {best_agent['fitness']:.1f}",
             f"A's in core: {best_agent['chromosome'][:23].count('a')}",
             f"Length after core: {len(best_agent['chromosome']) - 23}"
         ]))
