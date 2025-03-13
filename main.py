@@ -421,7 +421,7 @@ def display_generation_stats(stats: dict) -> None:  # Removed unused 'population
         f"Core: {stats['best_core']}\n"
         f"Δ{stats['diversity']:.0%} 👥{stats['population_size']:,}/{MAX_POPULATION:,}",
         title="Evolution Progress",
-        subtitle=f"[Population evolution: +{len(children)}/-{len(population)-len(parents)}]",
+        subtitle=f"[Population evolution]",
         style="blue"
     ))
 
